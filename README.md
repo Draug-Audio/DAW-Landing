@@ -24,12 +24,18 @@ src/
   slider/
     CanvasCarousel.js   silnik sceny 3D na canvasie
     captions.js         zsynchronizowany slider opisów + kropki
-    texture.js          przygotowanie tekstur (m.in. rozbicie na kanały RGB)
+    texture.js          skalowanie zrzutów do rozmiaru sceny
     math.js             clamp / lerp / smoothstep / zawijanie po okręgu
 Mockups/                oryginalne, spakowane pliki HTML (źródło projektu)
 ```
 
 ## Slider
+
+Przedni kafel ma dokładnie szerokość kontenera treści; canvas jest od niego
+szerszy (100vw), więc sąsiednie kafle wychodzą poza kontener aż po krawędzie
+okna. Strzałki siedzą przy krawędziach kontenera od zewnątrz — rynna strony ma
+tylko 28 px, więc całkiem poza kontener wychodzą dopiero powyżej 1512 px
+szerokości okna; niżej siadają okrakiem na krawędzi, zamiast uciekać poza ekran.
 
 Osiem kafli leży na okręgu wokół kamery (co 45°) i jest rzutowanych
 perspektywicznie. Canvas 2D nie potrafi mapować tekstury na trapez, więc każdy
@@ -50,7 +56,7 @@ Efekty (skalowane energią ruchu, czyli liczbą slajdów na sekundę):
 
 | efekt | jak działa |
 | --- | --- |
-| aberracja chromatyczna | tekstura trzymana jest też w trzech kopiach z wyizolowanymi kanałami R/G/B (w połowie rozdzielczości — przy ruchu i tak niewidocznej); przy ruchu rysowane są rozsunięte i składane addytywnie (`lighter`) |
+| aberracja chromatyczna | kafel rysowany trzy razy do bufora pomocniczego, każdy przebieg przemnożony przez czysty kanał R/G/B (obcięcie do czworokąta jest konieczne — `multiply` na przezroczystym tle dałoby pełny kolor), potem składane addytywnie z przesunięciem; suma przy zerowym przesunięciu odtwarza oryginał (zmierzone: średnia różnica 0,8/255) |
 | mgła głębi | gradient wzdłuż kafla liczony z realnej odległości krawędzi od kamery |
 | odblask krawędzi natarcia | gradient limonkowy po stronie, w którą leci kafel |
 | odbicie | scena odbita względem linii podłogi, maskowana gradientem (bufor w połowie rozdzielczości) |
@@ -63,8 +69,8 @@ klawisze ←/→, poziomy scroll gładzika, autoodtwarzanie z paskiem postępu.
 Pętla stoi, gdy sekcja jest poza ekranem albo karta jest w tle.
 `prefers-reduced-motion` wyłącza autoodtwarzanie, aberrację, glitch i ziarno.
 
-Wydajność przy 1350 × 587 px bufora i ośmiu slajdach: **0,31 ms/klatkę**
-w spoczynku, **1,06 ms/klatkę** w ruchu. Tekstury zajmują ok. 22 MB.
+Wydajność przy 1700 × 919 px bufora i ośmiu slajdach: **0,31 ms/klatkę**
+w spoczynku, **0,91 ms/klatkę** w ruchu. Tekstury ok. 32 MB, bufory ok. 20 MB.
 
 ## Uwagi
 
@@ -72,7 +78,9 @@ w spoczynku, **1,06 ms/klatkę** w ruchu. Tekstury zajmują ok. 22 MB.
   Bezstratnie, żeby tekst interfejsu został ostry; wyjątkiem jest `2`, w dużej
   mierze fotograficzne GUI wtyczek, zapisane stratnie q97.
 - Zdjęcie z sekcji „Jak powstał DAW” ważyło 6,3 MB (PNG 4606 × 2624).
-  Tutaj jest jako WebP 2200 px / 139 kB.
+  Tutaj jest jako WebP 2200 px / 283 kB — **z kanałem alfa**, bo to wycinanka
+  na przezroczystym tle. Odrzucenie alfy przy konwersji odsłania surowe zielone
+  piksele spod biurka.
 - Treść slajdów (numer, tytuł, opis, plik) siedzi w `src/data/slides.js` —
   dodanie albo usunięcie pozycji nie wymaga zmian w silniku, kąt na okręgu
   i promień policzą się same.

@@ -7,6 +7,7 @@ const AUTOPLAY_DELAY = 5600;
 
 export async function mountShowcase(root, slides) {
   const canvas = root.querySelector('[data-showcase-canvas]');
+  const stage = root.querySelector('[data-showcase-stage]');
   const captionsRoot = root.querySelector('[data-captions]');
   const dotsRoot = root.querySelector('[data-showcase-dots]');
   const progressBar = root.querySelector('[data-showcase-progress]');
@@ -15,14 +16,14 @@ export async function mountShowcase(root, slides) {
 
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // Tekstura nie musi być szersza niż przedni kafel, a ten zajmuje ok. 0,6
-  // szerokości sceny. Przy ośmiu slajdach każdy piksel ponad to jest mnożony
-  // razy osiem, więc limit trzymamy nisko.
-  const stageWidth = canvas.getBoundingClientRect().width || 1200;
+  // Tekstura ma być dokładnie tak szeroka, jak przedni kafel — a ten ma
+  // szerokość kontenera. Przy ośmiu slajdach każdy piksel ponad to mnoży się
+  // razy osiem, więc górny limit trzymamy krótko.
+  const cardWidth = (stage ?? canvas).getBoundingClientRect().width || 1200;
   const textureWidth = clamp(
-    Math.round(stageWidth * Math.min(window.devicePixelRatio || 1, 2) * 0.62),
+    Math.round(cardWidth * Math.min(window.devicePixelRatio || 1, 2)),
     880,
-    1600,
+    1500,
   );
 
   const images = await Promise.all(slides.map((slide) => loadImage(slide.src)));
@@ -70,6 +71,7 @@ export async function mountShowcase(root, slides) {
 
   carousel = new CanvasCarousel(canvas, {
     textures,
+    frame: stage ?? canvas,
     options: { reducedMotion },
     onFrame: ({ position, energy }) => {
       captions.update(position);

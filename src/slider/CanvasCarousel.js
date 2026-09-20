@@ -4,7 +4,8 @@ import { context2d, makeCanvas, makeNoiseTile, makeScanlineTile } from './textur
 const DEG = Math.PI / 180;
 
 const DEFAULTS = {
-  /** szerokość przedniego kafla względem szerokości canvasu (górny limit) */
+  /** Awaryjna szerokość kafla, gdy nie podano elementu odniesienia.
+   *  Normalnie przedni kafel ma dokładnie szerokość `frame` (kontenera). */
   frontWidth: 0.7,
   /**
    * Odstęp sąsiednich kafli mierzony cięciwą okręgu, w szerokościach kafla.
@@ -18,7 +19,7 @@ const DEFAULTS = {
   /** maksymalny rozstaw kątowy między sąsiednimi slajdami */
   maxArc: 58 * DEG,
   /** pionowy środek okręgu (ułamek wysokości) — wyżej, bo pod spodem odbicie */
-  centerY: 0.435,
+  centerY: 0.44,
   maxStrips: 88,
   /** maks. rozjazd kanałów RGB w px przy pełnej prędkości */
   aberration: 11,
@@ -34,8 +35,10 @@ export class CanvasCarousel {
    * @param {HTMLCanvasElement} canvas
    * @param {{textures: object[], options?: object, onFrame?: Function, onSettle?: Function}} config
    */
-  constructor(canvas, { textures, options = {}, onFrame, onSettle }) {
+  constructor(canvas, { textures, frame, options = {}, onFrame, onSettle }) {
     this.canvas = canvas;
+    /** element wyznaczający szerokość przedniego kafla (kontener treści) */
+    this.frame = frame ?? canvas;
     this.ctx = context2d(canvas);
     this.textures = textures;
     this.count = textures.length;
@@ -71,6 +74,8 @@ export class CanvasCarousel {
     this.reflCtx = context2d(this.refl);
     this.bloom = makeCanvas(1, 1);
     this.bloomCtx = context2d(this.bloom);
+    this.fx = makeCanvas(1, 1);
+    this.fxCtx = context2d(this.fx);
 
     this.noise = [makeNoiseTile(), makeNoiseTile(), makeNoiseTile()];
     this.scanTile = makeScanlineTile(4);
@@ -131,11 +136,13 @@ export class CanvasCarousel {
     const dpr = Math.min(dprCap, this.opt.maxBackingWidth / rect.width);
     const w = Math.max(320, Math.round(rect.width * dpr));
     const h = Math.max(160, Math.round(rect.height * dpr));
-    if (w === this.w && h === this.h) return;
+    const cardWidth = Math.round(this.frame.getBoundingClientRect().width * dpr);
+    if (w === this.w && h === this.h && cardWidth === this.cardWidth) return;
 
     this.w = w;
     this.h = h;
-    for (const c of [this.canvas, this.stage, this.work]) {
+    this.cardWidth = cardWidth;
+    for (const c of [this.canvas, this.stage, this.work, this.fx]) {
       c.width = w;
       c.height = h;
     }
@@ -145,7 +152,7 @@ export class CanvasCarousel {
     this.bloom.height = Math.max(1, Math.round(h / 4));
 
     // konteksty gubią ustawienia przy zmianie rozmiaru
-    for (const ctx of [this.ctx, this.stageCtx, this.workCtx, this.reflCtx, this.bloomCtx]) {
+    for (const ctx of [this.ctx, this.stageCtx, this.workCtx, this.reflCtx, this.bloomCtx, this.fxCtx]) {
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
     }
@@ -159,9 +166,10 @@ export class CanvasCarousel {
   _geometry() {
     const { w, h, opt } = this;
     const aspect = this.textures[0].aspect;
-    let cardW = w * opt.frontWidth;
+    // przedni kafel ma szerokość kontenera; sąsiedzi wychodzą poza canvas
+    let cardW = Math.min(this.cardWidth || w * opt.frontWidth, w);
     let cardH = cardW * aspect;
-    const maxCardH = h * 0.74;
+    const maxCardH = h * 0.98;
     if (cardH > maxCardH) {
       cardH = maxCardH;
       cardW = cardH / aspect;
@@ -337,10 +345,14 @@ export class CanvasCarousel {
     const left = this._project(-cardW / 2, sin, cos);
     const right = this._project(cardW / 2, sin, cos);
 
+    const ab = this.opt.reducedMotion
+      ? 0
+      : energy * this.opt.aberration * (this.w / 1400) * (0.4 + 0.6 * front);
+
     const minX = Math.min(left.x, right.x);
     const maxX = Math.max(left.x, right.x);
     const maxHalf = Math.max(left.half, right.half);
-    const pad = 24;
+    const pad = 16 + Math.ceil(ab);
     const bx = clamp(Math.floor(minX - pad), 0, this.w);
     const by = clamp(Math.floor(cy - maxHalf - pad), 0, this.h);
     const bw = clamp(Math.ceil(maxX + pad) - bx, 0, this.w - bx);
@@ -353,35 +365,52 @@ export class CanvasCarousel {
     ctx.globalCompositeOperation = 'source-over';
     ctx.clearRect(bx, by, bw, bh);
 
-    const quad = () => {
-      ctx.beginPath();
-      ctx.moveTo(left.x, cy - left.half);
-      ctx.lineTo(right.x, cy - right.half);
-      ctx.lineTo(right.x, cy + right.half);
-      ctx.lineTo(left.x, cy + left.half);
-      ctx.closePath();
+    const quad = (target) => {
+      target.beginPath();
+      target.moveTo(left.x, cy - left.half);
+      target.lineTo(right.x, cy - right.half);
+      target.lineTo(right.x, cy + right.half);
+      target.lineTo(left.x, cy + left.half);
+      target.closePath();
     };
 
-    ctx.save();
-    quad();
-    ctx.clip();
-
-    const abMax = this.opt.aberration * (this.w / 1400);
-    const ab = this.opt.reducedMotion ? 0 : energy * abMax * (0.4 + 0.6 * front);
-
-    // Próg wyżej niż „widoczny rozjazd”, bo kopie kanałowe mają połowę
-    // rozdzielczości — przejście na nie ma wypaść wtedy, gdy kafel i tak
-    // wyraźnie leci, a nie na wyciszeniu sprężyny.
-    if (ab > 1.5) {
-      ctx.globalCompositeOperation = 'lighter';
+    if (ab > 0.4) {
+      // Aberracja chromatyczna: kafel rysowany trzy razy do bufora pomocniczego,
+      // za każdym razem przemnożony przez czysty kanał (obcięcie do quada jest
+      // konieczne — `multiply` na przezroczystym tle dałoby pełny kolor), a
+      // potem składany addytywnie z przesunięciem. Suma R+G+B przy zerowym
+      // przesunięciu odtwarza oryginał co do piksela.
+      const fx = this.fxCtx;
       const dir = this.dir || 1;
-      this._paintStrips(ctx, tex.r, sin, cos, -ab * dir);
-      this._paintStrips(ctx, tex.g, sin, cos, 0);
-      this._paintStrips(ctx, tex.b, sin, cos, ab * dir);
+      const channels = [['#ff0000', -ab * dir], ['#00ff00', 0], ['#0000ff', ab * dir]];
+      ctx.globalCompositeOperation = 'lighter';
+      for (const [tint, offset] of channels) {
+        fx.setTransform(1, 0, 0, 1, 0, 0);
+        fx.globalAlpha = 1;
+        fx.globalCompositeOperation = 'source-over';
+        fx.clearRect(bx, by, bw, bh);
+        fx.save();
+        quad(fx);
+        fx.clip();
+        this._paintStrips(fx, tex.base, sin, cos, 0);
+        fx.globalCompositeOperation = 'multiply';
+        fx.fillStyle = tint;
+        fx.fillRect(bx, by, bw, bh);
+        fx.restore();
+        ctx.drawImage(this.fx, bx, by, bw, bh, bx + offset, by, bw, bh);
+      }
       ctx.globalCompositeOperation = 'source-over';
     } else {
+      ctx.save();
+      quad(ctx);
+      ctx.clip();
       this._paintStrips(ctx, tex.base, sin, cos, 0);
+      ctx.restore();
     }
+
+    ctx.save();
+    quad(ctx);
+    ctx.clip();
 
     // mgła głębi — jeden gradient zamiast cieniowania per pasek
     const shade = (p) => clamp(1 - (p.depth / this.geom.dist - 1) * 1.15, 0, 1);
@@ -392,7 +421,7 @@ export class CanvasCarousel {
     fog.addColorStop(0, `rgba(5,6,5,${clamp(a0, 0, 0.92)})`);
     fog.addColorStop(1, `rgba(5,6,5,${clamp(a1, 0, 0.92)})`);
     ctx.fillStyle = fog;
-    quad();
+    quad(ctx);
     ctx.fill();
 
     // odblask na krawędzi natarcia
@@ -404,7 +433,7 @@ export class CanvasCarousel {
       rim.addColorStop(0.16, 'rgba(200,255,61,0)');
       ctx.globalCompositeOperation = 'lighter';
       ctx.fillStyle = rim;
-      quad();
+      quad(ctx);
       ctx.fill();
       ctx.globalCompositeOperation = 'source-over';
     }
@@ -413,7 +442,7 @@ export class CanvasCarousel {
 
     // obrys kafla
     ctx.save();
-    quad();
+    quad(ctx);
     ctx.lineWidth = Math.max(1, this.w / 1400);
     ctx.strokeStyle = `rgba(200,255,61,${0.08 + 0.3 * front})`;
     ctx.stroke();
@@ -686,6 +715,7 @@ export class CanvasCarousel {
   _observe() {
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(this.canvas);
+    if (this.frame !== this.canvas) this.resizeObserver.observe(this.frame);
 
     this.intersectionObserver = new IntersectionObserver(
       ([entry]) => {

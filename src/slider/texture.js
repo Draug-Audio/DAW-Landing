@@ -1,10 +1,9 @@
 /**
  * Przygotowanie tekstur dla slidera.
  *
- * Poza wersją bazową budujemy trzy kopie z wyizolowanymi kanałami R/G/B.
- * Złożone addytywnie (`globalCompositeOperation = 'lighter'`) dają dokładnie
- * obraz wyjściowy, a rozsunięte w poziomie — aberrację chromatyczną, której
- * canvas 2D nie potrafi zrobić filtrem.
+ * Obraz jest przeskalowywany do rozmiaru, w jakim realnie pojawia się na
+ * scenie, i podkładany na kryjącym tle — dzięki temu izolacja kanałów przy
+ * aberracji (`multiply` z czystym kanałem) daje poprawny wynik.
  */
 
 export function loadImage(src) {
@@ -55,24 +54,12 @@ export function makeScanlineTile(period = 4) {
   return canvas;
 }
 
-function isolateChannel(base, color, scale) {
-  const canvas = makeCanvas(base.width * scale, base.height * scale);
-  const ctx = context2d(canvas);
-  ctx.drawImage(base, 0, 0, canvas.width, canvas.height);
-  ctx.globalCompositeOperation = 'multiply';
-  ctx.fillStyle = color;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  return canvas;
-}
-
 /**
  * @param {HTMLImageElement} img
  * @param {number} maxWidth  docelowa szerokość tekstury w pikselach urządzenia
- * @param {object} [opts]
- * @param {string} [opts.backdrop]      tło pod obrazem (kanały muszą być kryjące)
- * @param {number} [opts.channelScale]  skala kopii kanałowych względem bazy
+ * @param {string} [backdrop] tło podkładane pod obraz
  */
-export function buildTexture(img, maxWidth, { backdrop = '#0c0e0c', channelScale = 0.5 } = {}) {
+export function buildTexture(img, maxWidth, backdrop = '#0c0e0c') {
   const scale = Math.min(1, maxWidth / img.naturalWidth);
   const w = Math.round(img.naturalWidth * scale);
   const h = Math.round(img.naturalHeight * scale);
@@ -83,15 +70,5 @@ export function buildTexture(img, maxWidth, { backdrop = '#0c0e0c', channelScale
   ctx.fillRect(0, 0, w, h);
   ctx.drawImage(img, 0, 0, w, h);
 
-  // Kopie kanałowe służą tylko aberracji, czyli momentom szybkiego ruchu —
-  // połowa rozdzielczości jest tam niewidoczna, a oszczędza 3/4 pamięci.
-  return {
-    base,
-    r: isolateChannel(base, '#ff0000', channelScale),
-    g: isolateChannel(base, '#00ff00', channelScale),
-    b: isolateChannel(base, '#0000ff', channelScale),
-    width: w,
-    height: h,
-    aspect: h / w,
-  };
+  return { base, width: w, height: h, aspect: h / w };
 }

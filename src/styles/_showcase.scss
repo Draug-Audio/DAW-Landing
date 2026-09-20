@@ -6,35 +6,38 @@
 // ─────────────────────────────────────────────────────────────
 
 .showcase {
-  --sc-bleed: clamp(0px, 5.5vw, 120px);
   --sc-energy: 0;   // 0 = spoczynek, 1 = pełny ruch (ustawiane z JS)
 
   position: relative;
   margin-top: 56px;
 
+  // Scena wyznacza szerokość PRZEDNIEGO kafla — canvas jest od niej szerszy,
+  // więc sąsiednie kafle wychodzą poza kontener aż po krawędzie okna.
+  // Wysokość: proporcja zrzutu (2560 / 1392) plus zapas na odbicie.
   &__stage {
     position: relative;
-    width: calc(100% + 2 * var(--sc-bleed));
-    margin-inline: calc(-1 * var(--sc-bleed));
-    // zrzuty mają 2560 x 1392; scena jest szersza, żeby zmieściły się
-    // sąsiednie kafle, odbicie i poświata
-    aspect-ratio: 23 / 10;
+    aspect-ratio: 2560 / 1700;
+  }
+
+  &__canvas {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100vw;
+    height: 100%;
     touch-action: pan-y;
     cursor: grab;
+    // poświata, odbicie i winieta powstają wewnątrz canvasu — żadnych
+    // filtrów CSS na animowanym elemencie
 
     &:active { cursor: grabbing; }
   }
 
-  &__canvas {
-    width: 100%;
-    height: 100%;
-    // poświata, odbicie i winieta powstają wewnątrz canvasu — żadnych
-    // filtrów CSS na animowanym elemencie
-  }
-
   &__fallback {
     position: absolute;
-    inset: 8% 0;
+    top: 0;
+    left: 0;
     width: 100%;
     height: auto;
     border: 1px solid $line-strong;
@@ -65,12 +68,16 @@
       background: rgba(8, 9, 8, 0.95);
     }
 
-    &--prev { left: calc(var(--sc-bleed) * -1 + 12px); }
-    &--next { right: calc(var(--sc-bleed) * -1 + 12px); }
+    // Przy krawędziach kontenera, po zewnętrznej stronie. Rynna strony ma
+    // tylko 28 px, więc w pełni poza kontener przycisk wychodzi dopiero
+    // wtedy, gdy okno jest szersze niż kontener plus miejsce na przycisk;
+    // niżej siada okrakiem na krawędzi, nie uciekając poza ekran.
+    &--prev { right: calc(100% - 18px); }
+    &--next { left: calc(100% - 18px); }
 
-    @include below($bp-md) {
-      &--prev { left: 8px; }
-      &--next { right: 8px; }
+    @media (min-width: 1512px) {
+      &--prev { right: calc(100% + 14px); }
+      &--next { left: calc(100% + 14px); }
     }
   }
 
