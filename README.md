@@ -85,7 +85,7 @@ zewnętrzna ramka w kolorze tła strony (rozdziela kafelki), wpuszczony o piksel
 obrys w kolorze znaku, ledwie widoczne limonkowe wypełnienie (12 % jasności
 kafelka) i znak — losowa litera albo cyfra z
 `runescript-monospace-variable.ttf`. Czcionka jest zmienna, więc waga idzie
-z osi (350). Wszystkie znaki wypalane są raz do atlasu, więc rysowanie kafelka
+z osi (300). Wszystkie znaki wypalane są raz do atlasu, więc rysowanie kafelka
 to `drawImage` z wycinka, a nie skład tekstu co klatkę.
 
 Kafelki rysowane są **wyłącznie w zasięgu pasa przemiatania**. Poza nim nie ma

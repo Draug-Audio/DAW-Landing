@@ -57,7 +57,7 @@ const DEFAULTS = {
   /** rodzina czcionki znaków w kafelkach */
   gridFont: 'RuneScript Monospace Variable',
   /** waga ze zmiennej osi czcionki (oś 100–900) */
-  gridFontWeight: 350,
+  gridFontWeight: 300,
   gridChars: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split(''),
   /** obrotów pasa na sekundę */
   sweepSpeed: 0.15,
