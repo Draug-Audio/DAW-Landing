@@ -80,12 +80,13 @@ komórki (mapowanie 1:1), a na bocznym 19 px przy przewidzianych 19,24.
 
 ### Siatka wywoływana przemiataniem
 
-Kafel jest pokryty siatką kafelków: kwadrat z cienką ramką w kolorze tła strony
-(żeby czytały się jako rozdzielone), półprzezroczyste limonkowe wypełnienie
-i znak — losowa litera albo cyfra z `runescript-monospace-variable.ttf`.
-Czcionka jest zmienna, więc glify idą z osi wagi (600), inaczej przy 21 px
-zanikają. Wszystkie znaki wypalane są raz do atlasu, więc rysowanie kafelka to
-`drawImage` z wycinka, a nie skład tekstu co klatkę.
+Kafel jest pokryty siatką kafelków. Jeden kafelek to, od zewnątrz:
+zewnętrzna ramka w kolorze tła strony (rozdziela kafelki), wpuszczony o piksel
+obrys w kolorze znaku, ledwie widoczne limonkowe wypełnienie (12 % jasności
+kafelka) i znak — losowa litera albo cyfra z
+`runescript-monospace-variable.ttf`. Czcionka jest zmienna, więc waga idzie
+z osi (350). Wszystkie znaki wypalane są raz do atlasu, więc rysowanie kafelka
+to `drawImage` z wycinka, a nie skład tekstu co klatkę.
 
 Kafelki rysowane są **wyłącznie w zasięgu pasa przemiatania**. Poza nim nie ma
 czego kryć — a każdy stały ślad siatki, choćby 5 % przyciemnienia, zostawiałby
@@ -127,8 +128,8 @@ klawisze ←/→, poziomy scroll gładzika, autoodtwarzanie z paskiem postępu.
 Pętla stoi, gdy sekcja jest poza ekranem albo karta jest w tle.
 `prefers-reduced-motion` wyłącza autoodtwarzanie, aberrację, glitch i ziarno.
 
-Wydajność przy 1920 × 919 px bufora i ośmiu slajdach: **ok. 1,4 ms/klatkę**
-w spoczynku i **ok. 2,3 ms/klatkę** w ruchu. Tekstury ok. 32 MB, bufory ok. 24 MB.
+Wydajność przy 1920 × 919 px bufora i ośmiu slajdach: **ok. 1 ms/klatkę**
+w spoczynku i **ok. 1,6 ms/klatkę** w ruchu. Tekstury ok. 32 MB, bufory ok. 24 MB.
 
 Liczby są zaokrąglone świadomie. Pomiar to mediana z siedmiu próbek po dziesięć
 klatek, z przerwą między próbkami. Dłuższe pętle `_render` bez oddechu zapychają
@@ -136,10 +137,14 @@ kolejkę GPU i czasy rosną kilkukrotnie — to artefakt pomiaru, nie kosztu kla
 więc podawanie tu wartości z dokładnością do setnych byłoby fikcją.
 
 Spoczynek kosztuje tyle, bo w zasięgu pasa leży ok. 640 kafelków, a każdy to
-wypełnienie, glif i ramka. Kolory ustawiane są raz, a jasność idzie przez
-`globalAlpha` — sklejanie `rgba(...)` per kafelek kosztowało 0,3 ms na klatkę.
+wypełnienie, glif i dwie ramki. Jasność idzie przez `globalAlpha` przy stałych
+kolorach — sklejanie `rgba(...)` per kafelek kosztowało 0,3 ms na klatkę.
 Gdyby trzeba było zejść niżej: mniej kafelków (większa podziałka) albo wypiekanie
 całych wierszy do bufora i przesuwanie ich, zamiast rysowania kafelek po kafelku.
+
+Wartości sprzed i po zmianie wyglądu kafelka nie są porównywalne — pomiary
+potrafią się rozjechać o połowę między sesjami panelu podglądu, więc liczby mają
+sens jako rząd wielkości, nie jako różnica.
 
 ## Uwagi
 

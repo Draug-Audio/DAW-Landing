@@ -3,6 +3,9 @@ import { context2d, makeCanvas, makeGlyphAtlas, makeNoiseTile } from './texture.
 
 const DEG = Math.PI / 180;
 
+/** kolor znaków i obrysu kafelków siatki */
+const GRID_INK = 'rgb(200,255,61)';
+
 const DEFAULTS = {
   /** Awaryjna szerokość kafla, gdy nie podano elementu odniesienia.
    *  Normalnie przedni kafel ma dokładnie szerokość `frame` (kontenera). */
@@ -43,16 +46,18 @@ const DEFAULTS = {
   gridFloor: 0.3,
   /** górny pułap jasności kafelka pod rdzeniem pasa */
   gridReveal: 1,
-  /** krycie tła kafelka względem jego jasności — reszta to sam znak */
-  gridFill: 0.26,
-  /** krycie ramki */
+  /** krycie tła kafelka względem jego jasności */
+  gridFill: 0.12,
+  /** krycie zewnętrznej ramki rozdzielającej kafelki */
   gridEdge: 0.9,
-  /** kolor ramki: tło strony, żeby kafelki wyglądały na rozdzielone */
+  /** kolor tej ramki: tło strony, żeby kafelki wyglądały na rozdzielone */
   gridEdgeColor: '8,9,8',
+  /** krycie wewnętrznego obrysu w kolorze znaku */
+  gridOutline: 0.55,
   /** rodzina czcionki znaków w kafelkach */
   gridFont: 'RuneScript Monospace Variable',
-  /** waga ze zmiennej osi czcionki */
-  gridFontWeight: 600,
+  /** waga ze zmiennej osi czcionki (oś 100–900) */
+  gridFontWeight: 350,
   gridChars: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split(''),
   /** obrotów pasa na sekundę */
   sweepSpeed: 0.15,
@@ -749,8 +754,8 @@ export class CanvasCarousel {
       // kafelek kosztowałby dwa sklejane stringi `rgba(...)` na klatkę,
       // a kafelków jest tu ponad sześćset.
       oc.lineWidth = 1;
-      oc.fillStyle = 'rgb(200,255,61)';
-      oc.strokeStyle = `rgb(${opt.gridEdgeColor})`;
+      oc.fillStyle = GRID_INK;
+      const edgeColor = `rgb(${opt.gridEdgeColor})`;
       for (let r = first; r <= last; r += 1) {
         const y = r * cell;
         const mid = y + square / 2;
@@ -776,6 +781,13 @@ export class CanvasCarousel {
           oc.globalAlpha = a;
           oc.drawImage(this.glyphs, grid.char[i] * square, 0, square, square, x, y, square, square);
 
+          // obrys w kolorze znaku, wpuszczony o piksel
+          oc.strokeStyle = GRID_INK;
+          oc.globalAlpha = a * opt.gridOutline;
+          oc.strokeRect(x + 1.5, y + 1.5, square - 3, square - 3);
+
+          // zewnętrzna ramka w kolorze tła — rozdziela kafelki
+          oc.strokeStyle = edgeColor;
           oc.globalAlpha = a * opt.gridEdge;
           oc.strokeRect(x + 0.5, y + 0.5, square - 1, square - 1);
         }
