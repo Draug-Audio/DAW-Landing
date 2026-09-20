@@ -85,7 +85,7 @@ zewnętrzna ramka w kolorze tła strony (rozdziela kafelki), wpuszczony o piksel
 obrys w kolorze znaku, ledwie widoczne limonkowe wypełnienie (12 % jasności
 kafelka) i znak — losowa litera albo cyfra z
 `runescript-monospace-variable.ttf`. Czcionka jest zmienna, więc waga idzie
-z osi (200) — ale `FontFace` musi dostać zakres `weight: '100 900'`, inaczej
+z osi (100, czyli jej dolny kraniec) — ale `FontFace` musi dostać zakres `weight: '100 900'`, inaczej
 zgłasza się jako statyczny krój 400, przeglądarka w ogóle nie sięga po oś
 i każda waga poniżej 600 renderuje się identycznie (a powyżej — syntetycznie
 pogrubia). Sprawdzenie: ilość „tuszu” w atlasie musi rosnąć monotonicznie
