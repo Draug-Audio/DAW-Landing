@@ -124,6 +124,11 @@ const DEFAULTS = {
    * odbicie też jej nie dostaje.
    */
   reflectionShimmer: 0.9,
+  /**
+   * Krycie obrysu w odbiciu, jako ułamek krycia obrysu na kaflu. Nisko, żeby
+   * ramka w odbiciu domykała kształt, a nie ściągała na siebie uwagi.
+   */
+  reflectionBorder: 0.45,
   /** maks. rozjazd kanałów RGB w px przy pełnej prędkości */
   aberration: 11,
   stiffness: 120,
@@ -746,6 +751,30 @@ export class CanvasCarousel {
       rc.globalAlpha = reflShimmer;
       this._paintStrips(rc, this.overlay, ang, 0, true);
     }
+
+    /*
+     * Obrys odbicia. Czworokąt budowany wprost, bez transformaty: górna
+     * krawędź odbicia to dolna krawędź kafla, a dolna leży na `3 × half`,
+     * bo każda kolumna odbija się względem WŁASNEJ dolnej krawędzi.
+     *
+     * Krycie bierze się z `0,08 + 0,3 · front`, a nie z `_borderAlpha` —
+     * to drugie gaśnie pod ostrą kopią w DOM, a kopia przykrywa sam kafel,
+     * nie jego odbicie.
+     */
+    const reflBorder = (0.08 + 0.3 * front) * this.opt.reflectionBorder;
+    if (reflBorder > 0.004) {
+      rc.globalAlpha = reflAlpha;
+      rc.lineWidth = this.geom.border;
+      rc.strokeStyle = `rgba(200,255,61,${reflBorder})`;
+      rc.beginPath();
+      rc.moveTo(left.x, cy + left.half);
+      rc.lineTo(right.x, cy + right.half);
+      rc.lineTo(right.x, cy + 3 * right.half);
+      rc.lineTo(left.x, cy + 3 * left.half);
+      rc.closePath();
+      rc.stroke();
+    }
+
     rc.globalAlpha = 1;
   }
 
