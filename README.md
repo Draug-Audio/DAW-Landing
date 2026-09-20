@@ -113,6 +113,10 @@ pogrubia). Sprawdzenie: ilość „tuszu” w atlasie musi rosnąć monotoniczni
 z wagą (100 → 243, 200 → 277, 400 → 381, 700 → 534, 900 → 637). Wszystkie znaki wypalane są raz do atlasu, więc rysowanie kafelka
 to `drawImage` z wycinka, a nie skład tekstu co klatkę.
 
+Jasność kafelka nie jest losowana z ciągłego przedziału, tylko ze **schodków**:
+pełne ułamki 0,1 – 0,6 co 0,1, sześć poziomów, rozkład równomierny. Dzięki temu
+siatka ma wyraźne stopnie zamiast równomiernej chmury wartości.
+
 Kafelki rysowane są **wyłącznie w zasięgu pasa przemiatania**. Poza nim nie ma
 czego kryć — a każdy stały ślad siatki, choćby 5 % przyciemnienia, zostawiałby
 SZCZELINY jaśniejsze od kafelków i rysował widoczną kratę (zmierzone:

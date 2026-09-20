@@ -57,8 +57,15 @@ const DEFAULTS = {
   gridCell: 32,
   /** szczelina między kafelkami — o tyle kafelek jest mniejszy od podziałki */
   gridGap: 4,
-  /** najniższa jasność kafelka; wyżej losowo */
-  gridFloor: 0.3,
+  /**
+   * Jasność kafelka losowana jest ze schodków, nie z ciągłego przedziału:
+   * pełne ułamki od `gridLevelMin` do `gridLevelMax` co `gridLevelStep`.
+   * Sześć poziomów zamiast płynnej skali daje siatce wyraźne stopnie,
+   * zamiast równomiernej chmury wartości.
+   */
+  gridLevelMin: 0.1,
+  gridLevelMax: 0.6,
+  gridLevelStep: 0.1,
   /**
    * Górny pułap jasności kafelka pod rdzeniem pasa. Poniżej 1 nawet kafelek
    * o jasności 1,0 przepuszcza trochę obrazu — świadomie, żeby pas nie
@@ -738,12 +745,13 @@ export class CanvasCarousel {
    * widać je wyłącznie na samych kaflach, a nie na tle strony.
    */
   /**
-   * Stan siatki: jeden wpis na kafelek. Jasność losowana raz (kwadrat rozkładu
-   * zagęszcza kafelki przy dolnym końcu skali, więc siatka jest nierówna),
-   * znak i numer przebiegu zmieniają się w trakcie życia sceny.
+   * Stan siatki: jeden wpis na kafelek. Jasność losowana raz, ze schodków
+   * (patrz `gridLevelMin` / `gridLevelStep`), znak i numer przebiegu
+   * zmieniają się w trakcie życia sceny.
    */
   _buildGrid() {
-    const { gridCell, gridFloor, gridChars } = this.opt;
+    const { gridCell, gridChars, gridLevelMin, gridLevelMax, gridLevelStep } = this.opt;
+    const levels = Math.max(1, Math.round((gridLevelMax - gridLevelMin) / gridLevelStep) + 1);
     const cols = Math.ceil(this.overlay.width / gridCell);
     const rows = Math.ceil(this.overlay.height / gridCell);
     const n = cols * rows;
@@ -752,7 +760,8 @@ export class CanvasCarousel {
     const pass = new Int32Array(n).fill(-1);
     const step = new Uint8Array(n);
     for (let i = 0; i < n; i += 1) {
-      bright[i] = gridFloor + (1 - gridFloor) * Math.random() ** 2;
+      // zaokrąglenie, żeby 0,1 × 3 nie wyszło 0,30000000000000004
+      bright[i] = Math.round((gridLevelMin + gridLevelStep * Math.floor(Math.random() * levels)) * 1000) / 1000;
       char[i] = Math.floor(Math.random() * gridChars.length);
     }
     this.grid = { cols, rows, bright, char, pass, step };
