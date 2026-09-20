@@ -72,12 +72,29 @@ Wszystko, co dotyczy pojedynczego kafla, idzie za jego rzutem: poświata i
 świetlista podłoga biorą jego rzutowane położenie i wymiary, **odbicie jest
 lustrzane względem własnej dolnej krawędzi kafla** (liczone per pasek, bo kafel
 obrócony ma tę krawędź ukośną i wyżej niż kafel na wprost), a **nakładka
-„ekranu” — skanlinie, ziarno, przemiatanie i winieta — budowana jest
+„ekranu” — siatka pikseli, ziarno, przemiatanie i winieta — budowana jest
 w układzie kafla i przepuszczana przez ten sam rzut co obraz**. Dzięki temu
-skraca się razem z kaflem, jej linie pochylają się do punktu zbiegu, a winieta
-jest wyśrodkowana na kaflu, nie na scenie. Zmierzone: okres skanlinii na kaflu
-bocznym 7 px wobec 8 px na przednim, czyli stosunek 0,875 — dokładnie tyle, ile
-wynosi przewidziana skala rzutu w tym miejscu.
+skraca się razem z kaflem, a winieta jest wyśrodkowana na kaflu, nie na scenie.
+Zmierzone: okres siatki na kaflu przednim 22 px, czyli dokładnie rozmiar
+komórki (mapowanie 1:1), a na bocznym 19 px przy przewidzianych 19,24.
+
+### Siatka wywoływana przemiataniem
+
+Zamiast płaskich skanlinii kafel dostaje siatkę „dużych pikseli”: komórki
+o losowej alfie, rozdzielone szczeliną. Warstwa jest budowana jako **jasność**,
+a dopiero na końcu przycinana alfą siatki:
+
+1. podłoga — ledwie widoczne przyciemnienie (`gridRest`); siatka leży na kaflu,
+   ale śpi,
+2. pas przemiatania dodany addytywnie (`lighter`) — to jest latarka,
+3. `destination-in` wzorem siatki — światło zostaje tylko w komórkach,
+   proporcjonalnie do ich własnej alfy.
+
+Stąd zachowanie jak latarki UV na liniach papilarnych: siatki nie widać, dopóki
+nie przejdzie po niej pas. Zmierzona luminancja wiersza kafla: **20,9 bez pasa,
+56,5 pod pasem** (2,7 ×), przy rozrzucie w samym wierszu od 14 do 182 — czyli
+komórki świecą różnie, zgodnie ze swoją losową alfą. Przy
+`prefers-reduced-motion` pasa nie ma i zostaje sama podłoga (17,4).
 
 Ruchem steruje sprężyna (lekko niedotłumiona — dojazd ~0,5 s z minimalnym
 przestrzeleniem). Pozycja jest **ciągła**, nie skokowa, więc wszystko, co od niej
@@ -94,7 +111,7 @@ Efekty (skalowane energią ruchu, czyli liczbą slajdów na sekundę):
 | odblask krawędzi natarcia | gradient limonkowy po stronie, w którą leci kafel |
 | odbicie | każdy kafel odbity względem własnej dolnej krawędzi, per pasek; wygaszane wspólnym gradientem (bufor w połowie rozdzielczości) |
 | bloom | scena w 1/4 rozdzielczości, `contrast + blur`, dołożona w trybie `lighter` |
-| skanlinie, ziarno, winieta, przemiatanie | rysowane w układzie kafla i rzutowane razem z nim; na kaflach mocno skróconych słabsze, żeby zagęszczone linie nie robiły mory |
+| siatka pikseli, ziarno, winieta, przemiatanie | rysowane w układzie kafla i rzutowane razem z nim; na kaflach mocno skróconych słabsze, żeby zagęszczona siatka nie robiła mory |
 | rozerwane pasy obrazu | przy szybkim obrocie i przy zmianie slajdu |
 
 Sterowanie: przeciąganie (z rzutem prędkości i zatrzaskiem), strzałki, kropki,
@@ -102,8 +119,13 @@ klawisze ←/→, poziomy scroll gładzika, autoodtwarzanie z paskiem postępu.
 Pętla stoi, gdy sekcja jest poza ekranem albo karta jest w tle.
 `prefers-reduced-motion` wyłącza autoodtwarzanie, aberrację, glitch i ziarno.
 
-Wydajność przy 1920 × 919 px bufora i ośmiu slajdach: **0,52 ms/klatkę**
-w spoczynku, **1,32 ms/klatkę** w ruchu. Tekstury ok. 32 MB, bufory ok. 24 MB.
+Wydajność przy 1920 × 919 px bufora i ośmiu slajdach: **0,70 ms/klatkę**
+w spoczynku, **1,50 ms/klatkę** w ruchu. Tekstury ok. 32 MB, bufory ok. 24 MB.
+
+Nakładka jest przebudowywana co klatkę, bo pas się przesuwa. Gdyby te liczby
+zaczęły uwierać, najprostszy zysk to wypiekanie warstwy spoczynkowej raz przy
+zmianie rozmiaru i dokładanie per klatkę wyłącznie pasa, obciętego do jego
+własnych wierszy — ok. 40 % mniej pracy na nakładce.
 
 Pomiar to mediana z pięciu próbek po dziesięć klatek, z przerwą między
 próbkami. Dłuższe pętle `_render` bez oddechu zapychają kolejkę GPU i czasy

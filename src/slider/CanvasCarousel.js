@@ -1,5 +1,5 @@
 import { clamp, lerp, smoothstep, wrapDelta, wrapIndex } from './math.js';
-import { context2d, makeCanvas, makeNoiseTile, makeScanlineTile } from './texture.js';
+import { context2d, makeCanvas, makeGridTile, makeNoiseTile } from './texture.js';
 
 const DEG = Math.PI / 180;
 
@@ -35,6 +35,16 @@ const DEFAULTS = {
   /** pionowy środek okręgu (ułamek wysokości) — wyżej, bo pod spodem odbicie */
   centerY: 0.44,
   maxStrips: 88,
+  /** bok komórki siatki w pikselach tekstury */
+  gridCell: 22,
+  /** ile siatki widać bez przemiatania — prawie nic, ma dopiero wyjść */
+  gridRest: 0.05,
+  /** ile wydobywa przechodzący pas */
+  gridReveal: 0.55,
+  /** obrotów pasa na sekundę */
+  sweepSpeed: 0.15,
+  /** połowa szerokości pasa, w wysokościach kafla */
+  sweepWidth: 0.1,
   /** maks. rozjazd kanałów RGB w px przy pełnej prędkości */
   aberration: 11,
   stiffness: 120,
@@ -96,7 +106,7 @@ export class CanvasCarousel {
     this.overlayCtx = context2d(this.overlay);
 
     this.noise = [makeNoiseTile(), makeNoiseTile(), makeNoiseTile()];
-    this.scanTile = makeScanlineTile(4);
+    this.gridTile = makeGridTile(this.opt.gridCell);
 
     this._frame = this._frame.bind(this);
     this._bindInput();
@@ -175,7 +185,7 @@ export class CanvasCarousel {
       ctx.imageSmoothingQuality = 'high';
     }
 
-    this.scanPattern = this.ctx.createPattern(this.scanTile, 'repeat');
+    this.gridPattern = this.ctx.createPattern(this.gridTile, 'repeat');
     this.noisePatterns = this.noise.map((tile) => this.ctx.createPattern(tile, 'repeat'));
     this._geometry();
     this._render(0);
@@ -652,48 +662,65 @@ export class CanvasCarousel {
     const oc = this.overlayCtx;
     const w = this.overlay.width;
     const h = this.overlay.height;
+    const opt = this.opt;
 
     oc.setTransform(1, 0, 0, 1, 0, 0);
     oc.globalCompositeOperation = 'source-over';
     oc.globalAlpha = 1;
     oc.clearRect(0, 0, w, h);
 
-    if (this.scanPattern) {
-      oc.globalAlpha = 0.085 + energy * 0.05;
-      oc.fillStyle = this.scanPattern;
+    /*
+     * Warstwa siatki budowana jest jako JASNOŚĆ, a dopiero na końcu przycinana
+     * alfą siatki — jak latarka UV na liniach papilarnych: siatka leży na
+     * całym kaflu, ale widać ją tylko tam, gdzie pada światło, i tym mocniej,
+     * im wyższa własna alfa komórki.
+     *
+     *   1. podłoga: ledwie widoczne przyciemnienie (siatka „jest”, ale śpi)
+     *   2. pas przemiatania dodany addytywnie (`lighter`) — to jest latarka
+     *   3. `destination-in` wzorem siatki — światło zostaje tylko w komórkach
+     */
+    oc.fillStyle = `rgba(0,0,0,${opt.gridRest})`;
+    oc.fillRect(0, 0, w, h);
+
+    if (!reduced) {
+      const half = h * opt.sweepWidth;
+      const sweep = ((this.time * opt.sweepSpeed) % 1) * (h + 4 * half) - 2 * half;
+      const peak = opt.gridReveal * (0.75 + 0.25 * energy);
+      const band = oc.createLinearGradient(0, sweep - half, 0, sweep + half);
+      band.addColorStop(0, 'rgba(200,255,61,0)');
+      band.addColorStop(0.38, `rgba(200,255,61,${(peak * 0.45).toFixed(3)})`);
+      band.addColorStop(0.5, `rgba(200,255,61,${peak.toFixed(3)})`);
+      band.addColorStop(0.62, `rgba(200,255,61,${(peak * 0.45).toFixed(3)})`);
+      band.addColorStop(1, 'rgba(200,255,61,0)');
+      oc.globalCompositeOperation = 'lighter';
+      oc.fillStyle = band;
+      oc.fillRect(0, sweep - half, w, half * 2);
+      oc.globalCompositeOperation = 'source-over';
+    }
+
+    if (this.gridPattern) {
+      oc.globalCompositeOperation = 'destination-in';
+      oc.fillStyle = this.gridPattern;
       oc.fillRect(0, 0, w, h);
+      oc.globalCompositeOperation = 'source-over';
     }
 
     if (!reduced && this.noisePatterns) {
       const tile = this.noisePatterns[Math.floor(this.time * 18) % this.noisePatterns.length];
       const ox = -Math.floor(Math.random() * 160);
       const oy = -Math.floor(Math.random() * 160);
-      oc.globalAlpha = 0.05 + energy * 0.06;
+      oc.globalAlpha = 0.035 + energy * 0.05;
       oc.save();
       oc.translate(ox, oy);
       oc.fillStyle = tile;
       oc.fillRect(-ox, -oy, w, h);
       oc.restore();
-    }
-
-    if (!reduced) {
-      // przemiatanie co ~7 s — pas poziomy w układzie kafla
-      const sweep = ((this.time * 0.14) % 1) * (h * 1.6) - h * 0.3;
-      const band = oc.createLinearGradient(0, sweep - h * 0.1, 0, sweep + h * 0.1);
-      band.addColorStop(0, 'rgba(200,255,61,0)');
-      band.addColorStop(0.5, 'rgba(200,255,61,0.07)');
-      band.addColorStop(1, 'rgba(200,255,61,0)');
-      oc.globalCompositeOperation = 'lighter';
       oc.globalAlpha = 1;
-      oc.fillStyle = band;
-      oc.fillRect(0, sweep - h * 0.1, w, h * 0.2);
-      oc.globalCompositeOperation = 'source-over';
     }
 
     const vig = oc.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.34, w / 2, h / 2, Math.max(w, h) * 0.62);
     vig.addColorStop(0, 'rgba(0,0,0,0)');
     vig.addColorStop(1, 'rgba(0,0,0,0.26)');
-    oc.globalAlpha = 1;
     oc.fillStyle = vig;
     oc.fillRect(0, 0, w, h);
   }
