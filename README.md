@@ -47,6 +47,19 @@ sąsiadami, więc rozstaw wygląda tak samo niezależnie od liczby slajdów, a
 kafle odwrócone tyłem odpadają na podstawie odległości kamery od ich
 płaszczyzny — dzięki temu zawinięcie indeksu jest niewidoczne.
 
+**Pozycja na okręgu i obrót kafla są rozdzielone** (`tilt`). Przy kaflu
+stycznym do okręgu (obrót = pozycja) wewnętrzna krawędź sąsiada wychyla się
+przed płaszczyznę przedniego kafla i renderuje się od niego **większa** — kafel
+stojący z tyłu wygląda na bliższy. Mniejszy obrót przy większym promieniu to
+usuwa: w spoczynku żaden kafel nie przekracza skali 1,000 (zmierzone dla
+wszystkich pozycji). Powyżej 1 skala wychodzi wyłącznie w trakcie obrotu, i to
+jest poprawne — obracający się panel naprawdę zbliża jedną krawędź do kamery.
+
+Wszystko, co dotyczy pojedynczego kafla, idzie za jego rzutem: poświata i
+świetlista podłoga biorą jego rzutowane położenie i wymiary, a **odbicie jest
+lustrzane względem własnej dolnej krawędzi kafla** — liczone per pasek, bo
+kafel obrócony ma tę krawędź ukośną i wyżej niż kafel na wprost.
+
 Ruchem steruje sprężyna (lekko niedotłumiona — dojazd ~0,5 s z minimalnym
 przestrzeleniem). Pozycja jest **ciągła**, nie skokowa, więc wszystko, co od niej
 zależy, jest zsynchronizowane w każdej klatce: obrót sceny, przenikanie opisów
@@ -58,8 +71,9 @@ Efekty (skalowane energią ruchu, czyli liczbą slajdów na sekundę):
 | --- | --- |
 | aberracja chromatyczna | kafel rysowany trzy razy do bufora pomocniczego, każdy przebieg przemnożony przez czysty kanał R/G/B (obcięcie do czworokąta jest konieczne — `multiply` na przezroczystym tle dałoby pełny kolor), potem składane addytywnie z przesunięciem; suma przy zerowym przesunięciu odtwarza oryginał (zmierzone: średnia różnica 0,8/255) |
 | mgła głębi | gradient wzdłuż kafla liczony z realnej odległości krawędzi od kamery |
+| poświata i podłoga | przypięte do kafla — przesuwają się i spłaszczają razem z nim; pełna moc na kaflu na wprost, słabsza na pobocznych |
 | odblask krawędzi natarcia | gradient limonkowy po stronie, w którą leci kafel |
-| odbicie | scena odbita względem linii podłogi, maskowana gradientem (bufor w połowie rozdzielczości) |
+| odbicie | każdy kafel odbity względem własnej dolnej krawędzi, per pasek; wygaszane wspólnym gradientem (bufor w połowie rozdzielczości) |
 | bloom | scena w 1/4 rozdzielczości, `contrast + blur`, dołożona w trybie `lighter` |
 | skanlinie, ziarno, winieta, przemiatanie | maskowane alfą sceny (`destination-in`), więc widać je tylko na samych kaflach, nie na tle strony |
 | rozerwane pasy obrazu | przy szybkim obrocie i przy zmianie slajdu |
@@ -69,8 +83,8 @@ klawisze ←/→, poziomy scroll gładzika, autoodtwarzanie z paskiem postępu.
 Pętla stoi, gdy sekcja jest poza ekranem albo karta jest w tle.
 `prefers-reduced-motion` wyłącza autoodtwarzanie, aberrację, glitch i ziarno.
 
-Wydajność przy 1700 × 919 px bufora i ośmiu slajdach: **0,31 ms/klatkę**
-w spoczynku, **0,91 ms/klatkę** w ruchu. Tekstury ok. 32 MB, bufory ok. 20 MB.
+Wydajność przy 1920 × 919 px bufora i ośmiu slajdach: **0,35 ms/klatkę**
+w spoczynku, **0,97 ms/klatkę** w ruchu. Tekstury ok. 32 MB, bufory ok. 20 MB.
 
 ## Uwagi
 

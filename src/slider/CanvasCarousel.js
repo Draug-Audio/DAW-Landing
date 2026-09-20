@@ -12,7 +12,15 @@ const DEFAULTS = {
    * Promień liczymy z tego, a nie wprost — dzięki czemu rozstaw wygląda tak
    * samo przy 3 slajdach (kąt 58°) i przy 8 (kąt 45°).
    */
-  chordFactor: 0.62,
+  chordFactor: 0.8,
+  /**
+   * Jaka część kąta pozycji trafia w obrót kafla wokół własnej osi.
+   * Przy 1 (kafel styczny do okręgu) wewnętrzna krawędź sąsiada wychyla się
+   * przed płaszczyznę przedniego kafla i renderuje się OD NIEGO WIĘKSZA —
+   * czyli kafel z tyłu wygląda na bliższy. Mniejszy obrót przy większym
+   * promieniu trzyma sąsiadów za przednim kaflem.
+   */
+  tilt: 0.82,
   /** ogniskowa jako wielokrotność szerokości kafla — stała perspektywa
    *  niezależnie od tego, czy kafel przycina szerokość czy wysokość sceny */
   focalFactor: 1.9,
@@ -254,7 +262,11 @@ export class CanvasCarousel {
     stageCtx.globalCompositeOperation = 'source-over';
     stageCtx.clearRect(0, 0, w, h);
 
-    this._drawGlow(ctx, energy);
+    const rc = this.reflCtx;
+    rc.setTransform(0.5, 0, 0, 0.5, 0, 0);
+    rc.globalAlpha = 1;
+    rc.globalCompositeOperation = 'source-over';
+    rc.clearRect(0, 0, w, h);
 
     // kolejność malarska: od najdalszego kafla do przedniego
     const order = [];
@@ -262,10 +274,11 @@ export class CanvasCarousel {
       const rel = wrapDelta(i - renderPos, this.count);
       const theta = rel * geom.arc;
       const depth = geom.radius + geom.dist - geom.radius * Math.cos(theta);
-      order.push({ i, rel, theta, depth });
+      order.push({ i, rel, theta, depth, ang: this._angles(theta) });
     }
     order.sort((a, b) => b.depth - a.depth);
 
+    for (const card of order) this._drawCardGlow(ctx, card, energy);
     for (const card of order) this._drawCard(card, energy);
 
     this._drawReflection(ctx, energy);
@@ -293,57 +306,93 @@ export class CanvasCarousel {
     ctx.restore();
   }
 
-  _drawGlow(ctx, energy) {
-    const { cx, cy, cardW, cardH } = this.geom;
-    const a = 0.05 + energy * 0.09;
+  /**
+   * Poświata i świetlista podłoga są przypięte do konkretnego kafla: biorą
+   * jego rzutowane położenie, szerokość i wysokość, więc na slajdach
+   * pobocznych przesuwają się i spłaszczają razem z nimi zamiast stać w
+   * jednym miejscu ekranu. Pełna moc przypada na kafel na wprost.
+   */
+  _drawCardGlow(ctx, { rel, ang }, energy) {
+    const { cardW, cardH, cy } = this.geom;
+    const fade = smoothstep(0, 0.2, this._facing(ang));
+    if (fade <= 0.004) return;
+
+    const front = smoothstep(1.05, 0.22, Math.abs(rel));
+    const strength = fade * (0.16 + 0.84 * front);
+    if (strength <= 0.01) return;
+
+    const left = this._project(-cardW / 2, ang);
+    const right = this._project(cardW / 2, ang);
+    const midX = (left.x + right.x) / 2;
+    const halfW = Math.abs(right.x - left.x) / 2;
+    const halfH = (left.half + right.half) / 2;
 
     ctx.globalCompositeOperation = 'lighter';
-    this._ellipseGlow(ctx, cx, cy, Math.min(cardW * 0.88, this.w * 0.5), Math.min(cardH * 1.05, this.h * 0.48), [
+
+    const a = (0.05 + energy * 0.09) * strength;
+    this._ellipseGlow(ctx, midX, cy, halfW * 1.7, halfH * 2.1, [
       [0, `rgba(200,255,61,${a})`],
       [0.5, `rgba(200,255,61,${a * 0.34})`],
       [1, 'rgba(200,255,61,0)'],
     ]);
 
-    // świetlista „podłoga” pod kaflami
-    const floorY = cy + cardH / 2;
-    const fa = 0.09 + energy * 0.12;
-    this._ellipseGlow(ctx, cx, floorY, cardW * 0.58, cardH * 0.3, [
+    const fa = (0.09 + energy * 0.12) * strength;
+    this._ellipseGlow(ctx, midX, cy + halfH, halfW * 1.15, (cardH * 0.3 * halfH) / (cardH / 2), [
       [0, `rgba(200,255,61,${fa})`],
       [0.45, `rgba(200,255,61,${fa * 0.4})`],
       [1, 'rgba(200,255,61,0)'],
     ]);
+
     ctx.globalCompositeOperation = 'source-over';
   }
 
+  /**
+   * Kąty kafla: `pos` to miejsce na okręgu, `rot` to obrót wokół własnej osi.
+   * Rozdzielone, bo przy pełnym obrocie (kafel styczny do okręgu) sąsiad
+   * wychyla wewnętrzną krawędź przed przedni kafel.
+   */
+  _angles(theta) {
+    const psi = theta * this.opt.tilt;
+    return {
+      sinPos: Math.sin(theta),
+      cosPos: Math.cos(theta),
+      sinRot: Math.sin(psi),
+      cosRot: Math.cos(psi),
+    };
+  }
+
+  /** Odległość kamery od płaszczyzny kafla wzdłuż jego normalnej, w `dist`.
+   *  Poniżej zera patrzymy na tył — wtedy rzut odwraca się w poziomie. */
+  _facing(ang) {
+    const { radius, dist } = this.geom;
+    return (
+      (-radius * ang.sinPos * ang.sinRot + (radius + dist - radius * ang.cosPos) * ang.cosRot) / dist
+    );
+  }
+
   /** Rzut punktu leżącego na kaflu (przesunięcie `lx` od jego środka). */
-  _project(lx, sin, cos) {
+  _project(lx, ang) {
     const { radius, dist, focal, cx, cy, cardH } = this.geom;
-    const px = radius * sin + lx * cos;
-    const pz = radius * cos - lx * sin;
+    const px = radius * ang.sinPos + lx * ang.cosRot;
+    const pz = radius * ang.cosPos - lx * ang.sinRot;
     const depth = Math.max(focal * 0.08, radius + dist - pz);
     const k = focal / depth;
     return { x: cx + px * k, half: (cardH / 2) * k, depth, y: cy };
   }
 
-  _drawCard({ i, rel, theta }, energy) {
+  _drawCard({ i, rel, ang }, energy) {
     const tex = this.textures[i];
-    const { cardW, cy, radius, dist } = this.geom;
+    const { cardW, cy } = this.geom;
 
-    const cos = Math.cos(theta);
-    const sin = Math.sin(theta);
-
-    // Odległość kamery od płaszczyzny kafla wzdłuż jego normalnej.
-    // Poniżej zera patrzymy na tył kafla — a wtedy rzut odwraca się w poziomie.
-    const facing = ((radius + dist) * cos - radius) / dist;
-    const edgeFade = smoothstep(0, 0.2, facing);
+    const edgeFade = smoothstep(0, 0.2, this._facing(ang));
     if (edgeFade <= 0.004) return;
 
     // „przedniość” trzyma slajd jasny prawie do końca przejścia,
     // a gaśnie dopiero blisko pozycji sąsiada
     const front = smoothstep(1.05, 0.22, Math.abs(rel));
 
-    const left = this._project(-cardW / 2, sin, cos);
-    const right = this._project(cardW / 2, sin, cos);
+    const left = this._project(-cardW / 2, ang);
+    const right = this._project(cardW / 2, ang);
 
     const ab = this.opt.reducedMotion
       ? 0
@@ -392,7 +441,7 @@ export class CanvasCarousel {
         fx.save();
         quad(fx);
         fx.clip();
-        this._paintStrips(fx, tex.base, sin, cos, 0);
+        this._paintStrips(fx, tex.base, ang, 0);
         fx.globalCompositeOperation = 'multiply';
         fx.fillStyle = tint;
         fx.fillRect(bx, by, bw, bh);
@@ -404,7 +453,7 @@ export class CanvasCarousel {
       ctx.save();
       quad(ctx);
       ctx.clip();
-      this._paintStrips(ctx, tex.base, sin, cos, 0);
+      this._paintStrips(ctx, tex.base, ang, 0);
       ctx.restore();
     }
 
@@ -451,21 +500,33 @@ export class CanvasCarousel {
     this.stageCtx.globalAlpha = edgeFade;
     this.stageCtx.drawImage(this.work, bx, by, bw, bh, bx, by, bw, bh);
     this.stageCtx.globalAlpha = 1;
+
+    // odbicie tego kafla — bufor pracuje w połowie rozdzielczości, ale
+    // współrzędne zostają pełne dzięki skali w transformacie
+    const rc = this.reflCtx;
+    rc.globalAlpha = edgeFade * (0.3 + 0.7 * front);
+    this._paintStrips(rc, tex.base, ang, 0, true);
+    rc.globalAlpha = 1;
   }
 
   /**
    * Kafel rysowany pionowymi paskami — każdy dostaje własną skalę z rzutu
    * perspektywicznego, co daje realne skrócenie, a nie zwykłe skalowanie.
    */
-  _paintStrips(ctx, source, sin, cos, offsetX) {
+  _paintStrips(ctx, source, ang, offsetX, mirror = false) {
     const { cardW, cy } = this.geom;
-    const flat = Math.abs(sin) < 0.004;
-    const strips = flat ? 1 : clamp(Math.round(6 + 160 * Math.abs(sin)), 6, this.opt.maxStrips);
+    // skrócenie perspektywiczne zależy od obrotu kafla, nie od jego pozycji
+    const turn = Math.abs(ang.sinRot);
+    const flat = turn < 0.004;
+    const strips = flat ? 1 : clamp(Math.round(6 + 160 * turn), 6, this.opt.maxStrips);
 
     if (flat) {
-      const l = this._project(-cardW / 2, sin, cos);
-      const r = this._project(cardW / 2, sin, cos);
-      ctx.drawImage(source, l.x + offsetX, cy - l.half, r.x - l.x, l.half + r.half);
+      const l = this._project(-cardW / 2, ang);
+      const r = this._project(cardW / 2, ang);
+      const dh = l.half + r.half;
+      // ujemna wysokość odwraca obraz w pionie (drawImage, spec HTML)
+      if (mirror) ctx.drawImage(source, l.x + offsetX, cy + 1.5 * dh, r.x - l.x, -dh);
+      else ctx.drawImage(source, l.x + offsetX, cy - dh / 2, r.x - l.x, dh);
       return;
     }
 
@@ -473,47 +534,38 @@ export class CanvasCarousel {
     // rozdzielczość niż baza
     const srcW = source.width;
     const srcH = source.height;
-    let prev = this._project(-cardW / 2, sin, cos);
+    let prev = this._project(-cardW / 2, ang);
     for (let s = 0; s < strips; s += 1) {
       const u1 = (s + 1) / strips;
-      const next = this._project((u1 - 0.5) * cardW, sin, cos);
+      const next = this._project((u1 - 0.5) * cardW, ang);
       const sx = (s / strips) * srcW;
       const sw = srcW / strips;
       const dx = prev.x + offsetX;
       const dw = next.x - prev.x + 1.15;
       const dh = prev.half + next.half;
-      ctx.drawImage(source, sx, 0, sw, srcH, dx, cy - dh / 2, dw, dh);
+      // Odbicie liczone per pasek, względem WŁASNEJ dolnej krawędzi kafla.
+      // Jedna wspólna linia lustra byłaby poprawna tylko dla kafla na wprost —
+      // kafel obrócony ma dolną krawędź ukośną i wyżej.
+      if (mirror) ctx.drawImage(source, sx, 0, sw, srcH, dx, cy + 1.5 * dh, dw, -dh);
+      else ctx.drawImage(source, sx, 0, sw, srcH, dx, cy - dh / 2, dw, dh);
       prev = next;
     }
   }
 
+  /** Odbicia narysowały już poszczególne kafle — tu zostaje wygaszenie. */
   _drawReflection(ctx, energy) {
     const { cy, cardH } = this.geom;
     const rc = this.reflCtx;
-    const rw = this.refl.width;
-    const rh = this.refl.height;
     const floorY = cy + cardH / 2;
 
-    rc.setTransform(1, 0, 0, 1, 0, 0);
-    rc.globalCompositeOperation = 'source-over';
-    rc.globalAlpha = 1;
-    rc.clearRect(0, 0, rw, rh);
-
-    // bufor odbicia ma połowę rozdzielczości — lustro względem y = floorY/2,
-    // czyli translate o 2·(floorY/2) = floorY
-    const mirror = floorY / 2;
-    rc.save();
-    rc.translate(0, floorY);
-    rc.scale(1, -1);
-    rc.drawImage(this.stage, 0, 0, rw, rh);
-    rc.restore();
-
-    const fade = rc.createLinearGradient(0, mirror, 0, mirror + (cardH * 0.45) / 2);
-    fade.addColorStop(0, `rgba(0,0,0,${0.38 + energy * 0.12})`);
+    rc.setTransform(0.5, 0, 0, 0.5, 0, 0);
+    const fade = rc.createLinearGradient(0, floorY, 0, floorY + cardH * 0.5);
+    fade.addColorStop(0, `rgba(0,0,0,${0.36 + energy * 0.12})`);
     fade.addColorStop(1, 'rgba(0,0,0,0)');
     rc.globalCompositeOperation = 'destination-in';
     rc.fillStyle = fade;
-    rc.fillRect(0, 0, rw, rh);
+    rc.fillRect(0, 0, this.w, this.h);
+    rc.globalCompositeOperation = 'source-over';
 
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
