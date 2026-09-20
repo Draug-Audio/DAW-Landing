@@ -38,10 +38,14 @@ const DEFAULTS = {
   /** pionowy środek okręgu (ułamek wysokości) — wyżej, bo pod spodem odbicie */
   centerY: 0.44,
   maxStrips: 88,
-  /** podziałka siatki w pikselach kafla */
-  gridCell: 24,
+  /**
+   * Podziałka siatki w pikselach kafla. Trzyma się razem z `gridFontWeight`:
+   * przy wadze 100 kreska glifu ma mniej niż piksel, dopóki glif nie urośnie
+   * powyżej ok. 20 px — poniżej tego runy żyją w samym antyaliasingu i bledną.
+   */
+  gridCell: 36,
   /** szczelina między kafelkami — o tyle kafelek jest mniejszy od podziałki */
-  gridGap: 3,
+  gridGap: 4,
   /** najniższa jasność kafelka; wyżej losowo */
   gridFloor: 0.3,
   /**

@@ -60,7 +60,7 @@ export function makeGlyphAtlas(chars, size, font, { color = '#c8ff3d', weight = 
   const ctx = canvas.getContext('2d');
   // czcionka jest zmienna (oś wagi 100–900) — przy tym rozmiarze glify
   // potrzebują grubszego kroju, żeby nie zniknęły
-  ctx.font = `${weight} ${Math.round(size * 0.66)}px "${font}", ui-monospace, monospace`;
+  ctx.font = `${weight} ${Math.round(size * 0.72)}px "${font}", ui-monospace, monospace`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = color;

@@ -85,7 +85,11 @@ zewnętrzna ramka w kolorze tła strony (rozdziela kafelki), wpuszczony o piksel
 obrys w kolorze znaku, ledwie widoczne limonkowe wypełnienie (12 % jasności
 kafelka) i znak — losowa litera albo cyfra z
 `runescript-monospace-variable.ttf`. Czcionka jest zmienna, więc waga idzie
-z osi (100, czyli jej dolny kraniec) — ale `FontFace` musi dostać zakres `weight: '100 900'`, inaczej
+z osi (100, czyli jej dolny kraniec). Podziałka siatki trzyma się razem z tą
+wagą: przy 100 kreska glifu ma mniej niż piksel, dopóki glif nie urośnie
+powyżej ok. 20 px. Przy podziałce 24 px (glif 14 px) tylko 13 % pikseli glifu
+było pełnych, a alfa nie dobijała do 255 — runy żyły w samym antyaliasingu
+i bladły. Przy podziałce 36 px (glif 23 px) jest to 32 % i pełne 255. Ale `FontFace` musi dostać zakres `weight: '100 900'`, inaczej
 zgłasza się jako statyczny krój 400, przeglądarka w ogóle nie sięga po oś
 i każda waga poniżej 600 renderuje się identycznie (a powyżej — syntetycznie
 pogrubia). Sprawdzenie: ilość „tuszu” w atlasie musi rosnąć monotonicznie
@@ -144,7 +148,7 @@ klatek, z przerwą między próbkami. Dłuższe pętle `_render` bez oddechu zap
 kolejkę GPU i czasy rosną kilkukrotnie — to artefakt pomiaru, nie kosztu klatki,
 więc podawanie tu wartości z dokładnością do setnych byłoby fikcją.
 
-Spoczynek kosztuje tyle, bo w zasięgu pasa leży ok. 640 kafelków, a każdy to
+Spoczynek kosztuje tyle, bo w zasięgu pasa leży ok. 200 kafelków, a każdy to
 wypełnienie, glif i dwie ramki. Jasność idzie przez `globalAlpha` przy stałych
 kolorach — sklejanie `rgba(...)` per kafelek kosztowało 0,3 ms na klatkę.
 Gdyby trzeba było zejść niżej: mniej kafelków (większa podziałka) albo wypiekanie
