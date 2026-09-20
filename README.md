@@ -84,17 +84,29 @@ Zamiast płaskich skanlinii kafel dostaje siatkę „dużych pikseli”: komórk
 o losowej alfie, rozdzielone szczeliną. Warstwa jest budowana jako **jasność**,
 a dopiero na końcu przycinana alfą siatki:
 
-1. podłoga — ledwie widoczne przyciemnienie (`gridRest`); siatka leży na kaflu,
-   ale śpi,
+1. podłoga (`gridRest`, domyślnie **zero**),
 2. pas przemiatania dodany addytywnie (`lighter`) — to jest latarka,
 3. `destination-in` wzorem siatki — światło zostaje tylko w komórkach,
    proporcjonalnie do ich własnej alfy.
 
 Stąd zachowanie jak latarki UV na liniach papilarnych: siatki nie widać, dopóki
-nie przejdzie po niej pas. Zmierzona luminancja wiersza kafla: **20,9 bez pasa,
-56,5 pod pasem** (2,7 ×), przy rozrzucie w samym wierszu od 14 do 182 — czyli
-komórki świecą różnie, zgodnie ze swoją losową alfą. Przy
-`prefers-reduced-motion` pasa nie ma i zostaje sama podłoga (17,4).
+nie przejdzie po niej pas. Komórki świecą różnie, zgodnie ze swoją losową alfą,
+a w rdzeniu pasa komórka o alfie 1,0 **kryje obraz całkowicie** — najjaśniejszy
+piksel kafla pod rdzeniem to (202, 255, 59) przy limonce (200, 255, 61).
+
+`gridRest` musi zostać na zerze. Nawet 5 % przyciemnienia komórek zostawia
+SZCZELINY między nimi jaśniejsze i na płaskiej ciemnej płaszczyźnie rysuje
+widoczną kratę: zmierzona różnica wiersza komórek i wiersza szczeliny to
+**7,17/255 przy `gridRest` 0,05 wobec 0,59/255 przy zerze** (a te 0,59 to już
+gradient winiety, nie wzór). Oko wyłapuje regularną siatkę przy różnicy rzędu
+jednego poziomu jasności — dużo poniżej progu, przy którym widać szum.
+
+Kafel na wprost jest rysowany **jednym `drawImage` na całych pikselach**.
+Wcześniej „oddychał” mikroobrotem, przez co nigdy nie trafiał w gałąź płaską
+i szedł przez siedem pasków o ułamkowych pozycjach — czyli był bez przerwy
+przepróbkowywany, a siatka miała rozmyte krawędzie. Za ruch w spoczynku
+odpowiada teraz samo przemiatanie. Nakładka ma dokładnie rozmiar kafla
+w pikselach urządzenia, więc na kaflu na wprost mapuje się 1:1.
 
 Ruchem steruje sprężyna (lekko niedotłumiona — dojazd ~0,5 s z minimalnym
 przestrzeleniem). Pozycja jest **ciągła**, nie skokowa, więc wszystko, co od niej
@@ -119,17 +131,19 @@ klawisze ←/→, poziomy scroll gładzika, autoodtwarzanie z paskiem postępu.
 Pętla stoi, gdy sekcja jest poza ekranem albo karta jest w tle.
 `prefers-reduced-motion` wyłącza autoodtwarzanie, aberrację, glitch i ziarno.
 
-Wydajność przy 1920 × 919 px bufora i ośmiu slajdach: **0,70 ms/klatkę**
-w spoczynku, **1,50 ms/klatkę** w ruchu. Tekstury ok. 32 MB, bufory ok. 24 MB.
+Wydajność przy 1920 × 919 px bufora i ośmiu slajdach: **ok. 0,5 ms/klatkę**
+w spoczynku i **ok. 2 ms/klatkę** w ruchu. Tekstury ok. 32 MB, bufory ok. 24 MB.
 
-Nakładka jest przebudowywana co klatkę, bo pas się przesuwa. Gdyby te liczby
-zaczęły uwierać, najprostszy zysk to wypiekanie warstwy spoczynkowej raz przy
-zmianie rozmiaru i dokładanie per klatkę wyłącznie pasa, obciętego do jego
-własnych wierszy — ok. 40 % mniej pracy na nakładce.
+Liczby są zaokrąglone świadomie. Pomiar to mediana z siedmiu próbek po dziesięć
+klatek, z przerwą między próbkami, i rozrzut samych próbek w ruchu sięga
+1,16 – 2,99 ms. Dłuższe pętle `_render` bez oddechu zapychają kolejkę GPU
+i czasy rosną kilkukrotnie — to artefakt pomiaru, nie kosztu klatki, więc
+podawanie tu wartości z dokładnością do setnych byłoby fikcją.
 
-Pomiar to mediana z pięciu próbek po dziesięć klatek, z przerwą między
-próbkami. Dłuższe pętle `_render` bez oddechu zapychają kolejkę GPU i czasy
-rosną kilkukrotnie — to artefakt pomiaru, nie kosztu klatki.
+Nakładka jest przebudowywana co klatkę, bo pas się przesuwa. Gdyby to zaczęło
+uwierać, najprostszy zysk to wypiekanie warstwy spoczynkowej raz przy zmianie
+rozmiaru i dokładanie per klatkę wyłącznie pasa, obciętego do jego własnych
+wierszy — ok. 40 % mniej pracy na nakładce.
 
 ## Uwagi
 

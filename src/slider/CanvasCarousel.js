@@ -37,10 +37,20 @@ const DEFAULTS = {
   maxStrips: 88,
   /** bok komórki siatki w pikselach tekstury */
   gridCell: 22,
-  /** ile siatki widać bez przemiatania — prawie nic, ma dopiero wyjść */
-  gridRest: 0.05,
-  /** ile wydobywa przechodzący pas */
-  gridReveal: 0.55,
+  /**
+   * Ile siatki widać bez przemiatania. Zero, i tak ma zostać: przy choćby
+   * 5 % przyciemnienia komórek SZCZELINY między nimi zostają jaśniejsze
+   * i na płaskiej ciemnej płaszczyźnie rysują widoczną kratę — oko wyłapuje
+   * regularny wzór przy różnicy rzędu jednego poziomu jasności, dużo poniżej
+   * progu dla szumu. Siatka ma być niewidzialna, dopóki nie oświetli jej pas.
+   */
+  gridRest: 0,
+  /**
+   * Ile wydobywa przechodzący pas. Suma z `gridRest` daje 1, więc w rdzeniu
+   * pasa komórka o alfie 1,0 kryje obraz całkowicie, a nie prześwituje.
+   * Niższe alfy komórek schodzą proporcjonalnie niżej.
+   */
+  gridReveal: 1,
   /** obrotów pasa na sekundę */
   sweepSpeed: 0.15,
   /** połowa szerokości pasa, w wysokościach kafla */
@@ -100,9 +110,11 @@ export class CanvasCarousel {
     this.bloomCtx = context2d(this.bloom);
     this.fx = makeCanvas(1, 1);
     this.fxCtx = context2d(this.fx);
-    // nakładka „ekranu” (skanlinie, ziarno, przemiatanie, winieta) budowana
-    // w układzie kafla, nie ekranu — dzięki temu idzie przez ten sam rzut
-    this.overlay = makeCanvas(textures[0].width, textures[0].height);
+    // nakładka „ekranu” (siatka, ziarno, przemiatanie, winieta) budowana
+    // w układzie kafla, nie ekranu — dzięki temu idzie przez ten sam rzut.
+    // Rozmiar ustawiany w resize() dokładnie na rozmiar kafla w pikselach
+    // urządzenia, żeby siatka mapowała się 1:1 i nie miękła na filtrowaniu.
+    this.overlay = makeCanvas(1, 1);
     this.overlayCtx = context2d(this.overlay);
 
     this.noise = [makeNoiseTile(), makeNoiseTile(), makeNoiseTile()];
@@ -188,6 +200,14 @@ export class CanvasCarousel {
     this.gridPattern = this.ctx.createPattern(this.gridTile, 'repeat');
     this.noisePatterns = this.noise.map((tile) => this.ctx.createPattern(tile, 'repeat'));
     this._geometry();
+
+    // nakładka dokładnie w rozmiarze kafla — na kaflu na wprost piksel
+    // nakładki odpowiada pikselowi ekranu, więc siatka ma ostre krawędzie
+    this.overlay.width = Math.max(1, Math.round(this.geom.cardW));
+    this.overlay.height = Math.max(1, Math.round(this.geom.cardH));
+    this.overlayCtx.imageSmoothingEnabled = true;
+    this.overlayCtx.imageSmoothingQuality = 'high';
+
     this._render(0);
   }
 
@@ -289,9 +309,12 @@ export class CanvasCarousel {
     const { ctx, stageCtx, w, h, geom } = this;
     const reduced = this.opt.reducedMotion;
 
-    // delikatne „oddychanie” w spoczynku, żeby scena nigdy nie zamarzała
-    const idle = reduced ? 0 : Math.sin(this.time * 0.42) * 0.013 * (1 - this.energy);
-    const renderPos = this.pos + idle;
+    // W spoczynku kafel stoi dokładnie na wprost. Wcześniej „oddychał”
+    // mikroobrotem, przez co nigdy nie trafiał w gałąź płaską i szedł przez
+    // kilka pasków o ułamkowych pozycjach — czyli był bez przerwy
+    // przepróbkowywany, a siatka miała rozmyte krawędzie. Za ruch w spoczynku
+    // odpowiada teraz przemiatanie.
+    const renderPos = this.pos;
     const energy = this.energy;
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -570,16 +593,23 @@ export class CanvasCarousel {
     const { cardW, cy } = this.geom;
     // skrócenie perspektywiczne zależy od obrotu kafla, nie od jego pozycji
     const turn = Math.abs(ang.sinRot);
-    const flat = turn < 0.004;
+    const flat = turn < 0.0015;
     const strips = flat ? 1 : clamp(Math.round(6 + 160 * turn), 6, this.opt.maxStrips);
 
     if (flat) {
       const l = this._project(-cardW / 2, ang);
       const r = this._project(cardW / 2, ang);
       const dh = l.half + r.half;
+      // Kafel na wprost trafia w całe piksele: przy nakładce o rozmiarze kafla
+      // daje to kopię 1:1 bez filtrowania, więc siatka ma ostre krawędzie.
+      // Zaokrąglenie jest bezpieczne, bo ta gałąź działa tylko w spoczynku.
+      const dx = Math.round(l.x + offsetX);
+      const dw = Math.round(r.x + offsetX) - dx;
+      const dy = Math.round(cy - dh / 2);
+      const dhr = Math.round(cy + dh / 2) - dy;
       // ujemna wysokość odwraca obraz w pionie (drawImage, spec HTML)
-      if (mirror) ctx.drawImage(source, l.x + offsetX, cy + 1.5 * dh, r.x - l.x, -dh);
-      else ctx.drawImage(source, l.x + offsetX, cy - dh / 2, r.x - l.x, dh);
+      if (mirror) ctx.drawImage(source, dx, dy + 2 * dhr, dw, -dhr);
+      else ctx.drawImage(source, dx, dy, dw, dhr);
       return;
     }
 
@@ -675,23 +705,30 @@ export class CanvasCarousel {
      * całym kaflu, ale widać ją tylko tam, gdzie pada światło, i tym mocniej,
      * im wyższa własna alfa komórki.
      *
-     *   1. podłoga: ledwie widoczne przyciemnienie (siatka „jest”, ale śpi)
+     *   1. podłoga (domyślnie zero — patrz `gridRest`)
      *   2. pas przemiatania dodany addytywnie (`lighter`) — to jest latarka
      *   3. `destination-in` wzorem siatki — światło zostaje tylko w komórkach
      */
-    oc.fillStyle = `rgba(0,0,0,${opt.gridRest})`;
-    oc.fillRect(0, 0, w, h);
+    if (opt.gridRest > 0) {
+      oc.fillStyle = `rgba(0,0,0,${opt.gridRest})`;
+      oc.fillRect(0, 0, w, h);
+    }
 
     if (!reduced) {
       const half = h * opt.sweepWidth;
       const sweep = ((this.time * opt.sweepSpeed) % 1) * (h + 4 * half) - 2 * half;
-      const peak = opt.gridReveal * (0.75 + 0.25 * energy);
+      const peak = opt.gridReveal;
       const band = oc.createLinearGradient(0, sweep - half, 0, sweep + half);
-      band.addColorStop(0, 'rgba(200,255,61,0)');
-      band.addColorStop(0.38, `rgba(200,255,61,${(peak * 0.45).toFixed(3)})`);
-      band.addColorStop(0.5, `rgba(200,255,61,${peak.toFixed(3)})`);
-      band.addColorStop(0.62, `rgba(200,255,61,${(peak * 0.45).toFixed(3)})`);
-      band.addColorStop(1, 'rgba(200,255,61,0)');
+      const at = (o, f) => band.addColorStop(o, `rgba(200,255,61,${(peak * f).toFixed(3)})`);
+      // rdzeń pasa ma plateau, nie szpilkę — inaczej pełne krycie łapałby
+      // tylko jeden wiersz komórek
+      at(0, 0);
+      at(0.3, 0.22);
+      at(0.44, 0.92);
+      at(0.5, 1);
+      at(0.56, 0.92);
+      at(0.7, 0.22);
+      at(1, 0);
       oc.globalCompositeOperation = 'lighter';
       oc.fillStyle = band;
       oc.fillRect(0, sweep - half, w, half * 2);
