@@ -123,7 +123,12 @@ const DEFAULTS = {
   stiffness: 120,
   damping: 18.5,
   maxDpr: 2,
-  maxBackingWidth: 2400,
+  /**
+   * Canvas celowo pracuje niżej niż ekran. Kafel przedni i tak przykrywa
+   * w spoczynku ostra kopia w DOM, a w ruchu rozdzielczość gubi rzut
+   * perspektywiczny — nie ma czego ratować, a jest co oszczędzić.
+   */
+  maxBackingWidth: 1800,
   reducedMotion: false,
 };
 
@@ -211,6 +216,33 @@ export class CanvasCarousel {
       this.burst = 1;
     }
     return this;
+  }
+
+  /**
+   * Prostokąt przedniego kafla w pikselach CSS, względem canvasu. Służy do
+   * ustawienia ostrej kopii w DOM dokładnie na tym, co rysuje canvas.
+   */
+  frontRect() {
+    if (!this.geom) return null;
+    const css = this.canvas.getBoundingClientRect().width;
+    if (!css) return null;
+    const scale = css / this.w;
+    const { cx, cy, cardW, cardH, border } = this.geom;
+    return {
+      left: (cx - cardW / 2) * scale,
+      top: (cy - cardH / 2) * scale,
+      width: cardW * scale,
+      height: cardH * scale,
+      // Obrys kafla leży na linii krawędzi, więc jego wewnętrzna połowa wpada
+      // w prostokąt kafla. Nakładka musi go o tyle nie zamalować — inaczej
+      // ramka zwęża się w spoczynku do samej zewnętrznej połowy.
+      border: border * scale,
+    };
+  }
+
+  /** Czy sprężyna doszła do celu i scena stoi. */
+  isSettled() {
+    return Math.abs(this.pos - this.targetPos) < 1e-3 && this.energy < 0.01 && !this.pointer.active;
   }
 
   next() { return this.goTo(this.index + 1); }
@@ -320,6 +352,9 @@ export class CanvasCarousel {
     this.geom = {
       cx: w / 2,
       cy: h * opt.centerY,
+      // obrys kafla; rysowany po linii krawędzi, więc wystaje o połowę na
+      // zewnątrz i o połowę do środka
+      border: Math.max(1, w / 1400),
       focal,
       dist: focal,          // dzięki temu przedni kafel ma skalę 1:1
       cardW,
@@ -432,7 +467,13 @@ export class CanvasCarousel {
     this._drawBloom(ctx, energy);
     if (!reduced) this._drawGlitch(ctx, energy);
 
-    this.onFrame?.({ position: renderPos, energy, burst: this.burst, index: this.index });
+    this.onFrame?.({
+      position: renderPos,
+      energy,
+      burst: this.burst,
+      index: this.index,
+      settled: this.isSettled(),
+    });
   }
 
   /** Eliptyczna poświata — rysowana w przeskalowanym układzie, żeby zgasła
@@ -629,18 +670,23 @@ export class CanvasCarousel {
       ctx.globalCompositeOperation = 'source-over';
     }
 
-    // nakładka ekranu — ten sam rzut co obraz, więc skraca się z kaflem.
-    // Na kaflach mocno skróconych słabsza: mniej mory przy zagęszczaniu linii.
-    ctx.globalAlpha = 0.35 + 0.65 * front;
-    this._paintStrips(ctx, this.overlay, ang, 0);
-    ctx.globalAlpha = 1;
+    // Nakładka ekranu — ten sam rzut co obraz, więc skraca się z kaflem.
+    // Wyłącznie na kaflach pobocznych: przedni ma być czysty, bo w spoczynku
+    // przykrywa go ostra kopia w DOM, a siatka byłaby pod nią i tak niewidoczna.
+    // Przy `front` równym 1 przebieg w ogóle nie rusza.
+    const accent = 1 - front;
+    if (accent > 0.004) {
+      ctx.globalAlpha = accent;
+      this._paintStrips(ctx, this.overlay, ang, 0);
+      ctx.globalAlpha = 1;
+    }
 
     ctx.restore();
 
     // obrys kafla
     ctx.save();
     quad(ctx);
-    ctx.lineWidth = Math.max(1, this.w / 1400);
+    ctx.lineWidth = this.geom.border;
     ctx.strokeStyle = `rgba(200,255,61,${0.08 + 0.3 * front})`;
     ctx.stroke();
     ctx.restore();

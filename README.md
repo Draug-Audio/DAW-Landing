@@ -183,8 +183,8 @@ klawisze ←/→, poziomy scroll gładzika, autoodtwarzanie z paskiem postępu.
 Pętla stoi, gdy sekcja jest poza ekranem albo karta jest w tle.
 `prefers-reduced-motion` wyłącza autoodtwarzanie, aberrację, glitch i ziarno.
 
-Wydajność przy 1920 × 919 px bufora i ośmiu slajdach: **ok. 1 ms/klatkę**
-w spoczynku i **ok. 1,6 ms/klatkę** w ruchu. Tekstury ok. 32 MB, bufory ok. 24 MB.
+Wydajność przy 1440 × 909 px bufora i ośmiu slajdach: **ok. 0,8 ms/klatkę**
+w spoczynku i **ok. 1,1 ms/klatkę** w ruchu. Tekstury ok. 15 MB.
 
 Liczby są zaokrąglone świadomie. Pomiar to mediana z siedmiu próbek po dziesięć
 klatek, z przerwą między próbkami. Dłuższe pętle `_render` bez oddechu zapychają

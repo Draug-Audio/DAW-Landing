@@ -34,6 +34,16 @@
     &:active { cursor: grabbing; }
   }
 
+  // Ostra kopia przedniego slajdu. Pozycja i rozmiar ustawiane z JS, dokładnie
+  // na kaflu narysowanym w canvasie; `opacity` przełączane w JS, bo zgaszenie
+  // ma być natychmiastowe, a zapalenie płynne.
+  &__sharp {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    will-change: opacity;
+  }
+
   &__fallback {
     position: absolute;
     top: 0;

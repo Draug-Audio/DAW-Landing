@@ -4,6 +4,8 @@ import { buildTexture, loadImage } from './texture.js';
 import { clamp } from './math.js';
 
 const AUTOPLAY_DELAY = 5600;
+/** czas wyostrzania po zatrzymaniu karuzeli */
+const SHARPEN_MS = 280;
 
 const GRID_FONT = 'RuneScript Monospace Variable';
 const GRID_FONT_FILE = 'runescript-monospace-variable.ttf';
@@ -34,6 +36,7 @@ async function loadGridFont() {
 export async function mountShowcase(root, slides) {
   const canvas = root.querySelector('[data-showcase-canvas]');
   const stage = root.querySelector('[data-showcase-stage]');
+  const sharp = root.querySelector('[data-showcase-sharp]');
   const captionsRoot = root.querySelector('[data-captions]');
   const dotsRoot = root.querySelector('[data-showcase-dots]');
   const progressBar = root.querySelector('[data-showcase-progress]');
@@ -45,11 +48,15 @@ export async function mountShowcase(root, slides) {
   // Tekstura ma być dokładnie tak szeroka, jak przedni kafel — a ten ma
   // szerokość kontenera. Przy ośmiu slajdach każdy piksel ponad to mnoży się
   // razy osiem, więc górny limit trzymamy krótko.
+  // Tekstura celowo poniżej rozdzielczości ekranu: przedni kafel w spoczynku
+  // przykrywa ostra kopia w DOM, a w ruchu rozdzielczość i tak gubi rzut
+  // perspektywiczny. Górny limit to szerokość pliku `-lo`, żeby nie skalować
+  // w górę.
   const cardWidth = (stage ?? canvas).getBoundingClientRect().width || 1200;
   const textureWidth = clamp(
-    Math.round(cardWidth * Math.min(window.devicePixelRatio || 1, 2)),
-    880,
-    1500,
+    Math.round(cardWidth * Math.min(window.devicePixelRatio || 1, 2) * 0.7),
+    700,
+    1280,
   );
 
   const [images] = await Promise.all([
@@ -60,6 +67,7 @@ export async function mountShowcase(root, slides) {
 
   const captions = new SyncedCaptions(captionsRoot, slides);
   let carousel = null;
+  let sharpState = null;
 
   // ── autoodtwarzanie (deklarowane przed sceną — onFrame czyta postęp) ──
   let lastAdvance = performance.now();
@@ -102,9 +110,10 @@ export async function mountShowcase(root, slides) {
     textures,
     frame: stage ?? canvas,
     options: { reducedMotion, gridFont: GRID_FONT },
-    onFrame: ({ position, energy }) => {
+    onFrame: ({ position, energy, settled }) => {
       captions.update(position);
       dots.update(position);
+      sharpState?.(settled);
       root.style.setProperty('--sc-energy', energy.toFixed(3));
       if (progressBar) {
         progressBar.style.transform = `scaleX(${autoplayProgress().toFixed(3)})`;
@@ -151,7 +160,97 @@ export async function mountShowcase(root, slides) {
     event.preventDefault();
   });
 
+  sharpState = mountSharpOverlay({ stage, canvas, sharp, slides, carousel });
+  sharpState(carousel.isSettled());
+
   if (import.meta.env.DEV) window.__showcase = carousel;
 
   return carousel;
+}
+
+
+/**
+ * Ostra kopia przedniego slajdu.
+ *
+ * Canvas rysuje kafel z tekstury o obniżonej rozdzielczości i przez własny
+ * rzut, więc interfejs na nim mięknie. W spoczynku podkładamy więc nad canvas
+ * zwykły `<img>` w pełnej rozdzielczości, ustawiony co do piksela na kaflu —
+ * rysuje go renderer przeglądarki, czyli z maksymalną ostrością.
+ *
+ * Przy każdym ruchu karuzeli kopia znika natychmiast (bez przejścia, żeby nie
+ * wlokła się za kaflem), a po zatrzymaniu wraca fadem. Pliki doczytywane są
+ * leniwie: jeśli ostra wersja nie zdąży, kafel po prostu zostaje dłużej
+ * miękki i wyostrzy się, gdy plik dojdzie.
+ */
+function mountSharpOverlay({ stage, canvas, sharp, slides, carousel }) {
+  if (!sharp || !stage || !canvas) return () => {};
+
+  const loaded = new Map();
+  let shown = false;
+  let wanted = -1;
+
+  const place = () => {
+    const rect = carousel.frontRect();
+    if (!rect) return;
+    const canvasBox = canvas.getBoundingClientRect();
+    const stageBox = stage.getBoundingClientRect();
+    sharp.style.left = `${canvasBox.left - stageBox.left + rect.left}px`;
+    sharp.style.top = `${canvasBox.top - stageBox.top + rect.top}px`;
+    sharp.style.width = `${rect.width}px`;
+    sharp.style.height = `${rect.height}px`;
+    // Przycięcie, a nie zmniejszenie prostokąta: obraz zostaje wyrównany
+    // z canvasem co do piksela, a obrys kafla nie jest zamalowywany.
+    sharp.style.clipPath = `inset(${rect.border}px)`;
+  };
+
+  const hide = () => {
+    if (!shown) return;
+    shown = false;
+    sharp.style.transition = 'none';
+    sharp.style.opacity = '0';
+  };
+
+  const show = () => {
+    if (shown) return;
+    shown = true;
+    place();
+    // wymuszenie przeliczenia stylu, żeby przejście ruszyło od zera,
+    // a nie zostało scalone z wyłączeniem transition przy zgaszeniu
+    void sharp.offsetWidth;
+    sharp.style.transition = `opacity ${SHARPEN_MS}ms linear`;
+    sharp.style.opacity = '1';
+  };
+
+  const ensure = (index) => {
+    if (loaded.has(index)) return loaded.get(index);
+    const pending = loadImage(slides[index].sharp).then(() => slides[index].sharp);
+    loaded.set(index, pending);
+    return pending;
+  };
+
+  // przy zmianie rozmiaru kopia musi wrócić na swoje miejsce; gaszenie na
+  // czas przeliczenia jest bezpieczniejsze niż pokazywanie jej nie tam, gdzie
+  // trzeba, a najbliższa klatka i tak zapali ją z powrotem
+  new ResizeObserver(() => {
+    hide();
+    wanted = -1;
+    place();
+  }).observe(canvas);
+
+  return (settledFlag) => {
+    if (!settledFlag) {
+      wanted = -1;
+      hide();
+      return;
+    }
+    const index = carousel.index;
+    if (index === wanted) return;
+    wanted = index;
+    ensure(index).then((src) => {
+      // w międzyczasie karuzela mogła ruszyć albo przejść na inny slajd
+      if (wanted !== index || !carousel.isSettled()) return;
+      if (sharp.getAttribute('src') !== src) sharp.setAttribute('src', src);
+      show();
+    }).catch(() => {});
+  };
 }
