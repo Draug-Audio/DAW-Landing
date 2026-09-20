@@ -42,6 +42,10 @@
     opacity: 0;
     pointer-events: none;
     will-change: opacity;
+    // przezroczysty pierścień pod obrys z canvasu; `border-box` sprawia, że
+    // pole treści obrazu równa się polu treści kafla
+    box-sizing: border-box;
+    border: 0 solid transparent;
   }
 
   &__fallback {

@@ -78,6 +78,48 @@ skraca się razem z kaflem, a winieta jest wyśrodkowana na kaflu, nie na scenie
 Zmierzone: okres siatki na kaflu przednim 22 px, czyli dokładnie rozmiar
 komórki (mapowanie 1:1), a na bocznym 19 px przy przewidzianych 19,24.
 
+### Ostra kopia przedniego slajdu
+
+Canvas rysuje kafel przez własny rzut i traci na tym ostrość, a landing ma
+pokazywać interfejs. W spoczynku nad canvas podkładany jest więc zwykły `<img>`
+w pełnej rozdzielczości, ustawiony co do piksela na kaflu — rysuje go renderer
+przeglądarki.
+
+Obie warstwy mają **to samo pole treści**, więc nic się między nimi nie
+przesuwa. Kafel to 1382 px treści plus ramka po jednym pikselu z każdej strony
+(razem 1384 = szerokość kontenera przy oknie 1920). Tekstura canvasu ma
+dokładnie 1382 px, więc idzie 1:1 — ani skalowana, ani rozciągana. Nakładka
+dostaje `box-sizing: border-box` i przezroczystą ramkę 1 px, przez co jej pole
+treści też wynosi 1382 px, a pierścień odsłania obrys narysowany na canvasie.
+Zmierzone: pole treści 1382 × 751 w obu warstwach, lewa krawędź treści 261,5
+w obu.
+
+Ramka ma równo jeden piksel urządzenia i leży POZA polem treści. Na kaflu na
+wprost rysowana jest po całych pikselach — `_flatRect` zaokrągla prostokąt raz,
+a obraz i obrys biorą go z tego samego miejsca. Zmierzone na przekroju przez
+lewą krawędź: ramka zajmuje dokładnie jedną kolumnę pikseli (85, 106, 30),
+sąsiednie z obu stron są tłem i treścią.
+
+Przy ruchu karuzeli kopia znika **natychmiast** (`transition: none`, żeby nie
+wlokła się za kaflem), po zatrzymaniu wraca liniowym fadem 280 ms. Zmierzone:
+w ruchu `opacity` 0 z `transition: none`, 30 ms po zatrzymaniu 0,109 przy
+`280ms linear`, potem 1.
+
+Stąd podział na dwa pliki na slajd. `N-lo.webp` (1536 px) idzie do tekstur
+canvasu i wczytuje się od razu dla wszystkich ośmiu — razem 379 kB zamiast
+723 kB. `N.webp` (2560 px) doczytuje się leniwie i tylko dla slajdu, na którym
+karuzela stanęła; jeśli nie zdąży, kafel po prostu zostaje dłużej miękki
+i wyostrzy się, gdy plik dojdzie.
+
+Na ekranach HiDPI canvas nie idzie pełnym dpr (limit 1,25) — tam ostrość
+w spoczynku zapewnia kopia w DOM, a w ruchu i tak gubi ją rzut perspektywiczny.
+Przy dpr 1 mnożnik wynosi 1, więc kafel wychodzi 1:1, a bufor nie schodzi
+poniżej rozdzielczości CSS.
+
+Siatka jest przy okazji **akcentem kafli pobocznych** — krycie skalowane przez
+`1 - front`, więc przedni jej nie dostaje i przebieg pasków na nim w ogóle nie
+rusza. W spoczynku i tak przykrywałaby ją ostra kopia.
+
 ### Siatka wywoływana przemiataniem
 
 Kafel jest pokryty siatką kafelków. Jeden kafelek to, od zewnątrz:
@@ -183,8 +225,8 @@ klawisze ←/→, poziomy scroll gładzika, autoodtwarzanie z paskiem postępu.
 Pętla stoi, gdy sekcja jest poza ekranem albo karta jest w tle.
 `prefers-reduced-motion` wyłącza autoodtwarzanie, aberrację, glitch i ziarno.
 
-Wydajność przy 1440 × 909 px bufora i ośmiu slajdach: **ok. 0,8 ms/klatkę**
-w spoczynku i **ok. 1,1 ms/klatkę** w ruchu. Tekstury ok. 15 MB.
+Wydajność przy 1920 × 919 px bufora i ośmiu slajdach: **ok. 0,8 ms/klatkę**
+w spoczynku i **ok. 2,3 ms/klatkę** w ruchu. Tekstury ok. 32 MB.
 
 Liczby są zaokrąglone świadomie. Pomiar to mediana z siedmiu próbek po dziesięć
 klatek, z przerwą między próbkami. Dłuższe pętle `_render` bez oddechu zapychają

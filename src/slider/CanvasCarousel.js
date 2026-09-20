@@ -320,8 +320,11 @@ export class CanvasCarousel {
   _geometry() {
     const { w, h, opt } = this;
     const aspect = this.textures[0].aspect;
-    // przedni kafel ma szerokość kontenera; sąsiedzi wychodzą poza canvas
-    let cardW = Math.min(this.cardWidth || w * opt.frontWidth, w);
+    const border = 1;
+    // `cardW` to pole TREŚCI kafla — ramka leży poza nim, po jednym pikselu
+    // z każdej strony. Dzięki temu tekstura, canvas i ostra kopia w DOM mają
+    // to samo pole treści i nikt niczego nie rozciąga o te dwa piksele.
+    let cardW = Math.min(this.cardWidth || w * opt.frontWidth, w) - 2 * border;
     let cardH = cardW * aspect;
     const maxCardH = h * 0.98;
     if (cardH > maxCardH) {
@@ -354,9 +357,10 @@ export class CanvasCarousel {
     this.geom = {
       cx: w / 2,
       cy: h * opt.centerY,
-      // Obrys kafla: dokładnie jeden piksel urządzenia. Ułamkowa grubość
-      // rozmywałaby się na dwa piksele, a akurat ją da się wyrównać do siatki.
-      border: 1,
+      // Obrys kafla: dokładnie jeden piksel urządzenia, rysowany POZA polem
+      // treści. Ułamkowa grubość rozmywałaby się na dwa piksele, a akurat ją
+      // da się wyrównać do siatki.
+      border,
       focal,
       dist: focal,          // dzięki temu przedni kafel ma skalę 1:1
       cardW,
@@ -706,8 +710,10 @@ export class CanvasCarousel {
     ctx.lineWidth = this.geom.border;
     ctx.strokeStyle = `rgba(200,255,61,${0.08 + 0.3 * front})`;
     if (Math.abs(ang.sinRot) < 0.0015) {
+      // linia o grubości 1 wyśrodkowana na -0,5 zajmuje dokładnie kolumnę
+      // pikseli tuż przy polu treści, nie wchodząc w nie
       const rect = this._flatRect(ang);
-      ctx.strokeRect(rect.x + 0.5, rect.y + 0.5, rect.w - 1, rect.h - 1);
+      ctx.strokeRect(rect.x - 0.5, rect.y - 0.5, rect.w + 1, rect.h + 1);
     } else {
       quad(ctx);
       ctx.stroke();

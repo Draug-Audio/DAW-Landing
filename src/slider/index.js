@@ -194,13 +194,15 @@ function mountSharpOverlay({ stage, canvas, sharp, slides, carousel }) {
     if (!rect) return;
     const canvasBox = canvas.getBoundingClientRect();
     const stageBox = stage.getBoundingClientRect();
-    sharp.style.left = `${canvasBox.left - stageBox.left + rect.left}px`;
-    sharp.style.top = `${canvasBox.top - stageBox.top + rect.top}px`;
-    sharp.style.width = `${rect.width}px`;
-    sharp.style.height = `${rect.height}px`;
-    // Przycięcie, a nie zmniejszenie prostokąta: obraz zostaje wyrównany
-    // z canvasem co do piksela, a obrys kafla nie jest zamalowywany.
-    sharp.style.clipPath = `inset(${rect.border}px)`;
+    // Nakładka dostaje własną, przezroczystą ramkę 1 px i `border-box`, więc
+    // jej POLE TREŚCI jest dokładnie takie samo jak pole treści kafla na
+    // canvasie — obraz skaluje się w obu warstwach identycznie, bez odchyleń
+    // między pikselami. Przezroczysty pierścień odsłania obrys z canvasu.
+    sharp.style.left = `${canvasBox.left - stageBox.left + rect.left - rect.border}px`;
+    sharp.style.top = `${canvasBox.top - stageBox.top + rect.top - rect.border}px`;
+    sharp.style.borderWidth = `${rect.border}px`;
+    sharp.style.width = `${rect.width + 2 * rect.border}px`;
+    sharp.style.height = `${rect.height + 2 * rect.border}px`;
   };
 
   const hide = () => {
