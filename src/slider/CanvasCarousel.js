@@ -167,6 +167,7 @@ export class CanvasCarousel {
     this.vel = 0;
     this.index = 0;
     this.energy = 0;
+    this.rawEnergy = 0;
     this.burst = 0;
     this.time = 0;
     this.running = false;
@@ -413,6 +414,13 @@ export class CanvasCarousel {
 
     // energia = ile „slajdów na sekundę” przelatuje pod kamerą
     const target = clamp(speed / 2.6, 0, 1);
+    /**
+     * Wartość chwilowa, bez wygładzania. `energy` rośnie natychmiast, ale
+     * opada z opóźnieniem — trzyma więc jeszcze ok. 0,3, gdy kafel stoi już
+     * na celu. Do bramkowania efektów, które na nieruchomym kaflu rzucają się
+     * w oczy, potrzebna jest prędkość bieżąca.
+     */
+    this.rawEnergy = target;
     this.energy = target > this.energy ? target : lerp(this.energy, target, 1 - Math.exp(-dt * 7));
     this.burst = Math.max(0, this.burst - dt / 0.5);
 
@@ -1061,7 +1069,16 @@ export class CanvasCarousel {
 
   /** Rozerwane pasy obrazu — tym mocniejsze, im szybszy obrót. */
   _drawGlitch(ctx, energy) {
-    const intensity = Math.max(energy, this.burst * 0.85);
+    /*
+     * Bramka na realnym ruchu, nie na samym `burst`. Przesunięty w bok pas
+     * obrazu to na pionowej krawędzi kafla schodek — przy szybkim obrocie
+     * ginie w rozmyciu i aberracji, ale przy dociąganiu do pozycji kafel jest
+     * już niemal nieruchomy i ostry, więc schodek na ramce rzuca się w oczy.
+     * `burst` sam z siebie trwa pół sekundy niezależnie od prędkości, więc bez
+     * tej bramki potrafił odpalać glitch na praktycznie stojącym kaflu.
+     */
+    const motion = smoothstep(0.22, 0.45, this.rawEnergy);
+    const intensity = Math.max(energy, this.burst * 0.85) * motion;
     if (intensity < 0.12) return;
 
     const { w, h } = this;
