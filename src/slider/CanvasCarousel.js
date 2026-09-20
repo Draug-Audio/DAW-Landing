@@ -84,14 +84,21 @@ const DEFAULTS = {
   /** rozmiar czcionki w pikselach; podawany wprost, nie jako ułamek kafelka */
   gridFontSize: 16,
   /**
-   * Minimalna grubość kreski glifu, w pikselach. Canvas nie hintuje, więc
-   * przy wadze 100 i rozmiarze 16 px kreska jest podpikselowa i cała żyje
-   * w antyaliasingu. Obrys dorysowany pod wypełnieniem wymusza pełny piksel,
-   * nie zmieniając kroju: przy 0,3 wychodzi 0,43 pikseli pełnych i alfa 255,
-   * przy tuszu 465 — mniej niż waga 400 bez obrysu (488) przy tym samym
-   * udziale pikseli pełnych.
+   * Minimalna grubość kreski glifu w pikselach; **zero i tak ma zostać**.
+   *
+   * Przy wadze 100 i rozmiarze 16 px kreska jest podpikselowa i cała żyje
+   * w antyaliasingu — wygląda na lekko rozmytą. To jest świadomy wybór:
+   * w tej scenie liczy się jak najmniejsza ilość tuszu, a nie czytelność
+   * pojedynczej runy. Dorysowanie obrysu pod wypełnieniem wymusiłoby pełny
+   * piksel (0,3 px → 0,43 pikseli pełnych i alfa 255), ale kosztem tuszu
+   * 465 zamiast 300, czyli o połowę cięższej siatki.
+   *
+   * Wyrównywanie pozycji znaku do całych pikseli nic tu nie da — canvas nie
+   * hintuje, więc kreska 0,5 px zostaje 0,5 px, gdziekolwiek trafi
+   * (zmierzone: ten sam udział pikseli pełnych i ta sama maksymalna alfa dla
+   * pozycji ułamkowej, całkowitej i przy `textRendering: geometricPrecision`).
    */
-  gridGlyphStroke: 0.3,
+  gridGlyphStroke: 0,
   gridChars: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split(''),
   /** obrotów pasa na sekundę */
   sweepSpeed: 0.15,
