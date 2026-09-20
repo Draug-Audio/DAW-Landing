@@ -66,7 +66,9 @@ const DEFAULTS = {
    * Poziomy nie są równie częste — waga maleje liniowo od najciemniejszego
    * do najjaśniejszego (przy sześciu poziomach 6 : 5 : 4 : 3 : 2 : 1), więc
    * jasne kafelki są rzadkie i czytają się jak pojedyncze błyski, a nie
-   * jak równomierna szachownica.
+   * jak równomierna szachownica. Poziom jest losowany raz i stały: dzięki
+   * temu ta rzadkość się utrzymuje. Zmiana poziomu przy każdej wymianie
+   * znaku wypłaszczałaby rozkład do równomiernego w kilka minut.
    */
   gridLevelMin: 0.1,
   gridLevelMax: 0.6,
@@ -89,14 +91,6 @@ const DEFAULTS = {
   gridSwaps: 2,
   /** odstęp kolejnych wymian, w połówkach szerokości pasa */
   gridSwapSpacing: 0.8,
-  /**
-   * Długość liniowego przejścia między poziomami jasności kafelka, w klatkach.
-   * Przeliczana po 60 klatkach na sekundę i dalej odmierzana czasem, nie
-   * klatkami — inaczej na ekranie 120 Hz przejście leciałoby dwa razy szybciej.
-   * Dziesięć klatek to ok. 0,17 s, czyli wyraźnie mniej niż odstęp dwóch
-   * wymian w jednym przebiegu (ok. 0,38 s).
-   */
-  gridLevelFadeFrames: 10,
   /** rodzina czcionki znaków w kafelkach */
   gridFont: 'RuneScript Monospace Variable',
   /** waga ze zmiennej osi czcionki — 100 to dolny kraniec osi w tym pliku */
@@ -759,8 +753,8 @@ export class CanvasCarousel {
    */
   /**
    * Stan siatki: jeden wpis na kafelek. Jasność losowana raz, ze schodków
-   * (patrz `gridLevelMin` / `gridLevelStep`), znak i numer przebiegu
-   * zmieniają się w trakcie życia sceny.
+   * (patrz `gridLevelMin` / `gridLevelStep`), i już stała — zmieniają się
+   * tylko znak i numer przebiegu pasa.
    */
   /** Poziom startowy: losowany ze schodków, z wagą malejącą do najjaśniejszego. */
   _rollLevel() {
@@ -773,20 +767,6 @@ export class CanvasCarousel {
     }
     // zaokrąglenie, żeby 0,1 × 3 nie wyszło 0,30000000000000004
     return Math.round((min + step * k) * 1000) / 1000;
-  }
-
-  /**
-   * Zmiana poziomu przy wymianie znaku: schodek w dół, schodek w górę albo bez
-   * zmiany, po równo. Krok, nie nowe losowanie — dzięki temu kafelek pełznie
-   * po skali, zamiast skakać po niej losowo. Na krańcach wyjście poza zakres
-   * liczy się jako brak zmiany.
-   */
-  _stepLevel(current) {
-    const { count, min, step } = this.levelScale;
-    const max = min + step * (count - 1);
-    const next = current + (Math.floor(Math.random() * 3) - 1) * step;
-    if (next < min - 1e-9 || next > max + 1e-9) return current;
-    return Math.round(next * 1000) / 1000;
   }
 
   _buildGrid() {
@@ -804,19 +784,15 @@ export class CanvasCarousel {
     const rows = Math.ceil(this.overlay.height / gridCell);
     const n = cols * rows;
     const bright = new Float32Array(n);
-    const from = new Float32Array(n);
-    const since = new Float32Array(n).fill(-1e9);
-    const timing = new Float32Array(n);
     const char = new Uint8Array(n);
     const pass = new Int32Array(n).fill(-1);
     const step = new Uint8Array(n);
     for (let i = 0; i < n; i += 1) {
+      // jasność losowana raz na całe życie kafelka i już się nie zmienia
       bright[i] = this._rollLevel();
-      from[i] = bright[i];
-      timing[i] = bright[i];
       char[i] = Math.floor(Math.random() * gridChars.length);
     }
-    this.grid = { cols, rows, bright, from, since, timing, char, pass, step };
+    this.grid = { cols, rows, bright, char, pass, step };
   }
 
   /**
@@ -863,16 +839,6 @@ export class CanvasCarousel {
 
       const swaps = opt.gridSwaps;
       const spacing = half * opt.gridSwapSpacing;
-      const fade = opt.gridLevelFadeFrames / 60;
-
-      // poziom pokazywany teraz: liniowo w drodze od poprzedniego do nowego
-      const shown = (i) => {
-        if (fade <= 0) return grid.bright[i];
-        const t = (this.time - grid.since[i]) / fade;
-        if (t >= 1) return grid.bright[i];
-        if (t <= 0) return grid.from[i];
-        return grid.from[i] + (grid.bright[i] - grid.from[i]) * t;
-      };
 
       const bandTop = sweep - half;
       const bandBottom = sweep + half;
@@ -894,35 +860,23 @@ export class CanvasCarousel {
         const lit = y + square >= bandTop && y <= bandBottom;
         for (let col = 0; col < grid.cols; col += 1) {
           const i = r * grid.cols + col;
+          const bright = grid.bright[i];
 
           if (grid.pass[i] !== pass) {
             grid.pass[i] = pass;
             grid.step[i] = 0;
-            // Jasność użyta do ODMIERZANIA wymian zamrażana jest na cały
-            // przebieg. Gdyby progi liczyły się z bieżącej jasności, a ta
-            // zmienia się przy każdej wymianie, to skok w górę przesuwałby
-            // kolejny próg wstecz i druga wymiana odpalałaby natychmiast po
-            // pierwszej, zamiast w swoim odstępie.
-            grid.timing[i] = grid.bright[i];
           }
-          const clock = grid.timing[i];
-
           // Kolejne wymiany w stałym odstępie od pierwszej, więc każda z nich
           // dziedziczy to samo wyprzedzenie zależne od jasności.
-          while (grid.step[i] < swaps && sweep >= mid - half * clock + grid.step[i] * spacing) {
+          while (grid.step[i] < swaps && sweep >= mid - half * bright + grid.step[i] * spacing) {
             // +1 i modulo po (n-1) gwarantuje, że znak naprawdę się zmieni
             grid.char[i] = (grid.char[i] + 1 + Math.floor(Math.random() * (charCount - 1))) % charCount;
-            // punkt startu przejścia to poziom POKAZYWANY, nie poprzedni cel —
-            // inaczej wymiana w trakcie przejścia szarpnęłaby jasnością
-            grid.from[i] = shown(i);
-            grid.bright[i] = this._stepLevel(grid.bright[i]);
-            grid.since[i] = this.time;
             grid.step[i] += 1;
           }
 
           if (!lit) continue;
           // pełna własna jasność kafelka — spadek od pasa nakłada maska niżej
-          const a = shown(i) * peak;
+          const a = bright * peak;
           if (a < 0.012) continue;
 
           const x = col * cell;

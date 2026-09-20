@@ -114,29 +114,17 @@ z wagą (100 → 243, 200 → 277, 400 → 381, 700 → 534, 900 → 637). Wszys
 to `drawImage` z wycinka, a nie skład tekstu co klatkę.
 
 Jasność kafelka nie jest losowana z ciągłego przedziału, tylko ze **schodków**:
-pełne ułamki 0,1 – 0,6 co 0,1. Poziom startowy losowany jest z wagą malejącą
-do najjaśniejszego (6 : 5 : 4 : 3 : 2 : 1), więc jasne kafelki są rzadkie
-i czytają się jak pojedyncze błyski — zmierzone na 23 760 losowaniach:
-0,2835 / 0,2385 / 0,1943 / 0,1409 / 0,0942 / 0,0487 wobec oczekiwanych
-0,2857 / 0,2381 / 0,1905 / 0,1429 / 0,0952 / 0,0476.
+pełne ułamki 0,1 – 0,6 co 0,1. Poziom losowany jest z wagą malejącą do
+najjaśniejszego (6 : 5 : 4 : 3 : 2 : 1), więc jasne kafelki są rzadkie i czytają
+się jak pojedyncze błyski — zmierzone na 23 760 losowaniach: 0,2835 / 0,2385 /
+0,1943 / 0,1409 / 0,0942 / 0,0487 wobec oczekiwanych 0,2857 / 0,2381 / 0,1905 /
+0,1429 / 0,0952 / 0,0476.
 
-Przy każdej wymianie znaku poziom zmienia się o **jeden schodek w dół, jeden
-w górę albo wcale**, po równo (zmierzone 0,334 / 0,332 / 0,334); na krańcach
-skali wyjście poza zakres liczy się jako brak zmiany, więc krańce są
-„lepkie" (2/3 szans na pozostanie). Przejście między poziomami jest **liniowe
-i trwa dziesięć klatek** (`gridLevelFadeFrames`, przeliczane po 60 fps i dalej
-odmierzane czasem, żeby na 120 Hz nie leciało dwa razy szybciej). Zmierzony
-przebieg: 0,30 → 0,20 po −0,01 na klatkę, potem zero.
-
-> **Uwaga na dryf.** Błądzenie po ±1 schodku z odbiciem od krańców ma rozkład
-> stacjonarny równomierny, więc wyjściowa rzadkość jasnych kafelków z czasem
-> się wypłaszcza. Zmierzone: start 0,286 / 0,245 / 0,190 / 0,136 / 0,095 /
-> 0,047, po dwóch wymianach (jeden przebieg pasa) 0,263 / 0,233 / 0,185 /
-> 0,146 / 0,102 / 0,072, a po pięćdziesięciu (ok. 3 min) już 0,17 / 0,16 /
-> 0,17 / 0,17 / 0,17 / 0,16. Siatka robi się więc powoli jaśniejsza. Gdyby
-> rzadkość miała się utrzymać, krok musiałby być niesymetryczny: przy stałym
-> 1/3 w dół, szansa w górę z poziomu `k` powinna wynosić `1/3 · w(k+1)/w(k)`,
-> a reszta iść w „bez zmiany”.
+Poziom jest losowany raz i **stały przez całe życie kafelka** — zmienia się
+tylko znak. Dzięki temu ta rzadkość się utrzymuje: zmiana poziomu przy każdej
+wymianie znaku (błądzenie po ±1 schodku) ma rozkład stacjonarny równomierny
+i wypłaszczyłaby rozkład do 0,17 na poziom w kilka minut, czyli siatka robiłaby
+się z czasem coraz jaśniejsza.
 
 Kafelki rysowane są **wyłącznie w zasięgu pasa przemiatania**. Poza nim nie ma
 czego kryć — a każdy stały ślad siatki, choćby 5 % przyciemnienia, zostawiałby
