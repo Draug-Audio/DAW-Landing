@@ -234,7 +234,7 @@ Efekty (skalowane energią ruchu, czyli liczbą slajdów na sekundę):
 | aberracja chromatyczna | kafel rysowany trzy razy do bufora pomocniczego, każdy przebieg przemnożony przez czysty kanał R/G/B (obcięcie do czworokąta jest konieczne — `multiply` na przezroczystym tle dałoby pełny kolor), potem składane addytywnie z przesunięciem; suma przy zerowym przesunięciu odtwarza oryginał (zmierzone: średnia różnica 0,8/255) |
 | mgła głębi | gradient wzdłuż kafla liczony z realnej odległości krawędzi od kamery |
 | poświata i podłoga | przypięte do kafla — przesuwają się i spłaszczają razem z nim; pełna moc na kaflu na wprost, słabsza na pobocznych |
-| odbicie | każdy kafel odbity względem własnej dolnej krawędzi, per pasek, razem z nakładką — przemiatanie przechodzi przez odbicie, a nie urywa się na krawędzi kafla; wygaszane wspólnym gradientem (bufor w połowie rozdzielczości) |
+| odbicie | każdy kafel odbity względem własnej dolnej krawędzi, per pasek, razem z nakładką — przemiatanie przechodzi przez odbicie, a nie urywa się na krawędzi kafla; siła nakładki liczona od tej na kaflu, więc odbicie przedniego zostaje czyste; wygaszane wspólnym gradientem (bufor w połowie rozdzielczości) |
 | bloom | scena w 1/4 rozdzielczości, `contrast + blur`, dołożona w trybie `lighter` |
 | siatka znaków, ziarno, winieta, przemiatanie | rysowane w układzie kafla i rzutowane razem z nim; na kaflach mocno skróconych słabsze, żeby zagęszczona siatka nie robiła mory |
 | rozerwane pasy obrazu | przy szybkim obrocie i przy zmianie slajdu |
@@ -244,8 +244,8 @@ klawisze ←/→, poziomy scroll gładzika, autoodtwarzanie z paskiem postępu.
 Pętla stoi, gdy sekcja jest poza ekranem albo karta jest w tle.
 `prefers-reduced-motion` wyłącza autoodtwarzanie, aberrację, glitch i ziarno.
 
-Wydajność przy 1920 × 919 px bufora i ośmiu slajdach: **ok. 1,5 ms/klatkę**
-w spoczynku i **ok. 2,7 ms/klatkę** w ruchu. Tekstury ok. 32 MB.
+Wydajność przy 1920 × 919 px bufora i ośmiu slajdach: **ok. 1,0 ms/klatkę**
+w spoczynku i **ok. 1,8 ms/klatkę** w ruchu. Tekstury ok. 32 MB.
 
 Liczby są zaokrąglone świadomie. Pomiar to mediana z siedmiu próbek po dziesięć
 klatek, z przerwą między próbkami. Dłuższe pętle `_render` bez oddechu zapychają

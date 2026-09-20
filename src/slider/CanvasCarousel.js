@@ -119,10 +119,9 @@ const DEFAULTS = {
   /** połowa szerokości pasa, w wysokościach kafla */
   sweepWidth: 0.1,
   /**
-   * Siła nakładki w odbiciu. Odbicie przedniego kafla jest w spoczynku jedyną
-   * jego częścią, którą nadal rysuje canvas — ostra kopia w DOM przykrywa sam
-   * kafel, ale nie to, co pod nim. Przemiatanie zostaje więc widoczne właśnie
-   * tam. Zero zrównuje odbicie z kaflem, czyli wygasza shimmer i w nim.
+   * Siła nakładki w odbiciu, liczona od siły nakładki na samym kaflu. Odbicie
+   * ma pokazywać to, co jest nad nim: kafel przedni nie ma siatki, więc jego
+   * odbicie też jej nie dostaje.
    */
   reflectionShimmer: 0.9,
   /** maks. rozjazd kanałów RGB w px przy pełnej prędkości */
@@ -741,7 +740,8 @@ export class CanvasCarousel {
     const reflAlpha = edgeFade * (0.3 + 0.7 * front);
     rc.globalAlpha = reflAlpha;
     this._paintStrips(rc, tex.base, ang, 0, true);
-    const reflShimmer = reflAlpha * this.opt.reflectionShimmer;
+    // `accent` zeruje się na kaflu na wprost, więc jego odbicie zostaje czyste
+    const reflShimmer = reflAlpha * this.opt.reflectionShimmer * accent;
     if (reflShimmer > 0.004) {
       rc.globalAlpha = reflShimmer;
       this._paintStrips(rc, this.overlay, ang, 0, true);
