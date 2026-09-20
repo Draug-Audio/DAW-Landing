@@ -53,14 +53,14 @@ export function makeNoiseTile(size = 168, strength = 26) {
  * @param {string[]} chars
  * @param {number} size  bok kafelka w pikselach (mapowanie 1:1 z nakładką)
  * @param {string} font  rodzina czcionki; fallback na monospace
- * @param {object} [opts] kolor glifu i waga ze zmiennej osi
+ * @param {object} [opts] kolor glifu, waga ze zmiennej osi i rozmiar czcionki
  */
-export function makeGlyphAtlas(chars, size, font, { color = '#c8ff3d', weight = 600 } = {}) {
+export function makeGlyphAtlas(chars, size, font, { color = '#c8ff3d', weight = 600, fontSize } = {}) {
   const canvas = makeCanvas(size * chars.length, size);
   const ctx = canvas.getContext('2d');
-  // czcionka jest zmienna (oś wagi 100–900) — przy tym rozmiarze glify
-  // potrzebują grubszego kroju, żeby nie zniknęły
-  ctx.font = `${weight} ${Math.round(size * 0.72)}px "${font}", ui-monospace, monospace`;
+  // czcionka jest zmienna (oś wagi 100–900); rozmiar podawany wprost, bo przy
+  // cienkich wagach to on decyduje, czy kreska zmieści się w pikselu
+  ctx.font = `${weight} ${Math.round(fontSize ?? size * 0.72)}px "${font}", ui-monospace, monospace`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = color;

@@ -54,7 +54,7 @@ const DEFAULTS = {
    * przy wadze 100 kreska glifu ma mniej niż piksel, dopóki glif nie urośnie
    * powyżej ok. 20 px — poniżej tego runy żyją w samym antyaliasingu i bledną.
    */
-  gridCell: 36,
+  gridCell: 32,
   /** szczelina między kafelkami — o tyle kafelek jest mniejszy od podziałki */
   gridGap: 4,
   /** najniższa jasność kafelka; wyżej losowo */
@@ -81,6 +81,8 @@ const DEFAULTS = {
   gridFont: 'RuneScript Monospace Variable',
   /** waga ze zmiennej osi czcionki — 100 to dolny kraniec osi w tym pliku */
   gridFontWeight: 100,
+  /** rozmiar czcionki w pikselach; podawany wprost, nie jako ułamek kafelka */
+  gridFontSize: 16,
   gridChars: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split(''),
   /** obrotów pasa na sekundę */
   sweepSpeed: 0.15,
@@ -153,7 +155,7 @@ export class CanvasCarousel {
       this.opt.gridChars,
       this.opt.gridCell - this.opt.gridGap,
       this.opt.gridFont,
-      { weight: this.opt.gridFontWeight },
+      { weight: this.opt.gridFontWeight, fontSize: this.opt.gridFontSize },
     );
 
     this._frame = this._frame.bind(this);
