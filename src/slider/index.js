@@ -48,15 +48,15 @@ export async function mountShowcase(root, slides) {
   // Tekstura ma być dokładnie tak szeroka, jak przedni kafel — a ten ma
   // szerokość kontenera. Przy ośmiu slajdach każdy piksel ponad to mnoży się
   // razy osiem, więc górny limit trzymamy krótko.
-  // Tekstura celowo poniżej rozdzielczości ekranu: przedni kafel w spoczynku
-  // przykrywa ostra kopia w DOM, a w ruchu rozdzielczość i tak gubi rzut
-  // perspektywiczny. Górny limit to szerokość pliku `-lo`, żeby nie skalować
-  // w górę.
+  // Tekstura odpowiada ZAWARTOŚCI kafla, czyli jego szerokości bez ramki
+  // (1 px z każdej strony). Przy dpr 1 daje to kopię 1:1 — obraz nie jest ani
+  // skalowany w dół, ani rozciągany. Górny limit to szerokość pliku `-lo`,
+  // żeby nie skalować w górę.
   const cardWidth = (stage ?? canvas).getBoundingClientRect().width || 1200;
   const textureWidth = clamp(
-    Math.round(cardWidth * Math.min(window.devicePixelRatio || 1, 2) * 0.7),
-    700,
-    1280,
+    Math.round(cardWidth * Math.min(window.devicePixelRatio || 1, 1.25)) - 2,
+    900,
+    1536,
   );
 
   const [images] = await Promise.all([

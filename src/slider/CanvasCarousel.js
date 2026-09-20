@@ -122,13 +122,15 @@ const DEFAULTS = {
   aberration: 11,
   stiffness: 120,
   damping: 18.5,
-  maxDpr: 2,
   /**
-   * Canvas celowo pracuje niżej niż ekran. Kafel przedni i tak przykrywa
-   * w spoczynku ostra kopia w DOM, a w ruchu rozdzielczość gubi rzut
-   * perspektywiczny — nie ma czego ratować, a jest co oszczędzić.
+   * Na ekranach HiDPI canvas nie idzie pełnym dpr — w spoczynku przedni kafel
+   * i tak przykrywa ostra kopia w DOM, a w ruchu rozdzielczość gubi rzut
+   * perspektywiczny. Przy dpr 1 mnożnik wynosi 1, więc kafel wychodzi 1:1.
    */
-  maxBackingWidth: 1800,
+  maxDpr: 1.25,
+  /** Górny limit bufora; dobrany tak, żeby przy dpr 1 nie schodzić poniżej
+   *  rozdzielczości CSS nawet na szerokich ekranach. */
+  maxBackingWidth: 2600,
   reducedMotion: false,
 };
 
@@ -352,9 +354,9 @@ export class CanvasCarousel {
     this.geom = {
       cx: w / 2,
       cy: h * opt.centerY,
-      // obrys kafla; rysowany po linii krawędzi, więc wystaje o połowę na
-      // zewnątrz i o połowę do środka
-      border: Math.max(1, w / 1400),
+      // Obrys kafla: dokładnie jeden piksel urządzenia. Ułamkowa grubość
+      // rozmywałaby się na dwa piksele, a akurat ją da się wyrównać do siatki.
+      border: 1,
       focal,
       dist: focal,          // dzięki temu przedni kafel ma skalę 1:1
       cardW,
@@ -553,6 +555,21 @@ export class CanvasCarousel {
     );
   }
 
+  /**
+   * Prostokąt kafla na wprost, wyrównany do całych pikseli. Używany i przez
+   * rysowanie obrazu, i przez obrys — muszą trafiać w te same krawędzie,
+   * inaczej ramka rozjeżdża się o pół piksela i mięknie.
+   */
+  _flatRect(ang) {
+    const { cardW, cy } = this.geom;
+    const l = this._project(-cardW / 2, ang);
+    const r = this._project(cardW / 2, ang);
+    const dh = l.half + r.half;
+    const x = Math.round(l.x);
+    const y = Math.round(cy - dh / 2);
+    return { x, y, w: Math.round(r.x) - x, h: Math.round(cy + dh / 2) - y };
+  }
+
   /** Rzut punktu leżącego na kaflu (przesunięcie `lx` od jego środka). */
   _project(lx, ang) {
     const { radius, dist, focal, cx, cy, cardH } = this.geom;
@@ -683,12 +700,18 @@ export class CanvasCarousel {
 
     ctx.restore();
 
-    // obrys kafla
+    // Obrys kafla. Na wprost rysowany po całych pikselach — pół piksela
+    // przesunięcia rozmazałoby go na dwa rzędy i ramka straciłaby ostrość.
     ctx.save();
-    quad(ctx);
     ctx.lineWidth = this.geom.border;
     ctx.strokeStyle = `rgba(200,255,61,${0.08 + 0.3 * front})`;
-    ctx.stroke();
+    if (Math.abs(ang.sinRot) < 0.0015) {
+      const rect = this._flatRect(ang);
+      ctx.strokeRect(rect.x + 0.5, rect.y + 0.5, rect.w - 1, rect.h - 1);
+    } else {
+      quad(ctx);
+      ctx.stroke();
+    }
     ctx.restore();
 
     this.stageCtx.globalAlpha = edgeFade;
@@ -715,19 +738,13 @@ export class CanvasCarousel {
     const strips = flat ? 1 : clamp(Math.round(6 + 160 * turn), 6, this.opt.maxStrips);
 
     if (flat) {
-      const l = this._project(-cardW / 2, ang);
-      const r = this._project(cardW / 2, ang);
-      const dh = l.half + r.half;
-      // Kafel na wprost trafia w całe piksele: przy nakładce o rozmiarze kafla
-      // daje to kopię 1:1 bez filtrowania, więc siatka ma ostre krawędzie.
-      // Zaokrąglenie jest bezpieczne, bo ta gałąź działa tylko w spoczynku.
-      const dx = Math.round(l.x + offsetX);
-      const dw = Math.round(r.x + offsetX) - dx;
-      const dy = Math.round(cy - dh / 2);
-      const dhr = Math.round(cy + dh / 2) - dy;
+      // Kafel na wprost trafia w całe piksele: przy teksturze o rozmiarze
+      // zawartości daje to kopię 1:1 bez filtrowania.
+      const rect = this._flatRect(ang);
+      const dx = rect.x + Math.round(offsetX);
       // ujemna wysokość odwraca obraz w pionie (drawImage, spec HTML)
-      if (mirror) ctx.drawImage(source, dx, dy + 2 * dhr, dw, -dhr);
-      else ctx.drawImage(source, dx, dy, dw, dhr);
+      if (mirror) ctx.drawImage(source, dx, rect.y + 2 * rect.h, rect.w, -rect.h);
+      else ctx.drawImage(source, dx, rect.y, rect.w, rect.h);
       return;
     }
 
