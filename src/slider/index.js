@@ -15,12 +15,14 @@ export async function mountShowcase(root, slides) {
 
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // tekstura nie musi być większa niż to, co realnie zmieści się na scenie
+  // Tekstura nie musi być szersza niż przedni kafel, a ten zajmuje ok. 0,6
+  // szerokości sceny. Przy ośmiu slajdach każdy piksel ponad to jest mnożony
+  // razy osiem, więc limit trzymamy nisko.
   const stageWidth = canvas.getBoundingClientRect().width || 1200;
   const textureWidth = clamp(
-    Math.round(stageWidth * Math.min(window.devicePixelRatio || 1, 2) * 0.8),
-    900,
-    2200,
+    Math.round(stageWidth * Math.min(window.devicePixelRatio || 1, 2) * 0.62),
+    880,
+    1600,
   );
 
   const images = await Promise.all(slides.map((slide) => loadImage(slide.src)));

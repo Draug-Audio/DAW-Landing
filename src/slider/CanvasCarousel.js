@@ -4,12 +4,17 @@ import { context2d, makeCanvas, makeNoiseTile, makeScanlineTile } from './textur
 const DEG = Math.PI / 180;
 
 const DEFAULTS = {
-  /** szerokość przedniego kafla względem szerokości canvasu */
+  /** szerokość przedniego kafla względem szerokości canvasu (górny limit) */
   frontWidth: 0.7,
-  /** promień okręgu jako wielokrotność szerokości kafla — mniejszy = ostrzejsza perspektywa */
-  radiusFactor: 0.64,
-  /** ogniskowa jako wielokrotność szerokości canvasu */
-  focalFactor: 1.32,
+  /**
+   * Odstęp sąsiednich kafli mierzony cięciwą okręgu, w szerokościach kafla.
+   * Promień liczymy z tego, a nie wprost — dzięki czemu rozstaw wygląda tak
+   * samo przy 3 slajdach (kąt 58°) i przy 8 (kąt 45°).
+   */
+  chordFactor: 0.62,
+  /** ogniskowa jako wielokrotność szerokości kafla — stała perspektywa
+   *  niezależnie od tego, czy kafel przycina szerokość czy wysokość sceny */
+  focalFactor: 1.9,
   /** maksymalny rozstaw kątowy między sąsiednimi slajdami */
   maxArc: 58 * DEG,
   /** pionowy środek okręgu (ułamek wysokości) — wyżej, bo pod spodem odbicie */
@@ -161,7 +166,8 @@ export class CanvasCarousel {
       cardH = maxCardH;
       cardW = cardH / aspect;
     }
-    const focal = w * opt.focalFactor;
+    const focal = cardW * opt.focalFactor;
+    const arc = Math.min((Math.PI * 2) / this.count, opt.maxArc);
     this.geom = {
       cx: w / 2,
       cy: h * opt.centerY,
@@ -169,8 +175,8 @@ export class CanvasCarousel {
       dist: focal,          // dzięki temu przedni kafel ma skalę 1:1
       cardW,
       cardH,
-      radius: cardW * opt.radiusFactor,
-      arc: Math.min((Math.PI * 2) / this.count, opt.maxArc),
+      radius: (cardW * opt.chordFactor) / (2 * Math.sin(arc / 2)),
+      arc,
     };
   }
 
@@ -363,15 +369,18 @@ export class CanvasCarousel {
     const abMax = this.opt.aberration * (this.w / 1400);
     const ab = this.opt.reducedMotion ? 0 : energy * abMax * (0.4 + 0.6 * front);
 
-    if (ab > 0.5) {
+    // Próg wyżej niż „widoczny rozjazd”, bo kopie kanałowe mają połowę
+    // rozdzielczości — przejście na nie ma wypaść wtedy, gdy kafel i tak
+    // wyraźnie leci, a nie na wyciszeniu sprężyny.
+    if (ab > 1.5) {
       ctx.globalCompositeOperation = 'lighter';
       const dir = this.dir || 1;
-      this._paintStrips(ctx, tex.r, tex, sin, cos, -ab * dir);
-      this._paintStrips(ctx, tex.g, tex, sin, cos, 0);
-      this._paintStrips(ctx, tex.b, tex, sin, cos, ab * dir);
+      this._paintStrips(ctx, tex.r, sin, cos, -ab * dir);
+      this._paintStrips(ctx, tex.g, sin, cos, 0);
+      this._paintStrips(ctx, tex.b, sin, cos, ab * dir);
       ctx.globalCompositeOperation = 'source-over';
     } else {
-      this._paintStrips(ctx, tex.base, tex, sin, cos, 0);
+      this._paintStrips(ctx, tex.base, sin, cos, 0);
     }
 
     // mgła głębi — jeden gradient zamiast cieniowania per pasek
@@ -419,7 +428,7 @@ export class CanvasCarousel {
    * Kafel rysowany pionowymi paskami — każdy dostaje własną skalę z rzutu
    * perspektywicznego, co daje realne skrócenie, a nie zwykłe skalowanie.
    */
-  _paintStrips(ctx, source, tex, sin, cos, offsetX) {
+  _paintStrips(ctx, source, sin, cos, offsetX) {
     const { cardW, cy } = this.geom;
     const flat = Math.abs(sin) < 0.004;
     const strips = flat ? 1 : clamp(Math.round(6 + 160 * Math.abs(sin)), 6, this.opt.maxStrips);
@@ -431,16 +440,20 @@ export class CanvasCarousel {
       return;
     }
 
+    // wymiary źródła czytamy z samego canvasu — kopie kanałowe mają mniejszą
+    // rozdzielczość niż baza
+    const srcW = source.width;
+    const srcH = source.height;
     let prev = this._project(-cardW / 2, sin, cos);
     for (let s = 0; s < strips; s += 1) {
       const u1 = (s + 1) / strips;
       const next = this._project((u1 - 0.5) * cardW, sin, cos);
-      const sx = (s / strips) * tex.width;
-      const sw = tex.width / strips;
+      const sx = (s / strips) * srcW;
+      const sw = srcW / strips;
       const dx = prev.x + offsetX;
       const dw = next.x - prev.x + 1.15;
       const dh = prev.half + next.half;
-      ctx.drawImage(source, sx, 0, sw, tex.height, dx, cy - dh / 2, dw, dh);
+      ctx.drawImage(source, sx, 0, sw, srcH, dx, cy - dh / 2, dw, dh);
       prev = next;
     }
   }

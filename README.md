@@ -15,7 +15,7 @@ npm run preview
 
 ```
 index.html              markup całej strony (semantyczne klasy zamiast inline style)
-public/assets/          grafiki wypakowane z mockupu
+public/assets/          1–8.webp (zrzuty slajdów), logo, wtyczki, zdjęcie
 src/
   main.js               punkt wejścia — style + montaż slidera
   data/slides.js        treść slajdów (src / numer / tytuł / opis)
@@ -31,12 +31,15 @@ Mockups/                oryginalne, spakowane pliki HTML (źródło projektu)
 
 ## Slider
 
-Kafle leżą na okręgu wokół kamery i są rzutowane perspektywicznie. Canvas 2D nie
-potrafi mapować tekstury na trapez, więc każdy kafel rysowany jest **pionowymi
-paskami** — każdy pasek dostaje własną skalę z rzutu, co daje realne skrócenie
-perspektywiczne zamiast zwykłego skalowania obrazka. Liczba pasków rośnie z
+Osiem kafli leży na okręgu wokół kamery (co 45°) i jest rzutowanych
+perspektywicznie. Canvas 2D nie potrafi mapować tekstury na trapez, więc każdy
+kafel rysowany jest **pionowymi paskami** — każdy pasek dostaje własną skalę
+z rzutu, co daje realne skrócenie perspektywiczne zamiast zwykłego skalowania. Liczba pasków rośnie z
 kątem obrotu; w spoczynku kafel jest płaski i idzie jednym `drawImage`, więc
-zostaje piksel w piksel ostry.
+zostaje piksel w piksel ostry. Promień okręgu liczony jest z cięciwy między
+sąsiadami, więc rozstaw wygląda tak samo niezależnie od liczby slajdów, a
+kafle odwrócone tyłem odpadają na podstawie odległości kamery od ich
+płaszczyzny — dzięki temu zawinięcie indeksu jest niewidoczne.
 
 Ruchem steruje sprężyna (lekko niedotłumiona — dojazd ~0,5 s z minimalnym
 przestrzeleniem). Pozycja jest **ciągła**, nie skokowa, więc wszystko, co od niej
@@ -47,7 +50,7 @@ Efekty (skalowane energią ruchu, czyli liczbą slajdów na sekundę):
 
 | efekt | jak działa |
 | --- | --- |
-| aberracja chromatyczna | tekstura trzymana jest też w trzech kopiach z wyizolowanymi kanałami R/G/B; przy ruchu rysowane są rozsunięte i składane addytywnie (`lighter`) |
+| aberracja chromatyczna | tekstura trzymana jest też w trzech kopiach z wyizolowanymi kanałami R/G/B (w połowie rozdzielczości — przy ruchu i tak niewidocznej); przy ruchu rysowane są rozsunięte i składane addytywnie (`lighter`) |
 | mgła głębi | gradient wzdłuż kafla liczony z realnej odległości krawędzi od kamery |
 | odblask krawędzi natarcia | gradient limonkowy po stronie, w którą leci kafel |
 | odbicie | scena odbita względem linii podłogi, maskowana gradientem (bufor w połowie rozdzielczości) |
@@ -60,15 +63,19 @@ klawisze ←/→, poziomy scroll gładzika, autoodtwarzanie z paskiem postępu.
 Pętla stoi, gdy sekcja jest poza ekranem albo karta jest w tle.
 `prefers-reduced-motion` wyłącza autoodtwarzanie, aberrację, glitch i ziarno.
 
-Wydajność przy 1350 × 545 px bufora: **0,25 ms/klatkę** w spoczynku,
-**0,62 ms/klatkę** w ruchu.
+Wydajność przy 1350 × 587 px bufora i ośmiu slajdach: **0,31 ms/klatkę**
+w spoczynku, **1,06 ms/klatkę** w ruchu. Tekstury zajmują ok. 22 MB.
 
 ## Uwagi
 
-- Mockup używa jednego zrzutu ekranu dla wszystkich trzech widoków i tak jest tu
-  odwzorowany. Podmiana na docelowe zrzuty to zmiana `src` w `src/data/slides.js`.
-- Zdjęcie z sekcji „Jak powstał DAW” w mockupie ważyło 6,3 MB (PNG 4606 × 2624).
+- Zrzuty slajdów (`1`–`8`) przekonwertowane z PNG na WebP: 2561 kB → 723 kB.
+  Bezstratnie, żeby tekst interfejsu został ostry; wyjątkiem jest `2`, w dużej
+  mierze fotograficzne GUI wtyczek, zapisane stratnie q97.
+- Zdjęcie z sekcji „Jak powstał DAW” ważyło 6,3 MB (PNG 4606 × 2624).
   Tutaj jest jako WebP 2200 px / 139 kB.
+- Treść slajdów (numer, tytuł, opis, plik) siedzi w `src/data/slides.js` —
+  dodanie albo usunięcie pozycji nie wymaga zmian w silniku, kąt na okręgu
+  i promień policzą się same.
 - Fonty (Archivo, IBM Plex Mono) idą z Google Fonts zamiast 20 plików woff2
   zaszytych w mockupie.
 - W trybie deweloperskim instancja slidera siedzi pod `window.__showcase`.

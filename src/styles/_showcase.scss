@@ -16,7 +16,9 @@
     position: relative;
     width: calc(100% + 2 * var(--sc-bleed));
     margin-inline: calc(-1 * var(--sc-bleed));
-    aspect-ratio: 2576 / 1041;
+    // zrzuty mają 2560 x 1392; scena jest szersza, żeby zmieściły się
+    // sąsiednie kafle, odbicie i poświata
+    aspect-ratio: 23 / 10;
     touch-action: pan-y;
     cursor: grab;
 
