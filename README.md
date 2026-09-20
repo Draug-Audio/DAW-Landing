@@ -69,9 +69,15 @@ w momencie wyjścia z pary (zmierzona druga różnica kąta: 0,0077° dla `sin²
 wobec 0,1225° dla `sin`).
 
 Wszystko, co dotyczy pojedynczego kafla, idzie za jego rzutem: poświata i
-świetlista podłoga biorą jego rzutowane położenie i wymiary, a **odbicie jest
-lustrzane względem własnej dolnej krawędzi kafla** — liczone per pasek, bo
-kafel obrócony ma tę krawędź ukośną i wyżej niż kafel na wprost.
+świetlista podłoga biorą jego rzutowane położenie i wymiary, **odbicie jest
+lustrzane względem własnej dolnej krawędzi kafla** (liczone per pasek, bo kafel
+obrócony ma tę krawędź ukośną i wyżej niż kafel na wprost), a **nakładka
+„ekranu” — skanlinie, ziarno, przemiatanie i winieta — budowana jest
+w układzie kafla i przepuszczana przez ten sam rzut co obraz**. Dzięki temu
+skraca się razem z kaflem, jej linie pochylają się do punktu zbiegu, a winieta
+jest wyśrodkowana na kaflu, nie na scenie. Zmierzone: okres skanlinii na kaflu
+bocznym 7 px wobec 8 px na przednim, czyli stosunek 0,875 — dokładnie tyle, ile
+wynosi przewidziana skala rzutu w tym miejscu.
 
 Ruchem steruje sprężyna (lekko niedotłumiona — dojazd ~0,5 s z minimalnym
 przestrzeleniem). Pozycja jest **ciągła**, nie skokowa, więc wszystko, co od niej
@@ -88,7 +94,7 @@ Efekty (skalowane energią ruchu, czyli liczbą slajdów na sekundę):
 | odblask krawędzi natarcia | gradient limonkowy po stronie, w którą leci kafel |
 | odbicie | każdy kafel odbity względem własnej dolnej krawędzi, per pasek; wygaszane wspólnym gradientem (bufor w połowie rozdzielczości) |
 | bloom | scena w 1/4 rozdzielczości, `contrast + blur`, dołożona w trybie `lighter` |
-| skanlinie, ziarno, winieta, przemiatanie | maskowane alfą sceny (`destination-in`), więc widać je tylko na samych kaflach, nie na tle strony |
+| skanlinie, ziarno, winieta, przemiatanie | rysowane w układzie kafla i rzutowane razem z nim; na kaflach mocno skróconych słabsze, żeby zagęszczone linie nie robiły mory |
 | rozerwane pasy obrazu | przy szybkim obrocie i przy zmianie slajdu |
 
 Sterowanie: przeciąganie (z rzutem prędkości i zatrzaskiem), strzałki, kropki,
@@ -96,8 +102,8 @@ klawisze ←/→, poziomy scroll gładzika, autoodtwarzanie z paskiem postępu.
 Pętla stoi, gdy sekcja jest poza ekranem albo karta jest w tle.
 `prefers-reduced-motion` wyłącza autoodtwarzanie, aberrację, glitch i ziarno.
 
-Wydajność przy 1920 × 919 px bufora i ośmiu slajdach: **0,38 ms/klatkę**
-w spoczynku, **1,01 ms/klatkę** w ruchu. Tekstury ok. 32 MB, bufory ok. 20 MB.
+Wydajność przy 1920 × 919 px bufora i ośmiu slajdach: **0,52 ms/klatkę**
+w spoczynku, **1,32 ms/klatkę** w ruchu. Tekstury ok. 32 MB, bufory ok. 24 MB.
 
 Pomiar to mediana z pięciu próbek po dziesięć klatek, z przerwą między
 próbkami. Dłuższe pętle `_render` bez oddechu zapychają kolejkę GPU i czasy

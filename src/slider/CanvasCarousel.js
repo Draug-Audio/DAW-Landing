@@ -90,6 +90,10 @@ export class CanvasCarousel {
     this.bloomCtx = context2d(this.bloom);
     this.fx = makeCanvas(1, 1);
     this.fxCtx = context2d(this.fx);
+    // nakładka „ekranu” (skanlinie, ziarno, przemiatanie, winieta) budowana
+    // w układzie kafla, nie ekranu — dzięki temu idzie przez ten sam rzut
+    this.overlay = makeCanvas(textures[0].width, textures[0].height);
+    this.overlayCtx = context2d(this.overlay);
 
     this.noise = [makeNoiseTile(), makeNoiseTile(), makeNoiseTile()];
     this.scanTile = makeScanlineTile(4);
@@ -166,7 +170,7 @@ export class CanvasCarousel {
     this.bloom.height = Math.max(1, Math.round(h / 4));
 
     // konteksty gubią ustawienia przy zmianie rozmiaru
-    for (const ctx of [this.ctx, this.stageCtx, this.workCtx, this.reflCtx, this.bloomCtx, this.fxCtx]) {
+    for (const ctx of [this.ctx, this.stageCtx, this.workCtx, this.reflCtx, this.bloomCtx, this.fxCtx, this.overlayCtx]) {
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
     }
@@ -311,6 +315,7 @@ export class CanvasCarousel {
     }
     order.sort((a, b) => b.depth - a.depth);
 
+    this._buildOverlay(energy, reduced);
     for (const card of order) this._drawCardGlow(ctx, card, energy);
     for (const card of order) this._drawCard(card, energy);
 
@@ -320,7 +325,6 @@ export class CanvasCarousel {
     ctx.drawImage(this.stage, 0, 0);
 
     this._drawBloom(ctx, energy);
-    this._drawScreenOverlay(ctx, energy, reduced);
     if (!reduced) this._drawGlitch(ctx, energy);
 
     this.onFrame?.({ position: renderPos, energy, burst: this.burst, index: this.index });
@@ -520,6 +524,12 @@ export class CanvasCarousel {
       ctx.globalCompositeOperation = 'source-over';
     }
 
+    // nakładka ekranu — ten sam rzut co obraz, więc skraca się z kaflem.
+    // Na kaflach mocno skróconych słabsza: mniej mory przy zagęszczaniu linii.
+    ctx.globalAlpha = 0.35 + 0.65 * front;
+    this._paintStrips(ctx, this.overlay, ang, 0);
+    ctx.globalAlpha = 1;
+
     ctx.restore();
 
     // obrys kafla
@@ -629,9 +639,20 @@ export class CanvasCarousel {
    * Skanlinie, przemiatanie, ziarno i winieta — maskowane alfą sceny, więc
    * widać je wyłącznie na samych kaflach, a nie na tle strony.
    */
-  _drawScreenOverlay(ctx, energy, reduced) {
-    const { w, h, geom } = this;
-    const oc = this.workCtx;
+  /**
+   * Nakładka „ekranu” budowana w UKŁADZIE KAFLA, w rozdzielczości tekstury.
+   * Wcześniej te efekty leciały w przestrzeni ekranu i były tylko maskowane
+   * alfą sceny — przez co na kaflach pobocznych nie trzymały się perspektywy:
+   * skanlinie miały wszędzie ten sam skok, przemiatanie szło poziomym pasem
+   * przez całą scenę, a winieta była wyśrodkowana na scenie, nie na kaflu.
+   * Teraz nakładka idzie przez ten sam rzut co obraz, więc skraca się razem
+   * z kaflem, a jej linie pochylają się do punktu zbiegu.
+   */
+  _buildOverlay(energy, reduced) {
+    const oc = this.overlayCtx;
+    const w = this.overlay.width;
+    const h = this.overlay.height;
+
     oc.setTransform(1, 0, 0, 1, 0, 0);
     oc.globalCompositeOperation = 'source-over';
     oc.globalAlpha = 1;
@@ -648,17 +669,15 @@ export class CanvasCarousel {
       const ox = -Math.floor(Math.random() * 160);
       const oy = -Math.floor(Math.random() * 160);
       oc.globalAlpha = 0.05 + energy * 0.06;
-      oc.globalCompositeOperation = 'overlay';
       oc.save();
       oc.translate(ox, oy);
       oc.fillStyle = tile;
       oc.fillRect(-ox, -oy, w, h);
       oc.restore();
-      oc.globalCompositeOperation = 'source-over';
     }
 
     if (!reduced) {
-      // pionowe przemiatanie co ~7 s
+      // przemiatanie co ~7 s — pas poziomy w układzie kafla
       const sweep = ((this.time * 0.14) % 1) * (h * 1.6) - h * 0.3;
       const band = oc.createLinearGradient(0, sweep - h * 0.1, 0, sweep + h * 0.1);
       band.addColorStop(0, 'rgba(200,255,61,0)');
@@ -671,19 +690,12 @@ export class CanvasCarousel {
       oc.globalCompositeOperation = 'source-over';
     }
 
-    const vig = oc.createRadialGradient(geom.cx, geom.cy, geom.cardW * 0.3, geom.cx, geom.cy, geom.cardW * 0.85);
+    const vig = oc.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.34, w / 2, h / 2, Math.max(w, h) * 0.62);
     vig.addColorStop(0, 'rgba(0,0,0,0)');
     vig.addColorStop(1, 'rgba(0,0,0,0.26)');
     oc.globalAlpha = 1;
     oc.fillStyle = vig;
     oc.fillRect(0, 0, w, h);
-
-    oc.globalCompositeOperation = 'destination-in';
-    oc.drawImage(this.stage, 0, 0);
-    oc.globalCompositeOperation = 'source-over';
-
-    ctx.globalAlpha = 1;
-    ctx.drawImage(this.work, 0, 0);
   }
 
   /** Rozerwane pasy obrazu — tym mocniejsze, im szybszy obrót. */
