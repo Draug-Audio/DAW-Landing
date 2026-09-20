@@ -44,8 +44,12 @@ const DEFAULTS = {
   gridGap: 3,
   /** najniższa jasność kafelka; wyżej losowo */
   gridFloor: 0.3,
-  /** górny pułap jasności kafelka pod rdzeniem pasa */
-  gridReveal: 1,
+  /**
+   * Górny pułap jasności kafelka pod rdzeniem pasa. Poniżej 1 nawet kafelek
+   * o jasności 1,0 przepuszcza trochę obrazu — świadomie, żeby pas nie
+   * wycinał w kaflu jasnego bloku i mniej rzucał się w oczy.
+   */
+  gridReveal: 0.68,
   /** krycie tła kafelka względem jego jasności */
   gridFill: 0.12,
   /** krycie zewnętrznej ramki rozdzielającej kafelki */
@@ -57,7 +61,7 @@ const DEFAULTS = {
   /** rodzina czcionki znaków w kafelkach */
   gridFont: 'RuneScript Monospace Variable',
   /** waga ze zmiennej osi czcionki (oś 100–900) */
-  gridFontWeight: 300,
+  gridFontWeight: 200,
   gridChars: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split(''),
   /** obrotów pasa na sekundę */
   sweepSpeed: 0.15,
