@@ -129,6 +129,12 @@ const DEFAULTS = {
    * ramka w odbiciu domykała kształt, a nie ściągała na siebie uwagi.
    */
   reflectionBorder: 0.45,
+  /** ile pasów obrazu maksymalnie rwie się w jednej klatce */
+  glitchBands: 9,
+  /** maksymalna wysokość rwanego pasa w px, odniesiona do szerokości 1400 */
+  glitchBandHeight: 80,
+  /** maksymalne przesunięcie pasa w bok, odniesione do szerokości 1400 */
+  glitchShift: 54,
   /** maks. rozjazd kanałów RGB w px przy pełnej prędkości */
   aberration: 11,
   /**
@@ -1134,13 +1140,14 @@ export class CanvasCarousel {
     snap.clearRect(0, 0, w, h);
     snap.drawImage(this.canvas, 0, 0);
 
+    const opt = this.opt;
     const scale = this.w / 1400;
-    const bands = 1 + Math.floor(intensity * 3);
+    const bands = 1 + Math.floor(intensity * opt.glitchBands);
     for (let i = 0; i < bands; i += 1) {
-      if (Math.random() > 0.3 + intensity * 0.45) continue;
-      const bh = Math.max(2, Math.round((2 + Math.random() * 22) * intensity * scale));
+      if (Math.random() > 0.25 + intensity * 0.6) continue;
+      const bh = Math.max(3, Math.round((6 + Math.random() * opt.glitchBandHeight) * intensity * scale));
       const by = Math.round(Math.random() * (h - bh));
-      const dx = Math.round((Math.random() - 0.5) * 46 * intensity * scale);
+      const dx = Math.round((Math.random() - 0.5) * opt.glitchShift * intensity * scale);
       ctx.clearRect(0, by, w, bh);
       ctx.globalAlpha = 0.95;
       ctx.drawImage(this.stage, 0, by, w, bh, dx, by, w, bh);

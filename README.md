@@ -237,7 +237,7 @@ Efekty (skalowane energią ruchu, czyli liczbą slajdów na sekundę):
 | odbicie | każdy kafel odbity względem własnej dolnej krawędzi, per pasek, razem z nakładką — przemiatanie przechodzi przez odbicie, a nie urywa się na krawędzi kafla; siła nakładki liczona od tej na kaflu, więc odbicie przedniego zostaje czyste; obrys dorysowany z niskim kryciem (`reflectionBorder`), liczonym z pominięciem wygaszania pod ostrą kopią — kopia przykrywa kafel, nie jego odbicie; wygaszane wspólnym gradientem (bufor w połowie rozdzielczości) |
 | bloom | scena w 1/4 rozdzielczości, `contrast + blur`, dołożona w trybie `lighter` |
 | siatka znaków, ziarno, winieta, przemiatanie | rysowane w układzie kafla i rzutowane razem z nim; na kaflach mocno skróconych słabsze, żeby zagęszczona siatka nie robiła mory |
-| rozerwane pasy obrazu | tylko przy wyraźnym ruchu, bramkowane PRĘDKOŚCIĄ CHWILOWĄ, nie wygładzoną energią — ta opada z opóźnieniem i trzymała jeszcze ok. 0,3, gdy kafel stał już na celu, przez co przesunięty pas robił schodek na ramce nieruchomego kafla; po zmianie glitch gaśnie przy 0,038 slajdu do końca drogi zamiast −0,003 |
+| rozerwane pasy obrazu | przy pełnej energii ok. 8,5 pasa na klatkę, średnio 66 px wysokości, razem ok. 75 % wysokości kafla; tylko przy wyraźnym ruchu, bramkowane PRĘDKOŚCIĄ CHWILOWĄ, nie wygładzoną energią — ta opada z opóźnieniem i trzymała jeszcze ok. 0,3, gdy kafel stał już na celu, przez co przesunięty pas robił schodek na ramce nieruchomego kafla |
 
 Sterowanie: przeciąganie (z rzutem prędkości i zatrzaskiem), strzałki, kropki,
 klawisze ←/→, poziomy scroll gładzika, autoodtwarzanie z paskiem postępu.
