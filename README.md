@@ -231,7 +231,7 @@ Efekty (skalowane energią ruchu, czyli liczbą slajdów na sekundę):
 
 | efekt | jak działa |
 | --- | --- |
-| aberracja chromatyczna | kafel rysowany trzy razy do bufora pomocniczego, każdy przebieg przemnożony przez czysty kanał R/G/B (obcięcie do czworokąta jest konieczne — `multiply` na przezroczystym tle dałoby pełny kolor), potem składane addytywnie z przesunięciem; suma przy zerowym przesunięciu odtwarza oryginał (zmierzone: średnia różnica 0,8/255) |
+| aberracja chromatyczna | kafel rysowany trzy razy do bufora pomocniczego, każdy przebieg przemnożony przez czysty kanał (obcięcie do czworokąta jest konieczne — `multiply` na przezroczystym tle dałoby pełny kolor), potem składane addytywnie z przesunięciem; na dolnym końcu zakresu wersja kanałowa **przenika z czystą** (`aberrationBlend`), bo różni się od niej nie tylko przesunięciem — każdy kanał przechodzi dodatkowe przepróbkowanie, więc skokowe przełączenie było widoczne jako nagła zmiana na krawędzi |
 | mgła głębi | gradient wzdłuż kafla liczony z realnej odległości krawędzi od kamery |
 | poświata i podłoga | przypięte do kafla — przesuwają się i spłaszczają razem z nim; pełna moc na kaflu na wprost, słabsza na pobocznych |
 | odbicie | każdy kafel odbity względem własnej dolnej krawędzi, per pasek, razem z nakładką — przemiatanie przechodzi przez odbicie, a nie urywa się na krawędzi kafla; siła nakładki liczona od tej na kaflu, więc odbicie przedniego zostaje czyste; obrys dorysowany z niskim kryciem (`reflectionBorder`), liczonym z pominięciem wygaszania pod ostrą kopią — kopia przykrywa kafel, nie jego odbicie; wygaszane wspólnym gradientem (bufor w połowie rozdzielczości) |

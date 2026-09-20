@@ -131,6 +131,13 @@ const DEFAULTS = {
   reflectionBorder: 0.45,
   /** maks. rozjazd kanałów RGB w px przy pełnej prędkości */
   aberration: 11,
+  /**
+   * Zakres rozjazdu, na którym wersja kanałowa przenika z czystą. Poniżej
+   * dolnego progu rysowana jest sama czysta; między progami kanałowa jest
+   * przykrywana czystą tym mocniej, im wolniej idzie ruch. Zrównanie obu
+   * wartości wyłącza przenikanie i przywraca skokowe przełączenie.
+   */
+  aberrationBlend: [0.4, 2.5],
   stiffness: 120,
   damping: 18.5,
   /**
@@ -661,7 +668,23 @@ export class CanvasCarousel {
       target.closePath();
     };
 
-    if (ab > 0.4) {
+    /*
+     * Ścieżka kanałowa różni się od zwykłej NIE TYLKO przesunięciem kanałów:
+     * każdy kanał przechodzi dodatkowe przepróbkowanie przy składaniu
+     * z przesunięciem ułamkowym, więc na schodkach krawędzi i szwach pasków
+     * zostawia własny ślad. Zmierzone przy przesunięciu 0,41 wobec 0,39 px:
+     * maksymalna różnica 330 z 765, 1,51 % pikseli powyżej 30. Samo obniżenie
+     * progu nic by nie dało — przeskok jest skokowy z natury.
+     *
+     * Dlatego na dolnym końcu zakresu wersja kanałowa jest PRZENIKANA wersją
+     * czystą: przy `ab` tuż nad progiem widać praktycznie samą czystą, a im
+     * szybszy ruch, tym bardziej wychodzi kanałowa. Dociąganie do pozycji
+     * przestaje kończyć się skokiem.
+     */
+    const [abLow, abHigh] = this.opt.aberrationBlend;
+    const abBlend = smoothstep(abLow, abHigh, ab);
+
+    if (ab > abLow) {
       // Aberracja chromatyczna: kafel rysowany trzy razy do bufora pomocniczego,
       // za każdym razem przemnożony przez czysty kanał (obcięcie do quada jest
       // konieczne — `multiply` na przezroczystym tle dałoby pełny kolor), a
@@ -670,6 +693,12 @@ export class CanvasCarousel {
       const fx = this.fxCtx;
       const dir = this.dir || 1;
       const channels = [['#ff0000', -ab * dir], ['#00ff00', 0], ['#0000ff', ab * dir]];
+      // Składanie obcięte do czworokąta kafla: bez tego przesunięte kanały
+      // malują prążki POZA jego krawędzią, których czysta wersja — obcięta —
+      // nie ma, i sam ten margines zostawiał skok przy przełączeniu ścieżek.
+      ctx.save();
+      quad(ctx);
+      ctx.clip();
       ctx.globalCompositeOperation = 'lighter';
       for (const [tint, offset] of channels) {
         fx.setTransform(1, 0, 0, 1, 0, 0);
@@ -687,6 +716,22 @@ export class CanvasCarousel {
         ctx.drawImage(this.fx, bx, by, bw, bh, bx + offset, by, bw, bh);
       }
       ctx.globalCompositeOperation = 'source-over';
+
+      if (abBlend < 1) {
+        // czysta wersja domieszana na wierzch — przy `abBlend` bliskim zeru
+        // przykrywa kanałową niemal całkowicie
+        fx.setTransform(1, 0, 0, 1, 0, 0);
+        fx.globalAlpha = 1;
+        fx.globalCompositeOperation = 'source-over';
+        fx.clearRect(bx, by, bw, bh);
+        // bez własnego obcięcia: czworokąt obcina już `ctx`, a dwa nałożone
+        // obcięcia zagęszczałyby antyaliasing i zostawiały szew na krawędzi
+        this._paintStrips(fx, tex.base, ang, 0);
+        ctx.globalAlpha = 1 - abBlend;
+        ctx.drawImage(this.fx, bx, by, bw, bh, bx, by, bw, bh);
+        ctx.globalAlpha = 1;
+      }
+      ctx.restore();
     } else {
       ctx.save();
       quad(ctx);
