@@ -1,0 +1,74 @@
+@use 'tokens' as *;
+
+.origin {
+  position: relative;
+  max-width: $max-wide;
+  margin: 0 auto;
+  padding: 0 $gutter;
+
+  // pas tła rozlany na całą szerokość okna
+  &__bleed {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 100vw;
+    transform: translateX(-50%);
+    background: $bg-deep;
+    pointer-events: none;
+  }
+
+  &__inner {
+    position: relative;
+    display: grid;
+    // zdjęcie dostaje szeroką kolumnę, tekst wąską — tak jak w mockupie
+    grid-template-columns: minmax(0, 1fr) minmax(min(100%, 380px), 0.42fr);
+    align-items: stretch;
+
+    @include below($bp-md) {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 28px;
+    }
+  }
+
+  &__figure {
+    position: relative;
+    padding: 40px 40px 0 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    img { width: 100%; height: auto; }
+
+    @include below($bp-md) { padding: 40px 0 0; }
+  }
+
+  &__copy {
+    padding: clamp(28px, 5vw, 80px) 0;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+
+    h2 {
+      font-size: clamp(26px, 2.6vw, 38px);
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      font-weight: 700;
+      text-wrap: balance;
+    }
+
+    p {
+      font-size: 14.5px;
+      line-height: 1.65;
+      color: $text-dim;
+      text-wrap: pretty;
+    }
+
+    .origin__sign {
+      margin-top: auto;
+      padding-top: 26px;
+      @include mono(10px, 0.16em);
+      color: $text-whisper;
+    }
+  }
+}

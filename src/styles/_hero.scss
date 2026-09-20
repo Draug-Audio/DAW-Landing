@@ -1,0 +1,84 @@
+@use 'tokens' as *;
+
+.hero {
+  position: relative;
+  max-width: $max-narrow;
+  margin: 0 auto;
+  padding: 96px $gutter 0;
+
+  &__halo {
+    position: absolute;
+    top: -120px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 900px;
+    height: 420px;
+    background: radial-gradient(ellipse at center, rgba(200, 255, 61, 0.09), transparent 70%);
+    pointer-events: none;
+  }
+
+  &__rings {
+    position: absolute;
+    top: -430px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2500px;
+    height: 1500px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  &__copy {
+    position: relative;
+    max-width: 960px;
+
+    .eyebrow { margin-bottom: 28px; }
+  }
+
+  &__headline {
+    position: relative;
+
+    h1 {
+      font-size: clamp(40px, 6.4vw, 88px);
+      line-height: 0.94;
+      letter-spacing: -0.035em;
+      font-weight: 800;
+      text-wrap: balance;
+    }
+  }
+
+  // Duże, wyblakłe logo wpuszczone w prawą krawędź nagłówka
+  &__ghost-logo {
+    position: absolute;
+    bottom: 0;
+    right: calc(-1 * (min(1384px, 100vw - 56px) - min(960px, 100vw - 56px)));
+    width: clamp(0px, calc(38vw - 360px), 440px);
+    height: auto;
+    filter: brightness(0) invert(1);
+    opacity: 0.9;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  &__lead {
+    margin-top: 28px;
+    max-width: 800px;
+    font-size: clamp(15px, 1.5vw, 19px);
+    line-height: 1.55;
+    color: $text-muted;
+    text-wrap: pretty;
+
+    strong { color: $lime; }
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 36px;
+  }
+
+  @include below($bp-sm) {
+    padding-top: 64px;
+  }
+}

@@ -1,0 +1,124 @@
+@use 'tokens' as *;
+
+.pricing {
+  max-width: $max-narrow;
+  margin: 0 auto;
+  padding: $section-gap $gutter 0;
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+
+    @include below($bp-lg) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @include below($bp-sm) { grid-template-columns: minmax(0, 1fr); }
+  }
+}
+
+.plan {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  background: $panel;
+  border: 1px solid $line;
+  border-radius: 3px;
+  padding: 30px 26px 34px;
+
+  &__kicker {
+    @include mono(10.5px, 0.2em);
+    color: $text-faint;
+  }
+
+  &__price {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  &__amount {
+    font-size: 40px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+
+  &__period {
+    font-family: $font-mono;
+    font-size: 11px;
+    color: $text-faint;
+  }
+
+  &__badge {
+    margin-left: auto;
+    align-self: center;
+    border: 1px solid $lime;
+    color: $lime;
+    @include mono(9px, 0.14em);
+    font-weight: 600;
+    padding: 5px 8px;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+
+  &__desc {
+    font-size: 13px;
+    line-height: 1.55;
+    color: $text-dim;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: auto;
+    font-size: 13px;
+    color: $text-muted;
+  }
+
+  &__flag {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: $lime;
+    color: $bg;
+    @include mono(9px, 0.16em);
+    font-weight: 600;
+    padding: 4px 9px;
+  }
+
+  &--featured {
+    background: $panel-alt;
+    border-color: $lime;
+
+    .plan__kicker { color: $lime; }
+  }
+}
+
+.maker {
+  max-width: $max-narrow;
+  margin: 0 auto;
+  padding: $section-gap $gutter 0;
+  text-align: center;
+
+  &__rule {
+    height: 1px;
+    border: 0;
+    background: $line;
+    margin: 0 0 48px;
+  }
+
+  .eyebrow { margin-bottom: 56px; }
+
+  &__logo {
+    margin: 0 auto;
+    width: 240px;
+    height: auto;
+  }
+
+  &__copyright {
+    margin-top: 56px;
+    @include mono(10px, 0.16em);
+    color: $text-dim;
+  }
+}

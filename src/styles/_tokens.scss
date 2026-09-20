@@ -1,0 +1,78 @@
+// ─────────────────────────────────────────────────────────────
+// Tokeny — 1:1 z paletą mockupu (Mockups/Draug Landing.html)
+// ─────────────────────────────────────────────────────────────
+
+// Tła
+$bg:            #080908;
+$bg-deep:       #050605;
+$panel:         #0c0e0c;
+$panel-hover:   #101310;
+$panel-alt:     #0d100c;
+
+// Tekst
+$text:          #e8ece8;
+$text-soft:     #c9cfc9;
+$text-muted:    #a8afa8;
+$text-dim:      #8b918b;
+$text-faint:    #7d847d;
+$text-ghost:    #5a615a;
+$text-whisper:  #4e544e;
+
+// Akcenty
+$lime:          #c8ff3d;
+$lime-soft:     #dcff7a;
+$lime-hover:    #e2ff92;
+$red:           #ff3b30;
+
+// Linie / obrysy
+$line:          #1e211e;
+$line-strong:   #232623;
+$line-bright:   #2c302c;
+$line-plugin:   #1a1d1a;
+$line-agent:    #2a3320;
+
+// Pierścienie dekoracyjne
+$ring-1:        #1c2118;
+$ring-2:        #252c1f;
+$ring-3:        #3b4a25;
+$ring-4:        #161a14;
+$ring-5:        #1a2016;
+$ring-6:        #14170f;
+$ring-7:        #101208;
+
+// Typografia
+$font-sans: Archivo, system-ui, -apple-system, 'Segoe UI', sans-serif;
+$font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+// Rytm
+$gutter:        28px;
+$section-gap:   104px;
+$max-narrow:    1440px;
+$max-wide:      1760px;
+
+// Breakpointy
+$bp-lg: 1100px;
+$bp-md: 860px;
+$bp-sm: 620px;
+
+@mixin below($bp) {
+  @media (max-width: $bp) { @content; }
+}
+
+@mixin mono($size: 11px, $tracking: 0.08em) {
+  font-family: $font-mono;
+  font-size: $size;
+  letter-spacing: $tracking;
+  text-transform: uppercase;
+}
+
+:root {
+  --bg: #{$bg};
+  --panel: #{$panel};
+  --lime: #{$lime};
+  --text: #{$text};
+  --line: #{$line};
+  // wykorzystywane przez silnik canvasu (src/slider)
+  --slider-lime: #{$lime};
+  --slider-bg: #{$bg};
+}

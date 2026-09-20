@@ -1,0 +1,195 @@
+@use 'tokens' as *;
+
+// ─────────────────────────────────────────────────────────────
+// Showcase — scena canvas + zsynchronizowany slider opisów
+// Wartości --sc-* są nadpisywane z JS (src/slider) per klatkę.
+// ─────────────────────────────────────────────────────────────
+
+.showcase {
+  --sc-bleed: clamp(0px, 5.5vw, 120px);
+  --sc-energy: 0;   // 0 = spoczynek, 1 = pełny ruch (ustawiane z JS)
+
+  position: relative;
+  margin-top: 56px;
+
+  &__stage {
+    position: relative;
+    width: calc(100% + 2 * var(--sc-bleed));
+    margin-inline: calc(-1 * var(--sc-bleed));
+    aspect-ratio: 2576 / 1041;
+    touch-action: pan-y;
+    cursor: grab;
+
+    &:active { cursor: grabbing; }
+  }
+
+  &__canvas {
+    width: 100%;
+    height: 100%;
+    // poświata, odbicie i winieta powstają wewnątrz canvasu — żadnych
+    // filtrów CSS na animowanym elemencie
+  }
+
+  &__fallback {
+    position: absolute;
+    inset: 8% 0;
+    width: 100%;
+    height: auto;
+    border: 1px solid $line-strong;
+    border-radius: 4px;
+  }
+
+  &__arrow {
+    position: absolute;
+    z-index: 3;
+    top: 50%;
+    transform: translateY(-50%);
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid $line-bright;
+    border-radius: 2px;
+    background: rgba(8, 9, 8, 0.8);
+    backdrop-filter: blur(6px);
+    color: $text;
+    cursor: pointer;
+    transition: border-color 0.18s ease, color 0.18s ease, background-color 0.18s ease;
+
+    &:hover {
+      border-color: $lime;
+      color: $lime;
+      background: rgba(8, 9, 8, 0.95);
+    }
+
+    &--prev { left: calc(var(--sc-bleed) * -1 + 12px); }
+    &--next { right: calc(var(--sc-bleed) * -1 + 12px); }
+
+    @include below($bp-md) {
+      &--prev { left: 8px; }
+      &--next { right: 8px; }
+    }
+  }
+
+  &__meta {
+    display: flex;
+    gap: 28px;
+    align-items: flex-start;
+    margin-top: 22px;
+
+    @include below($bp-sm) {
+      flex-direction: column;
+      gap: 18px;
+    }
+  }
+
+  &__nav {
+    margin-left: auto;
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    padding-top: 4px;
+
+    @include below($bp-sm) {
+      margin-left: 0;
+      align-items: flex-start;
+      width: 100%;
+    }
+  }
+
+  &__dots {
+    display: flex;
+    gap: 7px;
+  }
+
+  &__progress {
+    width: 96px;
+    height: 1px;
+    background: $line-strong;
+    overflow: hidden;
+
+    span {
+      display: block;
+      height: 100%;
+      width: 100%;
+      background: $lime;
+      transform: scaleX(0);
+      transform-origin: left center;
+      opacity: 0.55;
+    }
+  }
+}
+
+// ── kropki nawigacji: pasek z wypełnieniem sterowanym z JS ──
+.dot {
+  position: relative;
+  width: 22px;
+  height: 14px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+
+  &__track {
+    position: relative;
+    width: 100%;
+    height: 3px;
+    background: $line-bright;
+    overflow: hidden;
+  }
+
+  &__fill {
+    position: absolute;
+    inset: 0;
+    background: $lime;
+    transform: scaleX(var(--dot-fill, 0));
+    transform-origin: left center;
+  }
+
+  &:hover &__track { background: $text-ghost; }
+}
+
+// ── zsynchronizowany slider opisów (cross-fade) ──
+.captions {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.caption {
+  grid-area: 1 / 1;
+  min-width: 0;
+  // opacity / transform ustawiane per klatkę z JS — zero transition,
+  // dzięki czemu fade jest idealnie zsynchronizowany z obrotem canvasu
+  opacity: var(--cap-opacity, 0);
+  transform: translate3d(var(--cap-x, 0), var(--cap-y, 0), 0);
+  filter: blur(var(--cap-blur, 0));
+  will-change: opacity, transform;
+  pointer-events: none;
+
+  &[data-active='true'] { pointer-events: auto; }
+
+  &__title {
+    @include mono(11px, 0.18em);
+    color: $lime;
+    margin-bottom: 8px;
+  }
+
+  &__desc {
+    font-size: 14px;
+    line-height: 1.6;
+    color: $text-dim;
+    max-width: 62ch;
+    text-wrap: pretty;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caption { filter: none; }
+}

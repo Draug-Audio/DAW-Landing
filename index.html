@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Draug Audio Workstation — DAW zbudowany dla agentów AI</title>
+  <meta name="description" content="Draug Audio Workstation — DAW zbudowany od podstaw dla agentów AI. Drzewiasta historia zmian, nodowy routing, VST3/CLAP/AU i agent, który przyspiesza pracę zamiast ją zastępować.">
+  <meta name="theme-color" content="#080908">
+  <link rel="icon" href="./assets/creator-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <link rel="preload" as="image" href="./assets/dau-screen.png">
+</head>
+<body>
+
+<a class="skip-link" href="#tresc">Przejdź do treści</a>
+
+<header class="site-header">
+  <img class="site-header__logo" src="./assets/dau-logo.png" alt="DAU" width="2994" height="934">
+  <span class="site-header__wordmark">Draug Audio Workstation</span>
+  <nav class="site-nav" aria-label="Główna">
+    <a href="#funkcje">Funkcje</a>
+    <a href="#agent">Agent</a>
+    <a href="#cennik">Cennik</a>
+  </nav>
+  <a class="btn btn--primary btn--sm" href="#cennik">Zdobądź DAW</a>
+</header>
+
+<main id="tresc">
+
+  <!-- ─────────────────────────── HERO ─────────────────────────── -->
+  <section class="hero">
+    <div class="hero__halo" aria-hidden="true"></div>
+    <div class="hero__rings" aria-hidden="true">
+      <svg viewBox="-150 -250 2500 1500" width="2500" height="1500" fill="none">
+        <circle cx="1100" cy="470" r="520" stroke="#1c2118" stroke-width="1"></circle>
+        <circle cx="1100" cy="470" r="360" stroke="#232a1d" stroke-width="1"></circle>
+        <circle cx="1100" cy="470" r="700" stroke="#161a14" stroke-width="1"></circle>
+        <circle cx="240" cy="300" r="300" stroke="#1c2118" stroke-width="1"></circle>
+        <circle cx="240" cy="300" r="190" stroke="#252c1f" stroke-width="1"></circle>
+        <circle cx="1960" cy="620" r="340" stroke="#1c2118" stroke-width="1"></circle>
+        <circle cx="1960" cy="620" r="210" stroke="#252c1f" stroke-width="1"></circle>
+        <circle cx="1960" cy="620" r="84" stroke="#3b4a25" stroke-width="1"></circle>
+        <circle cx="240" cy="300" r="70" stroke="#3b4a25" stroke-width="1"></circle>
+      </svg>
+    </div>
+
+    <div class="hero__copy">
+      <p class="eyebrow">Życie należy sobie ułatwiać</p>
+      <div class="hero__headline">
+        <h1>Redefinicja<br>produkcji <span class="accent">muzycznej</span>.</h1>
+        <img class="hero__ghost-logo" src="./assets/dau-logo.png" alt="" aria-hidden="true">
+      </div>
+      <p class="hero__lead"><strong>Draug Audio Workstation</strong> jest zbudowany od podstaw jako DAW dla agentów AI. To nie jest kolejna zabawka do generowania utworów lecz narzędzie do świadomej pracy w którym AI nie jest czarodziejską różdżką, lecz odgrywa rolę asystenta podsuwającego narzędzia specjaliście aby ten mógł się w pełni skupić na procesie twórczym.</p>
+      <div class="hero__actions">
+        <a class="btn btn--primary" href="#cennik">Zdobądź DAW</a>
+      </div>
+    </div>
+
+    <!-- Canvas showcase — slider 3D + zsynchronizowane opisy -->
+    <div class="showcase" data-showcase>
+      <div class="showcase__stage">
+        <canvas class="showcase__canvas" data-showcase-canvas></canvas>
+        <noscript><img class="showcase__fallback" src="./assets/dau-screen.png" alt="Interfejs Draug Audio Workstation"></noscript>
+        <p class="sr-only" aria-live="polite" data-showcase-live></p>
+
+        <button class="showcase__arrow showcase__arrow--prev" type="button" data-showcase-prev aria-label="Poprzedni widok">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 4 7 12l8 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square"/></svg>
+        </button>
+        <button class="showcase__arrow showcase__arrow--next" type="button" data-showcase-next aria-label="Następny widok">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="m9 4 8 8-8 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square"/></svg>
+        </button>
+      </div>
+
+      <div class="showcase__meta">
+        <div class="captions" data-captions></div>
+        <div class="showcase__nav">
+          <div class="showcase__dots" data-showcase-dots></div>
+          <div class="showcase__progress" aria-hidden="true"><span data-showcase-progress></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────── FUNKCJE ─────────────────────────── -->
+  <section id="funkcje" class="features">
+    <div class="section-head">
+      <p class="eyebrow">Co wyróżnia DAW</p>
+      <h2>Kluczowe funkcje</h2>
+    </div>
+    <div class="features__grid">
+      <article class="feature">
+        <p class="feature__no">01</p>
+        <h3>Architektura agent-first</h3>
+        <p>Każda operacja dostępna z interfejsu jest dostępna również dla agenta. Agent <strong>nie służy do przetwarzania ani generowania dźwięku</strong>, służy wyłącznie do przyspieszenia pracy na dostępnych zasobach i pluginach.</p>
+      </article>
+      <article class="feature">
+        <p class="feature__no">02</p>
+        <h3>Drzewiasta historia zmian</h3>
+        <p>Historia o strukturze drzewa: równoległe warianty pracy nad dokumentem zapisują się obok siebie i wracasz do każdego z nich. Nie musisz zapisywać projektu, zapis jest natychmiastowy i automatyczny. <strong>Żadna zmiana nie jest gubiona.</strong></p>
+      </article>
+      <article class="feature">
+        <p class="feature__no">03</p>
+        <h3>Nodowy system routingu</h3>
+        <p>Najprostszy i najczytelniejszy system sidechain. Banalne podpinanie automatyzacji pod wiele ścieżek i parametrów. <strong>Klarowny obraz w dużych, złożonych projektach.</strong></p>
+      </article>
+      <article class="feature">
+        <p class="feature__no">04</p>
+        <h3>Responsywność</h3>
+        <p><strong>Jest to jedyny DAW na rynku z interfejsem zbudowanym według współczesnych standardów przyjaznych dla użytkownika.</strong> Zakładki przełączane jak skille w LoLu, snapowanie wszędzie i do wszystkiego, płynne przesuwanie bloków, skróty klawiszowe, które znasz z innych aplikacji.</p>
+      </article>
+      <article class="feature">
+        <p class="feature__no">05</p>
+        <h3>VST3, CLAP, AU</h3>
+        <p>Twoje wtyczki działają od pierwszego uruchomienia. Każdy parametr wtyczki jest widoczny dla agenta i automatyzacji.</p>
+      </article>
+      <article class="feature">
+        <p class="feature__no">06</p>
+        <h3>Wydajność</h3>
+        <p>Ten DAW jest zoptymalizowany do granic możliwości, waży mało, instaluje się w sekundę, będzie działał płynnie na każdym sprzęcie ale co najważniejsze, potrafi wykorzystać potencjał mocniejszych maszyn. <strong>Koniec z renderowaniem ciężkich ścieżek</strong> — DAW zadba o to abyś nigdy nie musiał tego robić.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────── AGENT ─────────────────────────── -->
+  <section id="agent" class="agent">
+    <div class="agent__orbits" aria-hidden="true">
+      <div class="orbit orbit--tl"><div class="orbit__mid"><div class="orbit__core"></div></div></div>
+      <div class="orbit-ring orbit-ring--glow"></div>
+      <div class="orbit-ring orbit-ring--wide"></div>
+      <div class="orbit-ring orbit-ring--widest"></div>
+      <div class="orbit orbit--br"><div class="orbit__mid"><div class="orbit__core"></div></div></div>
+    </div>
+
+    <div class="agent__inner">
+      <div class="agent__copy">
+        <p class="eyebrow">Symbioza</p>
+        <h2>Współpraca z agentem</h2>
+        <p class="agent__lead">Praca dzieli się na kroki: agent przygotowuje i porządkuje, Ty decydujesz o brzmieniu i kierunku. Każdy krok agenta widzisz w historii, możesz go cofnąć, zmienić parametr albo przejąć kontrolę w połowie operacji.</p>
+        <div class="agent__legend">
+          <span class="legend legend--user"><i></i>Użytkownik</span>
+          <span class="legend legend--agent"><i></i>Agent</span>
+        </div>
+      </div>
+
+      <ol class="timeline">
+        <li class="timeline__lead-in" aria-hidden="true"><span></span></li>
+        <li class="timeline__row timeline__row--agent">
+          <div class="timeline__spine"><i></i></div>
+          <div class="timeline__card">
+            <p class="timeline__label">01 · Agent</p>
+            <p class="timeline__text">Przygotowanie szablonu pod konkretne zastosowanie, nazwanie kanałów, wybór podstawowych wtyczek, podstawowy sidechain.</p>
+          </div>
+        </li>
+        <li class="timeline__row timeline__row--user">
+          <div class="timeline__card">
+            <p class="timeline__label">02 · Użytkownik</p>
+            <p class="timeline__text">Użytkownik pisze linię melodyczną.</p>
+          </div>
+          <div class="timeline__spine"><i></i></div>
+        </li>
+        <li class="timeline__row timeline__row--agent">
+          <div class="timeline__spine"><i></i></div>
+          <div class="timeline__card">
+            <p class="timeline__label">03 · Agent</p>
+            <p class="timeline__text">Agent pisze podstawową linię basu i akordy, ustawia odpowiednią skalę, pisze podstawową perkusję.</p>
+          </div>
+        </li>
+        <li class="timeline__row timeline__row--user">
+          <div class="timeline__card">
+            <p class="timeline__label">04 · Użytkownik</p>
+            <p class="timeline__text">Użytkownik tworzy sound design.</p>
+          </div>
+          <div class="timeline__spine"><i></i></div>
+        </li>
+        <li class="timeline__row timeline__row--agent">
+          <div class="timeline__spine"><i></i></div>
+          <div class="timeline__card">
+            <p class="timeline__label">05 · Agent</p>
+            <p class="timeline__text">Agent tworzy kilka roboczych patternów aby przetestować brzmienie.</p>
+          </div>
+        </li>
+        <li class="timeline__row timeline__row--user">
+          <div class="timeline__card">
+            <p class="timeline__label">06 · Użytkownik</p>
+            <p class="timeline__text">Użytkownik tworzy aranżację.</p>
+          </div>
+          <div class="timeline__spine"><i></i></div>
+        </li>
+        <li class="timeline__row timeline__row--agent">
+          <div class="timeline__spine"><i></i></div>
+          <div class="timeline__card">
+            <p class="timeline__label">07 · Agent</p>
+            <p class="timeline__text">Agent tworzy podstawowy miks i podsuwa użytkownikowi makra, które są połączone z automatyzacjami wtyczek.</p>
+          </div>
+        </li>
+        <li class="timeline__row timeline__row--user">
+          <div class="timeline__card">
+            <p class="timeline__label">08 · Użytkownik</p>
+            <p class="timeline__text">Użytkownik szlifuje miks i master.</p>
+          </div>
+          <div class="timeline__spine"><i></i></div>
+        </li>
+        <li class="timeline__tail" aria-hidden="true"><span></span></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────── WTYCZKI ─────────────────────────── -->
+  <section id="wtyczki" class="plugins">
+    <div class="section-head section-head--wide">
+      <p class="eyebrow">Zestaw w komplecie</p>
+      <h2>Domyślne wtyczki</h2>
+      <p class="section-head__lead">Każda wtyczka jest w pełni dostępna dla agenta — ten sam zestaw parametrów, który widzisz w interfejsie, agent potrafi ustawić i zautomatyzować.</p>
+    </div>
+    <div class="plugins__grid">
+      <img src="./assets/plugin-eq.png" alt="Equalizer — wtyczka Draug Audio Workstation" loading="lazy" decoding="async">
+      <img src="./assets/plugin-compressor.png" alt="Kompresor — wtyczka Draug Audio Workstation" loading="lazy" decoding="async">
+      <img src="./assets/plugin-reverb.png" alt="Pogłos — wtyczka Draug Audio Workstation" loading="lazy" decoding="async">
+      <img src="./assets/plugin-delay.png" alt="Echo — wtyczka Draug Audio Workstation" loading="lazy" decoding="async">
+      <img src="./assets/plugin-distortion.png" alt="Przester — wtyczka Draug Audio Workstation" loading="lazy" decoding="async">
+      <img src="./assets/plugin-gate.png" alt="Bramka szumów — wtyczka Draug Audio Workstation" loading="lazy" decoding="async">
+    </div>
+  </section>
+
+  <!-- ─────────────────────────── GENEZA ─────────────────────────── -->
+  <section id="geneza" class="origin">
+    <div class="origin__bleed" aria-hidden="true"></div>
+    <div class="origin__inner">
+      <figure class="origin__figure">
+        <img src="./assets/producer.webp" alt="Producent przy stanowisku z uruchomionym Draug Audio Workstation" loading="lazy" decoding="async">
+      </figure>
+      <div class="origin__copy">
+        <p class="eyebrow">Jak powstał DAW</p>
+        <h2>Projekt stworzony przez jedną osobę</h2>
+        <p>Jako programista z dziesięcioletnim doświadczeniem, który naturalnie wszedł w epokę pracy z AI szybko wykształciłem nowe metody pracy z tym narzędziem, jakość i szybkość mojej pracy wzrosła do poziomu o jakim nie śniłem i chciałem to samo osiągnąć w dziedzinie muzyki, niestety, żaden istniejący DAW się do tego nie nadawał a te, którym było do tego najbliżej były bardzo toporne. Padła więc decyzja, że robię własny program i w miesiąc osiągnąłem efekt.</p>
+        <p>Zamiast doklejać AI do istniejącego DAW, silnik i model projektu napisałem od zera tak, aby każda operacja była dostępna zarówno z interfejsu, jak i dla agenta. Reszta to konsekwencja tej jednej decyzji.</p>
+        <p class="origin__sign">Draug Audio · 2026</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────── CENNIK ─────────────────────────── -->
+  <section id="cennik" class="pricing">
+    <div class="section-head">
+      <p class="eyebrow">Wybierz ciemną stronę mocy</p>
+      <h2>Twórz szybko i łatwo niczym demon</h2>
+      <p class="section-head__lead section-head__lead--bright">Za drobną opłatą...</p>
+    </div>
+    <div class="pricing__grid">
+      <article class="plan">
+        <p class="plan__kicker">Subskrypcja miesięczna</p>
+        <p class="plan__price"><span class="plan__amount">66,6 zł</span><span class="plan__period">/ mies.</span><span class="plan__badge">Pierwszy miesiąc gratis</span></p>
+        <p class="plan__desc">Pełny DAW bez ograniczeń. Rezygnujesz kiedy chcesz.</p>
+        <ul class="plan__list">
+          <li>Wszystkie funkcje</li>
+          <li>Aktualizacje w trakcie subskrypcji</li>
+          <li>Agent bez limitu operacji</li>
+        </ul>
+        <a class="btn btn--ghost" href="#">Wybierz plan</a>
+      </article>
+
+      <article class="plan plan--featured">
+        <p class="plan__flag">Najlepszy wybór</p>
+        <p class="plan__kicker">Subskrypcja roczna</p>
+        <p class="plan__price"><span class="plan__amount">666 zł</span><span class="plan__period">/ rok</span></p>
+        <p class="plan__desc">Dwa miesiące taniej niż płacąc co miesiąc.</p>
+        <ul class="plan__list">
+          <li>Wszystkie funkcje</li>
+          <li>Aktualizacje w trakcie subskrypcji</li>
+          <li>Agent bez limitu operacji</li>
+        </ul>
+        <a class="btn btn--primary" href="#">Wybierz plan</a>
+      </article>
+
+      <article class="plan">
+        <p class="plan__kicker">Oferta indywidualna</p>
+        <p class="plan__price"><span class="plan__amount">Wycena</span></p>
+        <p class="plan__desc">Studia, uczelnie i zespoły. Warunki ustalamy pod Twoje zastosowanie.</p>
+        <ul class="plan__list">
+          <li>Licencje wielostanowiskowe</li>
+          <li>Agent uruchamiany lokalnie</li>
+          <li>Wdrożenie i wsparcie</li>
+        </ul>
+        <a class="btn btn--ghost" href="#">Napisz do nas</a>
+      </article>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────── STOPKA ─────────────────────────── -->
+  <section id="stworzone-przez" class="maker">
+    <hr class="maker__rule">
+    <p class="eyebrow">Stworzone przez</p>
+    <img class="maker__logo" src="./assets/creator-logo.png" alt="Logo twórcy" loading="lazy" decoding="async">
+    <p class="maker__copyright">Draug Audio © 2026</p>
+  </section>
+
+</main>
+
+<div class="page-tail" aria-hidden="true"></div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
