@@ -83,6 +83,15 @@ const DEFAULTS = {
   gridFontWeight: 100,
   /** rozmiar czcionki w pikselach; podawany wprost, nie jako ułamek kafelka */
   gridFontSize: 16,
+  /**
+   * Minimalna grubość kreski glifu, w pikselach. Canvas nie hintuje, więc
+   * przy wadze 100 i rozmiarze 16 px kreska jest podpikselowa i cała żyje
+   * w antyaliasingu. Obrys dorysowany pod wypełnieniem wymusza pełny piksel,
+   * nie zmieniając kroju: przy 0,3 wychodzi 0,43 pikseli pełnych i alfa 255,
+   * przy tuszu 465 — mniej niż waga 400 bez obrysu (488) przy tym samym
+   * udziale pikseli pełnych.
+   */
+  gridGlyphStroke: 0.3,
   gridChars: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split(''),
   /** obrotów pasa na sekundę */
   sweepSpeed: 0.15,
@@ -155,7 +164,11 @@ export class CanvasCarousel {
       this.opt.gridChars,
       this.opt.gridCell - this.opt.gridGap,
       this.opt.gridFont,
-      { weight: this.opt.gridFontWeight, fontSize: this.opt.gridFontSize },
+      {
+        weight: this.opt.gridFontWeight,
+        fontSize: this.opt.gridFontSize,
+        minStroke: this.opt.gridGlyphStroke,
+      },
     );
 
     this._frame = this._frame.bind(this);

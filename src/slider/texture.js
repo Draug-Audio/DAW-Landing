@@ -53,9 +53,14 @@ export function makeNoiseTile(size = 168, strength = 26) {
  * @param {string[]} chars
  * @param {number} size  bok kafelka w pikselach (mapowanie 1:1 z nakładką)
  * @param {string} font  rodzina czcionki; fallback na monospace
- * @param {object} [opts] kolor glifu, waga ze zmiennej osi i rozmiar czcionki
+ * @param {object} [opts] kolor, waga ze zmiennej osi, rozmiar i minimalna kreska
  */
-export function makeGlyphAtlas(chars, size, font, { color = '#c8ff3d', weight = 600, fontSize } = {}) {
+export function makeGlyphAtlas(
+  chars,
+  size,
+  font,
+  { color = '#c8ff3d', weight = 600, fontSize, minStroke = 0 } = {},
+) {
   const canvas = makeCanvas(size * chars.length, size);
   const ctx = canvas.getContext('2d');
   // czcionka jest zmienna (oś wagi 100–900); rozmiar podawany wprost, bo przy
@@ -64,7 +69,24 @@ export function makeGlyphAtlas(chars, size, font, { color = '#c8ff3d', weight = 
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = color;
-  chars.forEach((ch, i) => ctx.fillText(ch, i * size + size / 2, size / 2 + size * 0.02));
+  ctx.strokeStyle = color;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
+  chars.forEach((ch, i) => {
+    // Canvas nie hintuje, więc samo wyrównanie pozycji do całych pikseli nic
+    // nie da — kreska 0,5 px zostaje 0,5 px, gdziekolwiek trafi (zmierzone:
+    // identyczny udział pikseli pełnych i ta sama maksymalna alfa). Pełny
+    // piksel wymusza dopiero obrys pod wypełnieniem. Całe piksele i tak
+    // ustawiamy, bo nic nie kosztują.
+    const x = Math.round(i * size + size / 2);
+    const y = Math.round(size / 2);
+    if (minStroke > 0) {
+      ctx.lineWidth = minStroke;
+      ctx.strokeText(ch, x, y);
+    }
+    ctx.fillText(ch, x, y);
+  });
   return canvas;
 }
 

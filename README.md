@@ -87,11 +87,23 @@ kafelka) i znak — losowa litera albo cyfra z
 `runescript-monospace-variable.ttf`. Czcionka jest zmienna, więc waga idzie
 z osi (100, czyli jej dolny kraniec), a rozmiar podawany jest wprost
 (`gridFontSize`, 16 px), nie jako ułamek kafelka — przy tak cienkich wagach to
-rozmiar decyduje, czy kreska zmieści się w pikselu. Przy 16 px i wadze 100
-pełnych jest 15 % pikseli glifu, a alfa dochodzi do 241: kreska jest
-podpikselowa i runy są celowo delikatne. Grubszy rysunek wymagałby albo
-większego rozmiaru (przy 23 px wychodzi 32 % i pełne 255), albo wyższej wagi.
-Ale `FontFace` musi dostać zakres `weight: '100 900'`, inaczej
+rozmiar decyduje, czy kreska zmieści się w pikselu. Przy 16 px i wadze 100 kreska jest
+podpikselowa. **Canvas nie hintuje**, więc samo wyrównanie pozycji do całych
+pikseli nic nie daje — zmierzone: identyczny udział pikseli pełnych (0,147)
+i ta sama maksymalna alfa (241) dla pozycji ułamkowej, całkowitej i przy
+`textRendering: geometricPrecision`. Pełny piksel wymusza dopiero obrys
+dorysowany pod wypełnieniem (`gridGlyphStroke`):
+
+| minimalna kreska | piksele pełne | maks. alfa | tusz |
+| --- | --- | --- | --- |
+| brak | 0,147 | 241 | 300 |
+| 0,2 px | 0,356 | 253 | 426 |
+| **0,3 px** | **0,426** | **255** | **465** |
+| 0,4 px | 0,484 | 255 | 497 |
+| waga 400 bez obrysu | 0,431 | 255 | 488 |
+
+0,3 px trafia w punkt: ten sam udział pikseli pełnych co waga 400, ale mniej
+tuszu — czyli krój zostaje cienki, a kreska ma pełny piksel. Ale `FontFace` musi dostać zakres `weight: '100 900'`, inaczej
 zgłasza się jako statyczny krój 400, przeglądarka w ogóle nie sięga po oś
 i każda waga poniżej 600 renderuje się identycznie (a powyżej — syntetycznie
 pogrubia). Sprawdzenie: ilość „tuszu” w atlasie musi rosnąć monotonicznie
