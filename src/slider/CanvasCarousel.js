@@ -6,6 +6,17 @@ const DEG = Math.PI / 180;
 /** kolor znaków i obrysu kafelków siatki */
 const GRID_INK = 'rgb(200,255,61)';
 
+/**
+ * Profil jasności pasa: pozycja w pasie → krycie. Płaski rdzeń i łagodne
+ * zbocza; stopni jest więcej niż trzy, bo gradient interpoluje liniowo,
+ * a chodzi o krzywą zbliżoną do smoothstep.
+ */
+const BEAM_PROFILE = [
+  [0, 0], [0.12, 0.08], [0.25, 0.35], [0.38, 0.8],
+  [0.44, 1], [0.56, 1],
+  [0.62, 0.8], [0.75, 0.35], [0.88, 0.08], [1, 0],
+];
+
 const DEFAULTS = {
   /** Awaryjna szerokość kafla, gdy nie podano elementu odniesienia.
    *  Normalnie przedni kafel ma dokładnie szerokość `frame` (kontenera). */
@@ -737,6 +748,13 @@ export class CanvasCarousel {
    * zależy od jasności kafelka: im jaśniejszy, tym wcześniej — wyprzedzenie
    * sięga połowy szerokości pasa, więc jaśniejsze kafelki przeskakują jeszcze
    * zanim światło do nich dojdzie.
+   *
+   * Treść kafelka jest skokowa, ale ODSŁANIANIE jest płynne. Kafelki rysowane
+   * są w pełnej własnej jasności, a dopiero na końcu przycinane gradientem
+   * pasa przez `destination-in` — maska działa per piksel, więc światło
+   * przechodzi przez kafelek, zamiast zapalać cały jego wiersz naraz.
+   * Liczenie spadku jasności per kafelek dawało schodkowe pojawianie się
+   * z przenikaniem, a nie latarkę.
    */
   _buildOverlay(energy, reduced) {
     const oc = this.overlayCtx;
@@ -763,6 +781,11 @@ export class CanvasCarousel {
       const swaps = opt.gridSwaps;
       const spacing = half * opt.gridSwapSpacing;
 
+      const bandTop = sweep - half;
+      const bandBottom = sweep + half;
+
+      // Zakres wierszy jest szerszy od samego pasa, bo wymiany znaków wyprzedzają
+      // światło. Rysujemy jednak tylko te wiersze, które pas realnie obejmuje.
       const first = Math.max(0, Math.floor((sweep - half * 1.6) / cell));
       const last = Math.min(grid.rows - 1, Math.ceil((sweep + half * 1.6) / cell));
 
@@ -775,6 +798,7 @@ export class CanvasCarousel {
       for (let r = first; r <= last; r += 1) {
         const y = r * cell;
         const mid = y + square / 2;
+        const lit = y + square >= bandTop && y <= bandBottom;
         for (let col = 0; col < grid.cols; col += 1) {
           const i = r * grid.cols + col;
           const bright = grid.bright[i];
@@ -792,9 +816,9 @@ export class CanvasCarousel {
             grid.step[i] += 1;
           }
 
-          const t = Math.abs(mid - sweep) / half;
-          if (t >= 1) continue;
-          const a = bright * peak * (t < 0.12 ? 1 : smoothstep(1, 0.12, t));
+          if (!lit) continue;
+          // pełna własna jasność kafelka — spadek od pasa nakłada maska niżej
+          const a = bright * peak;
           if (a < 0.012) continue;
 
           const x = col * cell;
@@ -816,6 +840,16 @@ export class CanvasCarousel {
         }
       }
       oc.globalAlpha = 1;
+
+      // Płynne odsłanianie: gradient pasa jako maska alfy, per piksel.
+      // Poza prostokątem pasa `destination-in` kasuje wszystko, więc kafelki
+      // narysowane z wyprzedzeniem na potrzeby wymiany znaków znikają same.
+      oc.globalCompositeOperation = 'destination-in';
+      const beam = oc.createLinearGradient(0, bandTop, 0, bandBottom);
+      for (const [stop, level] of BEAM_PROFILE) beam.addColorStop(stop, `rgba(0,0,0,${level})`);
+      oc.fillStyle = beam;
+      oc.fillRect(0, bandTop, w, half * 2);
+      oc.globalCompositeOperation = 'source-over';
     }
 
     if (!reduced && this.noisePatterns) {

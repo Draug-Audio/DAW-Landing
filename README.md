@@ -110,6 +110,19 @@ połowy szerokości pasa, więc jaśniejsze kafelki przeskakują, zanim światł
 nich dojdzie. Druga wymiana idzie w stałym odstępie (`gridSwapSpacing`) od
 pierwszej, więc dziedziczy to samo wyprzedzenie.
 
+**Treść kafelka jest skokowa, ale odsłanianie płynne.** Kafelki rysowane są
+w pełnej własnej jasności, a dopiero na końcu przycinane gradientem pasa przez
+`destination-in` — maska działa per piksel, więc światło przechodzi przez
+kafelek, zamiast zapalać cały jego wiersz naraz. Liczenie spadku jasności per
+kafelek (z jego środka) dawało schodkowe pojawianie się z przenikaniem, a nie
+latarkę.
+
+Zmierzone przy górnej krawędzi pasa wypadającej w połowie wiersza kafelków
+(288 – 320 px): wkład kafelków rośnie **0 → 0,21 → 0,54 → 0,69 → 0,93 → 4,44**
+w obrębie jednego wiersza. A na stałej wysokości, gdy pas przez nią przechodzi:
+**0 → 0,76 → 2,37 → 5,30 → 9,01 → 13,76 → 18,45 → 19,47 → 19,15 → 14,32** —
+gładki narost, plateau w rdzeniu, gładki spadek.
+
 Zmierzona korelacja jasności z wyprzedzeniem pierwszej wymiany na wierszu
 43 kafelków: **0,9983**; najciemniejsze (0,30) przeskakują przy wyprzedzeniu
 0,27 szerokości pasa, najjaśniejsze (0,99) przy 0,95. Odstęp obu wymian wychodzi
