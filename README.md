@@ -55,6 +55,19 @@ usuwa: w spoczynku żaden kafel nie przekracza skali 1,000 (zmierzone dla
 wszystkich pozycji). Powyżej 1 skala wychodzi wyłącznie w trakcie obrotu, i to
 jest poprawne — obracający się panel naprawdę zbliża jedną krawędź do kamery.
 
+**W trakcie przejścia para biorąca w nim udział dostaje dodatkowe
+rozsunięcie kątowe** (`edgeMeet`), zerowe w spoczynku. Bez niego w połowie
+drogi kafle nachodzą na siebie pasem szerokości ok. 0,15 szerokości kafla i
+przenikają się; z nim mijają się, a dokładnie w połowie ich wewnętrzne
+krawędzie schodzą się w jednym punkcie 3D — zmierzone nałożenie w połowie
+wynosi 0. Kąt rozsunięcia nie jest wpisany na sztywno: silnik rozwiązuje
+bisekcją `radius · sin(φ) = (cardW / 2) · cos(tilt · φ)`, czyli szuka kąta,
+przy którym wewnętrzna krawędź trafia w oś sceny (przy ośmiu slajdach wychodzi
+3,9°). Garb ma kształt `sign(rel) · sin²(π · rel)`, a nie `sin(π · rel)`, bo na
+granicy `|rel| = 1` musi zerować się także pochodna — inaczej kafel szarpie
+w momencie wyjścia z pary (zmierzona druga różnica kąta: 0,0077° dla `sin²`
+wobec 0,1225° dla `sin`).
+
 Wszystko, co dotyczy pojedynczego kafla, idzie za jego rzutem: poświata i
 świetlista podłoga biorą jego rzutowane położenie i wymiary, a **odbicie jest
 lustrzane względem własnej dolnej krawędzi kafla** — liczone per pasek, bo
@@ -83,8 +96,12 @@ klawisze ←/→, poziomy scroll gładzika, autoodtwarzanie z paskiem postępu.
 Pętla stoi, gdy sekcja jest poza ekranem albo karta jest w tle.
 `prefers-reduced-motion` wyłącza autoodtwarzanie, aberrację, glitch i ziarno.
 
-Wydajność przy 1920 × 919 px bufora i ośmiu slajdach: **0,35 ms/klatkę**
-w spoczynku, **0,97 ms/klatkę** w ruchu. Tekstury ok. 32 MB, bufory ok. 20 MB.
+Wydajność przy 1920 × 919 px bufora i ośmiu slajdach: **0,38 ms/klatkę**
+w spoczynku, **1,01 ms/klatkę** w ruchu. Tekstury ok. 32 MB, bufory ok. 20 MB.
+
+Pomiar to mediana z pięciu próbek po dziesięć klatek, z przerwą między
+próbkami. Dłuższe pętle `_render` bez oddechu zapychają kolejkę GPU i czasy
+rosną kilkukrotnie — to artefakt pomiaru, nie kosztu klatki.
 
 ## Uwagi
 

@@ -26,6 +26,12 @@ const DEFAULTS = {
   focalFactor: 1.9,
   /** maksymalny rozstaw kątowy między sąsiednimi slajdami */
   maxArc: 58 * DEG,
+  /**
+   * Dodatkowe rozsunięcie dwóch kafli biorących udział w przejściu, zerowe
+   * w spoczynku. Bez niego w połowie drogi kafle nachodzą na siebie i
+   * przenikają; z nim mijają się, stykając krawędziami dokładnie w połowie.
+   */
+  edgeMeet: true,
   /** pionowy środek okręgu (ułamek wysokości) — wyżej, bo pod spodem odbicie */
   centerY: 0.44,
   maxStrips: 88,
@@ -184,6 +190,27 @@ export class CanvasCarousel {
     }
     const focal = cardW * opt.focalFactor;
     const arc = Math.min((Math.PI * 2) / this.count, opt.maxArc);
+    const radius = (cardW * opt.chordFactor) / (2 * Math.sin(arc / 2));
+
+    /*
+     * W połowie przejścia dwa kafle stoją symetrycznie po obu stronach osi.
+     * Szukamy kąta, przy którym wewnętrzna krawędź kafla trafia dokładnie
+     * w oś sceny (px = 0) — wtedy obie krawędzie schodzą się w jednym
+     * punkcie 3D i kafle stykają się zamiast przenikać.
+     *
+     *   radius · sin(φ) = (cardW / 2) · cos(tilt · φ)
+     *
+     * Lewa strona rośnie, prawa maleje, więc jeden pierwiastek i bisekcja.
+     */
+    let lo = 0;
+    let hi = Math.PI / 2;
+    for (let i = 0; i < 40; i += 1) {
+      const mid = (lo + hi) / 2;
+      if (radius * Math.sin(mid) < (cardW / 2) * Math.cos(opt.tilt * mid)) lo = mid;
+      else hi = mid;
+    }
+    const spread = opt.edgeMeet ? Math.max(0, (lo + hi) / 2 - arc / 2) : 0;
+
     this.geom = {
       cx: w / 2,
       cy: h * opt.centerY,
@@ -191,8 +218,9 @@ export class CanvasCarousel {
       dist: focal,          // dzięki temu przedni kafel ma skalę 1:1
       cardW,
       cardH,
-      radius: (cardW * opt.chordFactor) / (2 * Math.sin(arc / 2)),
+      radius,
       arc,
+      spread,
     };
   }
 
@@ -272,7 +300,12 @@ export class CanvasCarousel {
     const order = [];
     for (let i = 0; i < this.count; i += 1) {
       const rel = wrapDelta(i - renderPos, this.count);
-      const theta = rel * geom.arc;
+      // Nieparzysty garb: 0 w spoczynku (rel całkowite), ±1 dokładnie
+      // w połowie przejścia, 0 poza parą biorącą w nim udział. Kwadrat sinusa,
+      // a nie sam sinus, bo na granicy |rel| = 1 musi zerować się też pochodna
+      // — inaczej kafel szarpie w momencie wyjścia z pary.
+      const bump = Math.abs(rel) < 1 ? Math.sign(rel) * Math.sin(Math.PI * rel) ** 2 : 0;
+      const theta = rel * geom.arc + geom.spread * bump;
       const depth = geom.radius + geom.dist - geom.radius * Math.cos(theta);
       order.push({ i, rel, theta, depth, ang: this._angles(theta) });
     }
