@@ -58,6 +58,10 @@ const DEFAULTS = {
   gridEdgeColor: '8,9,8',
   /** krycie wewnętrznego obrysu w kolorze znaku */
   gridOutline: 0.55,
+  /** ile razy znak wymienia się podczas jednego przejścia pasa */
+  gridSwaps: 2,
+  /** odstęp kolejnych wymian, w połówkach szerokości pasa */
+  gridSwapSpacing: 0.8,
   /** rodzina czcionki znaków w kafelkach */
   gridFont: 'RuneScript Monospace Variable',
   /** waga ze zmiennej osi czcionki (oś 100–900) */
@@ -709,11 +713,12 @@ export class CanvasCarousel {
     const bright = new Float32Array(n);
     const char = new Uint8Array(n);
     const pass = new Int32Array(n).fill(-1);
+    const step = new Uint8Array(n);
     for (let i = 0; i < n; i += 1) {
       bright[i] = gridFloor + (1 - gridFloor) * Math.random() ** 2;
       char[i] = Math.floor(Math.random() * gridChars.length);
     }
-    this.grid = { cols, rows, bright, char, pass };
+    this.grid = { cols, rows, bright, char, pass, step };
   }
 
   /**
@@ -751,6 +756,9 @@ export class CanvasCarousel {
       const pass = Math.floor(this.time * opt.sweepSpeed);
       const peak = opt.gridReveal * (0.85 + 0.15 * energy);
 
+      const swaps = opt.gridSwaps;
+      const spacing = half * opt.gridSwapSpacing;
+
       const first = Math.max(0, Math.floor((sweep - half * 1.6) / cell));
       const last = Math.min(grid.rows - 1, Math.ceil((sweep + half * 1.6) / cell));
 
@@ -766,11 +774,18 @@ export class CanvasCarousel {
         for (let col = 0; col < grid.cols; col += 1) {
           const i = r * grid.cols + col;
           const bright = grid.bright[i];
+          const firstAt = mid;
 
-          if (grid.pass[i] !== pass && sweep >= mid - half * bright) {
+          if (grid.pass[i] !== pass) {
+            grid.pass[i] = pass;
+            grid.step[i] = 0;
+          }
+          // Kolejne wymiany w stałym odstępie od pierwszej, więc każda z nich
+          // dziedziczy to samo wyprzedzenie zależne od jasności.
+          while (grid.step[i] < swaps && sweep >= firstAt - half * bright + grid.step[i] * spacing) {
             // +1 i modulo po (n-1) gwarantuje, że znak naprawdę się zmieni
             grid.char[i] = (grid.char[i] + 1 + Math.floor(Math.random() * (charCount - 1))) % charCount;
-            grid.pass[i] = pass;
+            grid.step[i] += 1;
           }
 
           const t = Math.abs(mid - sweep) / half;

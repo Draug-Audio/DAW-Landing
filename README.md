@@ -85,7 +85,11 @@ zewnętrzna ramka w kolorze tła strony (rozdziela kafelki), wpuszczony o piksel
 obrys w kolorze znaku, ledwie widoczne limonkowe wypełnienie (12 % jasności
 kafelka) i znak — losowa litera albo cyfra z
 `runescript-monospace-variable.ttf`. Czcionka jest zmienna, więc waga idzie
-z osi (200). Wszystkie znaki wypalane są raz do atlasu, więc rysowanie kafelka
+z osi (200) — ale `FontFace` musi dostać zakres `weight: '100 900'`, inaczej
+zgłasza się jako statyczny krój 400, przeglądarka w ogóle nie sięga po oś
+i każda waga poniżej 600 renderuje się identycznie (a powyżej — syntetycznie
+pogrubia). Sprawdzenie: ilość „tuszu” w atlasie musi rosnąć monotonicznie
+z wagą (100 → 243, 200 → 277, 400 → 381, 700 → 534, 900 → 637). Wszystkie znaki wypalane są raz do atlasu, więc rysowanie kafelka
 to `drawImage` z wycinka, a nie skład tekstu co klatkę.
 
 Kafelki rysowane są **wyłącznie w zasięgu pasa przemiatania**. Poza nim nie ma
@@ -96,12 +100,16 @@ gdy siatki w spoczynku nie ma; oko wyłapuje regularny wzór dużo poniżej prog
 przy którym widzi szum). Stąd zachowanie jak latarki UV na liniach
 papilarnych: siatki nie widać, dopóki nie przejdzie po niej pas.
 
-**Znak wymienia się, gdy przechodzi przez niego pas, a moment zależy od
-jasności kafelka — im jaśniejszy, tym wcześniej.** Wyprzedzenie sięga połowy
-szerokości pasa, więc jaśniejsze kafelki przeskakują, zanim światło do nich
-dojdzie. Zmierzona korelacja jasności z wyprzedzeniem na wierszu 43 kafelków:
-**0,9983**; najciemniejsze (0,30) przeskakują przy wyprzedzeniu 0,27 szerokości
-pasa, najjaśniejsze (0,96) przy 0,95.
+**Znak wymienia się dwa razy na przejście pasa, a moment pierwszej wymiany
+zależy od jasności kafelka — im jaśniejszy, tym wcześniej.** Wyprzedzenie sięga
+połowy szerokości pasa, więc jaśniejsze kafelki przeskakują, zanim światło do
+nich dojdzie. Druga wymiana idzie w stałym odstępie (`gridSwapSpacing`) od
+pierwszej, więc dziedziczy to samo wyprzedzenie.
+
+Zmierzona korelacja jasności z wyprzedzeniem pierwszej wymiany na wierszu
+43 kafelków: **0,9983**; najciemniejsze (0,30) przeskakują przy wyprzedzeniu
+0,27 szerokości pasa, najjaśniejsze (0,99) przy 0,95. Odstęp obu wymian wychodzi
+0,79 – 0,80 przy nastawie 0,8, niezależnie od jasności.
 
 Kafel na wprost jest rysowany **jednym `drawImage` na całych pikselach**.
 Wcześniej „oddychał” mikroobrotem, przez co nigdy nie trafiał w gałąź płaską

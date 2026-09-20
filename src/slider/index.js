@@ -16,7 +16,12 @@ const GRID_FONT_FILE = 'runescript-monospace-variable.ttf';
 async function loadGridFont() {
   if (!('FontFace' in window)) return false;
   try {
-    const face = new FontFace(GRID_FONT, `url(${import.meta.env.BASE_URL}assets/${GRID_FONT_FILE})`);
+    // Zakres wagi MUSI być zadeklarowany. Bez niego FontFace zgłasza się jako
+    // statyczny krój 400, przeglądarka nie sięga po oś zmienną i każda waga
+    // poniżej 600 renderuje się identycznie (a powyżej — syntetycznie pogrubia).
+    const face = new FontFace(GRID_FONT, `url(${import.meta.env.BASE_URL}assets/${GRID_FONT_FILE})`, {
+      weight: '100 900',
+    });
     await face.load();
     document.fonts.add(face);
     return true;
