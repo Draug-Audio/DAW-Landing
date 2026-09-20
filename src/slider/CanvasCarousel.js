@@ -1,5 +1,5 @@
 import { clamp, lerp, smoothstep, wrapDelta, wrapIndex } from './math.js';
-import { context2d, makeCanvas, makeGridTile, makeNoiseTile } from './texture.js';
+import { context2d, makeCanvas, makeGlyphAtlas, makeNoiseTile } from './texture.js';
 
 const DEG = Math.PI / 180;
 
@@ -35,22 +35,25 @@ const DEFAULTS = {
   /** pionowy środek okręgu (ułamek wysokości) — wyżej, bo pod spodem odbicie */
   centerY: 0.44,
   maxStrips: 88,
-  /** bok komórki siatki w pikselach tekstury */
-  gridCell: 22,
-  /**
-   * Ile siatki widać bez przemiatania. Zero, i tak ma zostać: przy choćby
-   * 5 % przyciemnienia komórek SZCZELINY między nimi zostają jaśniejsze
-   * i na płaskiej ciemnej płaszczyźnie rysują widoczną kratę — oko wyłapuje
-   * regularny wzór przy różnicy rzędu jednego poziomu jasności, dużo poniżej
-   * progu dla szumu. Siatka ma być niewidzialna, dopóki nie oświetli jej pas.
-   */
-  gridRest: 0,
-  /**
-   * Ile wydobywa przechodzący pas. Suma z `gridRest` daje 1, więc w rdzeniu
-   * pasa komórka o alfie 1,0 kryje obraz całkowicie, a nie prześwituje.
-   * Niższe alfy komórek schodzą proporcjonalnie niżej.
-   */
+  /** podziałka siatki w pikselach kafla */
+  gridCell: 24,
+  /** szczelina między kafelkami — o tyle kafelek jest mniejszy od podziałki */
+  gridGap: 3,
+  /** najniższa jasność kafelka; wyżej losowo */
+  gridFloor: 0.3,
+  /** górny pułap jasności kafelka pod rdzeniem pasa */
   gridReveal: 1,
+  /** krycie tła kafelka względem jego jasności — reszta to sam znak */
+  gridFill: 0.26,
+  /** krycie ramki */
+  gridEdge: 0.9,
+  /** kolor ramki: tło strony, żeby kafelki wyglądały na rozdzielone */
+  gridEdgeColor: '8,9,8',
+  /** rodzina czcionki znaków w kafelkach */
+  gridFont: 'RuneScript Monospace Variable',
+  /** waga ze zmiennej osi czcionki */
+  gridFontWeight: 600,
+  gridChars: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split(''),
   /** obrotów pasa na sekundę */
   sweepSpeed: 0.15,
   /** połowa szerokości pasa, w wysokościach kafla */
@@ -118,7 +121,12 @@ export class CanvasCarousel {
     this.overlayCtx = context2d(this.overlay);
 
     this.noise = [makeNoiseTile(), makeNoiseTile(), makeNoiseTile()];
-    this.gridTile = makeGridTile(this.opt.gridCell);
+    this.glyphs = makeGlyphAtlas(
+      this.opt.gridChars,
+      this.opt.gridCell - this.opt.gridGap,
+      this.opt.gridFont,
+      { weight: this.opt.gridFontWeight },
+    );
 
     this._frame = this._frame.bind(this);
     this._bindInput();
@@ -197,7 +205,6 @@ export class CanvasCarousel {
       ctx.imageSmoothingQuality = 'high';
     }
 
-    this.gridPattern = this.ctx.createPattern(this.gridTile, 'repeat');
     this.noisePatterns = this.noise.map((tile) => this.ctx.createPattern(tile, 'repeat'));
     this._geometry();
 
@@ -207,6 +214,7 @@ export class CanvasCarousel {
     this.overlay.height = Math.max(1, Math.round(this.geom.cardH));
     this.overlayCtx.imageSmoothingEnabled = true;
     this.overlayCtx.imageSmoothingQuality = 'high';
+    this._buildGrid();
 
     this._render(0);
   }
@@ -680,66 +688,99 @@ export class CanvasCarousel {
    * widać je wyłącznie na samych kaflach, a nie na tle strony.
    */
   /**
-   * Nakładka „ekranu” budowana w UKŁADZIE KAFLA, w rozdzielczości tekstury.
-   * Wcześniej te efekty leciały w przestrzeni ekranu i były tylko maskowane
-   * alfą sceny — przez co na kaflach pobocznych nie trzymały się perspektywy:
-   * skanlinie miały wszędzie ten sam skok, przemiatanie szło poziomym pasem
-   * przez całą scenę, a winieta była wyśrodkowana na scenie, nie na kaflu.
-   * Teraz nakładka idzie przez ten sam rzut co obraz, więc skraca się razem
-   * z kaflem, a jej linie pochylają się do punktu zbiegu.
+   * Stan siatki: jeden wpis na kafelek. Jasność losowana raz (kwadrat rozkładu
+   * zagęszcza kafelki przy dolnym końcu skali, więc siatka jest nierówna),
+   * znak i numer przebiegu zmieniają się w trakcie życia sceny.
+   */
+  _buildGrid() {
+    const { gridCell, gridFloor, gridChars } = this.opt;
+    const cols = Math.ceil(this.overlay.width / gridCell);
+    const rows = Math.ceil(this.overlay.height / gridCell);
+    const n = cols * rows;
+    const bright = new Float32Array(n);
+    const char = new Uint8Array(n);
+    const pass = new Int32Array(n).fill(-1);
+    for (let i = 0; i < n; i += 1) {
+      bright[i] = gridFloor + (1 - gridFloor) * Math.random() ** 2;
+      char[i] = Math.floor(Math.random() * gridChars.length);
+    }
+    this.grid = { cols, rows, bright, char, pass };
+  }
+
+  /**
+   * Nakładka „ekranu” budowana w UKŁADZIE KAFLA, w jego rozdzielczości —
+   * idzie potem przez ten sam rzut co obraz, więc skraca się razem z kaflem.
+   *
+   * Kafelki siatki rysowane są WYŁĄCZNIE w zasięgu pasa przemiatania. Poza nim
+   * nie ma czego kryć, a każdy stały ślad siatki (choćby 5 % przyciemnienia)
+   * zostawiałby szczeliny jaśniejsze od kafelków i rysował widoczną kratę.
+   *
+   * Znak w kafelku wymienia się, gdy przechodzi przez niego pas, a moment
+   * zależy od jasności kafelka: im jaśniejszy, tym wcześniej — wyprzedzenie
+   * sięga połowy szerokości pasa, więc jaśniejsze kafelki przeskakują jeszcze
+   * zanim światło do nich dojdzie.
    */
   _buildOverlay(energy, reduced) {
     const oc = this.overlayCtx;
     const w = this.overlay.width;
     const h = this.overlay.height;
     const opt = this.opt;
+    const grid = this.grid;
 
     oc.setTransform(1, 0, 0, 1, 0, 0);
     oc.globalCompositeOperation = 'source-over';
     oc.globalAlpha = 1;
     oc.clearRect(0, 0, w, h);
 
-    /*
-     * Warstwa siatki budowana jest jako JASNOŚĆ, a dopiero na końcu przycinana
-     * alfą siatki — jak latarka UV na liniach papilarnych: siatka leży na
-     * całym kaflu, ale widać ją tylko tam, gdzie pada światło, i tym mocniej,
-     * im wyższa własna alfa komórki.
-     *
-     *   1. podłoga (domyślnie zero — patrz `gridRest`)
-     *   2. pas przemiatania dodany addytywnie (`lighter`) — to jest latarka
-     *   3. `destination-in` wzorem siatki — światło zostaje tylko w komórkach
-     */
-    if (opt.gridRest > 0) {
-      oc.fillStyle = `rgba(0,0,0,${opt.gridRest})`;
-      oc.fillRect(0, 0, w, h);
-    }
-
-    if (!reduced) {
+    if (!reduced && grid && this.glyphs) {
+      const cell = opt.gridCell;
+      const square = cell - opt.gridGap;
+      const charCount = opt.gridChars.length;
       const half = h * opt.sweepWidth;
-      const sweep = ((this.time * opt.sweepSpeed) % 1) * (h + 4 * half) - 2 * half;
-      const peak = opt.gridReveal;
-      const band = oc.createLinearGradient(0, sweep - half, 0, sweep + half);
-      const at = (o, f) => band.addColorStop(o, `rgba(200,255,61,${(peak * f).toFixed(3)})`);
-      // rdzeń pasa ma plateau, nie szpilkę — inaczej pełne krycie łapałby
-      // tylko jeden wiersz komórek
-      at(0, 0);
-      at(0.3, 0.22);
-      at(0.44, 0.92);
-      at(0.5, 1);
-      at(0.56, 0.92);
-      at(0.7, 0.22);
-      at(1, 0);
-      oc.globalCompositeOperation = 'lighter';
-      oc.fillStyle = band;
-      oc.fillRect(0, sweep - half, w, half * 2);
-      oc.globalCompositeOperation = 'source-over';
-    }
+      const phase = (this.time * opt.sweepSpeed) % 1;
+      const sweep = phase * (h + 4 * half) - 2 * half;
+      const pass = Math.floor(this.time * opt.sweepSpeed);
+      const peak = opt.gridReveal * (0.85 + 0.15 * energy);
 
-    if (this.gridPattern) {
-      oc.globalCompositeOperation = 'destination-in';
-      oc.fillStyle = this.gridPattern;
-      oc.fillRect(0, 0, w, h);
-      oc.globalCompositeOperation = 'source-over';
+      const first = Math.max(0, Math.floor((sweep - half * 1.6) / cell));
+      const last = Math.min(grid.rows - 1, Math.ceil((sweep + half * 1.6) / cell));
+
+      // Kolory ustawiane raz, jasność przez `globalAlpha` — inaczej każdy
+      // kafelek kosztowałby dwa sklejane stringi `rgba(...)` na klatkę,
+      // a kafelków jest tu ponad sześćset.
+      oc.lineWidth = 1;
+      oc.fillStyle = 'rgb(200,255,61)';
+      oc.strokeStyle = `rgb(${opt.gridEdgeColor})`;
+      for (let r = first; r <= last; r += 1) {
+        const y = r * cell;
+        const mid = y + square / 2;
+        for (let col = 0; col < grid.cols; col += 1) {
+          const i = r * grid.cols + col;
+          const bright = grid.bright[i];
+
+          if (grid.pass[i] !== pass && sweep >= mid - half * bright) {
+            // +1 i modulo po (n-1) gwarantuje, że znak naprawdę się zmieni
+            grid.char[i] = (grid.char[i] + 1 + Math.floor(Math.random() * (charCount - 1))) % charCount;
+            grid.pass[i] = pass;
+          }
+
+          const t = Math.abs(mid - sweep) / half;
+          if (t >= 1) continue;
+          const a = bright * peak * (t < 0.12 ? 1 : smoothstep(1, 0.12, t));
+          if (a < 0.012) continue;
+
+          const x = col * cell;
+          oc.globalAlpha = a * opt.gridFill;
+          oc.fillRect(x, y, square, square);
+
+          oc.globalAlpha = a;
+          oc.drawImage(this.glyphs, grid.char[i] * square, 0, square, square, x, y, square, square);
+
+          oc.globalAlpha = a * opt.gridEdge;
+          oc.strokeRect(x + 0.5, y + 0.5, square - 1, square - 1);
+        }
+      }
+      oc.globalAlpha = 1;
     }
 
     if (!reduced && this.noisePatterns) {

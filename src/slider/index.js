@@ -5,6 +5,27 @@ import { clamp } from './math.js';
 
 const AUTOPLAY_DELAY = 5600;
 
+const GRID_FONT = 'RuneScript Monospace Variable';
+const GRID_FONT_FILE = 'runescript-monospace-variable.ttf';
+
+/**
+ * Znaki w kafelkach siatki rysuje canvas, a nie DOM — więc czcionka musi być
+ * gotowa, zanim powstanie atlas glifów. Gdy się nie wczyta, atlas spadnie na
+ * systemowy monospace i scena zadziała tak samo, tylko bez run.
+ */
+async function loadGridFont() {
+  if (!('FontFace' in window)) return false;
+  try {
+    const face = new FontFace(GRID_FONT, `url(${import.meta.env.BASE_URL}assets/${GRID_FONT_FILE})`);
+    await face.load();
+    document.fonts.add(face);
+    return true;
+  } catch (error) {
+    console.warn('[showcase] nie udało się wczytać czcionki siatki', error);
+    return false;
+  }
+}
+
 export async function mountShowcase(root, slides) {
   const canvas = root.querySelector('[data-showcase-canvas]');
   const stage = root.querySelector('[data-showcase-stage]');
@@ -26,7 +47,10 @@ export async function mountShowcase(root, slides) {
     1500,
   );
 
-  const images = await Promise.all(slides.map((slide) => loadImage(slide.src)));
+  const [images] = await Promise.all([
+    Promise.all(slides.map((slide) => loadImage(slide.src))),
+    loadGridFont(),
+  ]);
   const textures = images.map((img) => buildTexture(img, textureWidth));
 
   const captions = new SyncedCaptions(captionsRoot, slides);
@@ -72,7 +96,7 @@ export async function mountShowcase(root, slides) {
   carousel = new CanvasCarousel(canvas, {
     textures,
     frame: stage ?? canvas,
-    options: { reducedMotion },
+    options: { reducedMotion, gridFont: GRID_FONT },
     onFrame: ({ position, energy }) => {
       captions.update(position);
       dots.update(position);

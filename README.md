@@ -80,26 +80,27 @@ komórki (mapowanie 1:1), a na bocznym 19 px przy przewidzianych 19,24.
 
 ### Siatka wywoływana przemiataniem
 
-Zamiast płaskich skanlinii kafel dostaje siatkę „dużych pikseli”: komórki
-o losowej alfie, rozdzielone szczeliną. Warstwa jest budowana jako **jasność**,
-a dopiero na końcu przycinana alfą siatki:
+Kafel jest pokryty siatką kafelków: kwadrat z cienką ramką w kolorze tła strony
+(żeby czytały się jako rozdzielone), półprzezroczyste limonkowe wypełnienie
+i znak — losowa litera albo cyfra z `runescript-monospace-variable.ttf`.
+Czcionka jest zmienna, więc glify idą z osi wagi (600), inaczej przy 21 px
+zanikają. Wszystkie znaki wypalane są raz do atlasu, więc rysowanie kafelka to
+`drawImage` z wycinka, a nie skład tekstu co klatkę.
 
-1. podłoga (`gridRest`, domyślnie **zero**),
-2. pas przemiatania dodany addytywnie (`lighter`) — to jest latarka,
-3. `destination-in` wzorem siatki — światło zostaje tylko w komórkach,
-   proporcjonalnie do ich własnej alfy.
+Kafelki rysowane są **wyłącznie w zasięgu pasa przemiatania**. Poza nim nie ma
+czego kryć — a każdy stały ślad siatki, choćby 5 % przyciemnienia, zostawiałby
+SZCZELINY jaśniejsze od kafelków i rysował widoczną kratę (zmierzone:
+7,17/255 różnicy między wierszem kafelków a wierszem szczeliny wobec 0,59/255,
+gdy siatki w spoczynku nie ma; oko wyłapuje regularny wzór dużo poniżej progu,
+przy którym widzi szum). Stąd zachowanie jak latarki UV na liniach
+papilarnych: siatki nie widać, dopóki nie przejdzie po niej pas.
 
-Stąd zachowanie jak latarki UV na liniach papilarnych: siatki nie widać, dopóki
-nie przejdzie po niej pas. Komórki świecą różnie, zgodnie ze swoją losową alfą,
-a w rdzeniu pasa komórka o alfie 1,0 **kryje obraz całkowicie** — najjaśniejszy
-piksel kafla pod rdzeniem to (202, 255, 59) przy limonce (200, 255, 61).
-
-`gridRest` musi zostać na zerze. Nawet 5 % przyciemnienia komórek zostawia
-SZCZELINY między nimi jaśniejsze i na płaskiej ciemnej płaszczyźnie rysuje
-widoczną kratę: zmierzona różnica wiersza komórek i wiersza szczeliny to
-**7,17/255 przy `gridRest` 0,05 wobec 0,59/255 przy zerze** (a te 0,59 to już
-gradient winiety, nie wzór). Oko wyłapuje regularną siatkę przy różnicy rzędu
-jednego poziomu jasności — dużo poniżej progu, przy którym widać szum.
+**Znak wymienia się, gdy przechodzi przez niego pas, a moment zależy od
+jasności kafelka — im jaśniejszy, tym wcześniej.** Wyprzedzenie sięga połowy
+szerokości pasa, więc jaśniejsze kafelki przeskakują, zanim światło do nich
+dojdzie. Zmierzona korelacja jasności z wyprzedzeniem na wierszu 43 kafelków:
+**0,9983**; najciemniejsze (0,30) przeskakują przy wyprzedzeniu 0,27 szerokości
+pasa, najjaśniejsze (0,96) przy 0,95.
 
 Kafel na wprost jest rysowany **jednym `drawImage` na całych pikselach**.
 Wcześniej „oddychał” mikroobrotem, przez co nigdy nie trafiał w gałąź płaską
@@ -107,11 +108,6 @@ i szedł przez siedem pasków o ułamkowych pozycjach — czyli był bez przerwy
 przepróbkowywany, a siatka miała rozmyte krawędzie. Za ruch w spoczynku
 odpowiada teraz samo przemiatanie. Nakładka ma dokładnie rozmiar kafla
 w pikselach urządzenia, więc na kaflu na wprost mapuje się 1:1.
-
-Ruchem steruje sprężyna (lekko niedotłumiona — dojazd ~0,5 s z minimalnym
-przestrzeleniem). Pozycja jest **ciągła**, nie skokowa, więc wszystko, co od niej
-zależy, jest zsynchronizowane w każdej klatce: obrót sceny, przenikanie opisów
-i wypełnienie kropek — także w trakcie przeciągania myszą.
 
 Efekty (skalowane energią ruchu, czyli liczbą slajdów na sekundę):
 
@@ -123,7 +119,7 @@ Efekty (skalowane energią ruchu, czyli liczbą slajdów na sekundę):
 | odblask krawędzi natarcia | gradient limonkowy po stronie, w którą leci kafel |
 | odbicie | każdy kafel odbity względem własnej dolnej krawędzi, per pasek; wygaszane wspólnym gradientem (bufor w połowie rozdzielczości) |
 | bloom | scena w 1/4 rozdzielczości, `contrast + blur`, dołożona w trybie `lighter` |
-| siatka pikseli, ziarno, winieta, przemiatanie | rysowane w układzie kafla i rzutowane razem z nim; na kaflach mocno skróconych słabsze, żeby zagęszczona siatka nie robiła mory |
+| siatka znaków, ziarno, winieta, przemiatanie | rysowane w układzie kafla i rzutowane razem z nim; na kaflach mocno skróconych słabsze, żeby zagęszczona siatka nie robiła mory |
 | rozerwane pasy obrazu | przy szybkim obrocie i przy zmianie slajdu |
 
 Sterowanie: przeciąganie (z rzutem prędkości i zatrzaskiem), strzałki, kropki,
@@ -131,19 +127,19 @@ klawisze ←/→, poziomy scroll gładzika, autoodtwarzanie z paskiem postępu.
 Pętla stoi, gdy sekcja jest poza ekranem albo karta jest w tle.
 `prefers-reduced-motion` wyłącza autoodtwarzanie, aberrację, glitch i ziarno.
 
-Wydajność przy 1920 × 919 px bufora i ośmiu slajdach: **ok. 0,5 ms/klatkę**
-w spoczynku i **ok. 2 ms/klatkę** w ruchu. Tekstury ok. 32 MB, bufory ok. 24 MB.
+Wydajność przy 1920 × 919 px bufora i ośmiu slajdach: **ok. 1,4 ms/klatkę**
+w spoczynku i **ok. 2,3 ms/klatkę** w ruchu. Tekstury ok. 32 MB, bufory ok. 24 MB.
 
 Liczby są zaokrąglone świadomie. Pomiar to mediana z siedmiu próbek po dziesięć
-klatek, z przerwą między próbkami, i rozrzut samych próbek w ruchu sięga
-1,16 – 2,99 ms. Dłuższe pętle `_render` bez oddechu zapychają kolejkę GPU
-i czasy rosną kilkukrotnie — to artefakt pomiaru, nie kosztu klatki, więc
-podawanie tu wartości z dokładnością do setnych byłoby fikcją.
+klatek, z przerwą między próbkami. Dłuższe pętle `_render` bez oddechu zapychają
+kolejkę GPU i czasy rosną kilkukrotnie — to artefakt pomiaru, nie kosztu klatki,
+więc podawanie tu wartości z dokładnością do setnych byłoby fikcją.
 
-Nakładka jest przebudowywana co klatkę, bo pas się przesuwa. Gdyby to zaczęło
-uwierać, najprostszy zysk to wypiekanie warstwy spoczynkowej raz przy zmianie
-rozmiaru i dokładanie per klatkę wyłącznie pasa, obciętego do jego własnych
-wierszy — ok. 40 % mniej pracy na nakładce.
+Spoczynek kosztuje tyle, bo w zasięgu pasa leży ok. 640 kafelków, a każdy to
+wypełnienie, glif i ramka. Kolory ustawiane są raz, a jasność idzie przez
+`globalAlpha` — sklejanie `rgba(...)` per kafelek kosztowało 0,3 ms na klatkę.
+Gdyby trzeba było zejść niżej: mniej kafelków (większa podziałka) albo wypiekanie
+całych wierszy do bufora i przesuwanie ich, zamiast rysowania kafelek po kafelku.
 
 ## Uwagi
 

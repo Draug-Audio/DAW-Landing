@@ -46,29 +46,25 @@ export function makeNoiseTile(size = 168, strength = 26) {
 }
 
 /**
- * Siatka „dużych pikseli” — kafel komórek o losowej alfie, rozdzielonych
- * szczeliną. Używany wyłącznie jako maska (`destination-in`): liczy się sama
- * alfa, kolor bierze się z warstwy pod spodem. Dzięki temu ta sama siatka
- * daje i spokojną teksturę ekranu, i komórki podświetlane przez przemiatanie.
+ * Atlas znaków: każdy znak wypalony raz w kwadrat o boku `size`, w jednym
+ * rzędzie obok siebie. Rysowanie kafelków sprowadza się potem do `drawImage`
+ * z odpowiedniego wycinka — bez składu tekstu co klatkę.
  *
- * @param {number} cell  bok komórki w pikselach tekstury
- * @param {number} count komórek na bok kafla wzoru
- * @param {number} gap   szczelina między komórkami
- * @param {number} floor minimalna alfa komórki
+ * @param {string[]} chars
+ * @param {number} size  bok kafelka w pikselach (mapowanie 1:1 z nakładką)
+ * @param {string} font  rodzina czcionki; fallback na monospace
+ * @param {object} [opts] kolor glifu i waga ze zmiennej osi
  */
-export function makeGridTile(cell = 22, count = 24, gap = 3, floor = 0.32) {
-  const size = cell * count;
-  const canvas = makeCanvas(size, size);
+export function makeGlyphAtlas(chars, size, font, { color = '#c8ff3d', weight = 600 } = {}) {
+  const canvas = makeCanvas(size * chars.length, size);
   const ctx = canvas.getContext('2d');
-  for (let y = 0; y < count; y += 1) {
-    for (let x = 0; x < count; x += 1) {
-      // kwadrat rozkładu zagęszcza komórki przy dolnym końcu skali,
-      // więc siatka jest nierówna, a nie równomiernie szara
-      const level = floor + (1 - floor) * Math.random() ** 2;
-      ctx.fillStyle = `rgba(255,255,255,${level.toFixed(3)})`;
-      ctx.fillRect(x * cell, y * cell, cell - gap, cell - gap);
-    }
-  }
+  // czcionka jest zmienna (oś wagi 100–900) — przy tym rozmiarze glify
+  // potrzebują grubszego kroju, żeby nie zniknęły
+  ctx.font = `${weight} ${Math.round(size * 0.74)}px "${font}", ui-monospace, monospace`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = color;
+  chars.forEach((ch, i) => ctx.fillText(ch, i * size + size / 2, size / 2 + size * 0.02));
   return canvas;
 }
 
