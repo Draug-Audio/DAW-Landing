@@ -118,6 +118,13 @@ const DEFAULTS = {
   sweepSpeed: 0.15,
   /** połowa szerokości pasa, w wysokościach kafla */
   sweepWidth: 0.1,
+  /**
+   * Siła nakładki w odbiciu. Odbicie przedniego kafla jest w spoczynku jedyną
+   * jego częścią, którą nadal rysuje canvas — ostra kopia w DOM przykrywa sam
+   * kafel, ale nie to, co pod nim. Przemiatanie zostaje więc widoczne właśnie
+   * tam. Zero zrównuje odbicie z kaflem, czyli wygasza shimmer i w nim.
+   */
+  reflectionShimmer: 0.9,
   /** maks. rozjazd kanałów RGB w px przy pełnej prędkości */
   aberration: 11,
   stiffness: 120,
@@ -726,11 +733,19 @@ export class CanvasCarousel {
     this.stageCtx.drawImage(this.work, bx, by, bw, bh, bx, by, bw, bh);
     this.stageCtx.globalAlpha = 1;
 
-    // odbicie tego kafla — bufor pracuje w połowie rozdzielczości, ale
-    // współrzędne zostają pełne dzięki skali w transformacie
+    // Odbicie tego kafla — bufor pracuje w połowie rozdzielczości, ale
+    // współrzędne zostają pełne dzięki skali w transformacie. Nakładka idzie
+    // tym samym rzutem co obraz, więc przemiatanie przechodzi także przez
+    // odbicie, a nie urywa się na dolnej krawędzi kafla.
     const rc = this.reflCtx;
-    rc.globalAlpha = edgeFade * (0.3 + 0.7 * front);
+    const reflAlpha = edgeFade * (0.3 + 0.7 * front);
+    rc.globalAlpha = reflAlpha;
     this._paintStrips(rc, tex.base, ang, 0, true);
+    const reflShimmer = reflAlpha * this.opt.reflectionShimmer;
+    if (reflShimmer > 0.004) {
+      rc.globalAlpha = reflShimmer;
+      this._paintStrips(rc, this.overlay, ang, 0, true);
+    }
     rc.globalAlpha = 1;
   }
 
@@ -745,14 +760,29 @@ export class CanvasCarousel {
     const flat = turn < 0.0015;
     const strips = flat ? 1 : clamp(Math.round(6 + 160 * turn), 6, this.opt.maxStrips);
 
+    /*
+     * Odbicie robi transformata, a NIE ujemna wysokość w `drawImage`.
+     * Sprawdzone: przy ujemnej wysokości przeglądarka tylko normalizuje
+     * prostokąt i rysuje obraz bez odwrócenia — wychodzi klon, nie odbicie.
+     *
+     * Lustro kładziemy na wysokości środka kafla (`cy`), a każdy pasek
+     * rysujemy o `1,5 · dh` wyżej: po odbiciu ląduje wtedy dokładnie pod
+     * własną dolną krawędzią. Jedna transformata na cały przebieg zamiast
+     * jednej na pasek.
+     */
+    if (mirror) {
+      ctx.save();
+      ctx.translate(0, 2 * cy);
+      ctx.scale(1, -1);
+    }
+
     if (flat) {
       // Kafel na wprost trafia w całe piksele: przy teksturze o rozmiarze
       // zawartości daje to kopię 1:1 bez filtrowania.
       const rect = this._flatRect(ang);
       const dx = rect.x + Math.round(offsetX);
-      // ujemna wysokość odwraca obraz w pionie (drawImage, spec HTML)
-      if (mirror) ctx.drawImage(source, dx, rect.y + 2 * rect.h, rect.w, -rect.h);
-      else ctx.drawImage(source, dx, rect.y, rect.w, rect.h);
+      ctx.drawImage(source, dx, mirror ? cy - 1.5 * rect.h : rect.y, rect.w, rect.h);
+      if (mirror) ctx.restore();
       return;
     }
 
@@ -769,13 +799,12 @@ export class CanvasCarousel {
       const dx = prev.x + offsetX;
       const dw = next.x - prev.x + 1.15;
       const dh = prev.half + next.half;
-      // Odbicie liczone per pasek, względem WŁASNEJ dolnej krawędzi kafla.
-      // Jedna wspólna linia lustra byłaby poprawna tylko dla kafla na wprost —
-      // kafel obrócony ma dolną krawędź ukośną i wyżej.
-      if (mirror) ctx.drawImage(source, sx, 0, sw, srcH, dx, cy + 1.5 * dh, dw, -dh);
-      else ctx.drawImage(source, sx, 0, sw, srcH, dx, cy - dh / 2, dw, dh);
+      // Pasek odbity trafia pod własną dolną krawędź, a nie pod wspólną linię
+      // podłogi — kafel obrócony ma tę krawędź ukośną i wyżej.
+      ctx.drawImage(source, sx, 0, sw, srcH, dx, mirror ? cy - 1.5 * dh : cy - dh / 2, dw, dh);
       prev = next;
     }
+    if (mirror) ctx.restore();
   }
 
   /** Odbicia narysowały już poszczególne kafle — tu zostaje wygaszenie. */

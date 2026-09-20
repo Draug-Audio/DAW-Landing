@@ -68,6 +68,15 @@ granicy `|rel| = 1` musi zerować się także pochodna — inaczej kafel szarpie
 w momencie wyjścia z pary (zmierzona druga różnica kąta: 0,0077° dla `sin²`
 wobec 0,1225° dla `sin`).
 
+Odbicie robi **transformata**, a nie ujemna wysokość w `drawImage`. Sprawdzone
+na wzorze z bielą u góry: po rysowaniu z ujemną wysokością biel nadal jest
+u góry (`[255, 255, 0, 0, 0, 0, 0, 0]`) — przeglądarka normalizuje prostokąt
+i rysuje obraz bez odwrócenia, więc wychodzi klon, nie odbicie. Lustro kładzione
+jest więc na wysokości środka kafla, a każdy pasek rysowany o `1,5 · dh` wyżej,
+żeby po odbiciu trafić pod własną dolną krawędź. Jedna transformata na cały
+przebieg zamiast jednej na pasek. Zmierzona korelacja wierszy odbicia
+z wierszami kafla: **+0,68 z lustrem, −0,20 z klonem**.
+
 Wszystko, co dotyczy pojedynczego kafla, idzie za jego rzutem: poświata i
 świetlista podłoga biorą jego rzutowane położenie i wymiary, **odbicie jest
 lustrzane względem własnej dolnej krawędzi kafla** (liczone per pasek, bo kafel
@@ -225,7 +234,7 @@ Efekty (skalowane energią ruchu, czyli liczbą slajdów na sekundę):
 | aberracja chromatyczna | kafel rysowany trzy razy do bufora pomocniczego, każdy przebieg przemnożony przez czysty kanał R/G/B (obcięcie do czworokąta jest konieczne — `multiply` na przezroczystym tle dałoby pełny kolor), potem składane addytywnie z przesunięciem; suma przy zerowym przesunięciu odtwarza oryginał (zmierzone: średnia różnica 0,8/255) |
 | mgła głębi | gradient wzdłuż kafla liczony z realnej odległości krawędzi od kamery |
 | poświata i podłoga | przypięte do kafla — przesuwają się i spłaszczają razem z nim; pełna moc na kaflu na wprost, słabsza na pobocznych |
-| odbicie | każdy kafel odbity względem własnej dolnej krawędzi, per pasek; wygaszane wspólnym gradientem (bufor w połowie rozdzielczości) |
+| odbicie | każdy kafel odbity względem własnej dolnej krawędzi, per pasek, razem z nakładką — przemiatanie przechodzi przez odbicie, a nie urywa się na krawędzi kafla; wygaszane wspólnym gradientem (bufor w połowie rozdzielczości) |
 | bloom | scena w 1/4 rozdzielczości, `contrast + blur`, dołożona w trybie `lighter` |
 | siatka znaków, ziarno, winieta, przemiatanie | rysowane w układzie kafla i rzutowane razem z nim; na kaflach mocno skróconych słabsze, żeby zagęszczona siatka nie robiła mory |
 | rozerwane pasy obrazu | przy szybkim obrocie i przy zmianie slajdu |
@@ -235,8 +244,8 @@ klawisze ←/→, poziomy scroll gładzika, autoodtwarzanie z paskiem postępu.
 Pętla stoi, gdy sekcja jest poza ekranem albo karta jest w tle.
 `prefers-reduced-motion` wyłącza autoodtwarzanie, aberrację, glitch i ziarno.
 
-Wydajność przy 1920 × 919 px bufora i ośmiu slajdach: **ok. 0,8 ms/klatkę**
-w spoczynku i **ok. 2,3 ms/klatkę** w ruchu. Tekstury ok. 32 MB.
+Wydajność przy 1920 × 919 px bufora i ośmiu slajdach: **ok. 1,5 ms/klatkę**
+w spoczynku i **ok. 2,7 ms/klatkę** w ruchu. Tekstury ok. 32 MB.
 
 Liczby są zaokrąglone świadomie. Pomiar to mediana z siedmiu próbek po dziesięć
 klatek, z przerwą między próbkami. Dłuższe pętle `_render` bez oddechu zapychają
