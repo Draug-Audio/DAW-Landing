@@ -169,6 +169,14 @@ export class CanvasCarousel {
 
     this.supportsFilter = typeof this.ctx.filter === 'string';
 
+    /**
+     * Na ile ostra kopia w DOM przykryła przedni kafel (0–1). Przy pełnym
+     * przykryciu obrys tego kafla gaśnie, bo ramkę rysuje wtedy przeglądarka
+     * — ostrzejszą i dokładnie jednopikselową. Wartość ustawia strona
+     * montująca, bo tylko ona wie, co dzieje się z nakładką.
+     */
+    this.sharpCover = 0;
+
     // bufory pomocnicze
     this.stage = makeCanvas(1, 1);
     this.stageCtx = context2d(this.stage);
@@ -235,11 +243,18 @@ export class CanvasCarousel {
       top: (cy - cardH / 2) * scale,
       width: cardW * scale,
       height: cardH * scale,
-      // Obrys kafla leży na linii krawędzi, więc jego wewnętrzna połowa wpada
-      // w prostokąt kafla. Nakładka musi go o tyle nie zamalować — inaczej
-      // ramka zwęża się w spoczynku do samej zewnętrznej połowy.
+      // Ramka leży poza polem treści; nakładka rezerwuje na nią tyle samo
+      // własnym, przezroczystym obramowaniem.
       border: border * scale,
+      // kolor, jakim canvas narysowałby obrys przedniego kafla, gdyby nie
+      // był przykryty — nakładka przejmuje go, żeby nie rozjechały się barwą
+      borderColor: `rgba(200,255,61,${(0.08 + 0.3).toFixed(3)})`,
     };
+  }
+
+  /** Krycie obrysu kafla; dla przedniego gaśnie pod ostrą kopią. */
+  _borderAlpha(front) {
+    return (0.08 + 0.3 * front) * (1 - front * this.sharpCover);
   }
 
   /** Czy sprężyna doszła do celu i scena stoi. */
@@ -708,7 +723,8 @@ export class CanvasCarousel {
     // przesunięcia rozmazałoby go na dwa rzędy i ramka straciłaby ostrość.
     ctx.save();
     ctx.lineWidth = this.geom.border;
-    ctx.strokeStyle = `rgba(200,255,61,${0.08 + 0.3 * front})`;
+    // im bardziej kafel jest przykryty ostrą kopią, tym słabszy obrys z canvasu
+    ctx.strokeStyle = `rgba(200,255,61,${this._borderAlpha(front)})`;
     if (Math.abs(ang.sinRot) < 0.0015) {
       // linia o grubości 1 wyśrodkowana na -0,5 zajmuje dokładnie kolumnę
       // pikseli tuż przy polu treści, nie wchodząc w nie

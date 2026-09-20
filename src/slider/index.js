@@ -188,6 +188,7 @@ function mountSharpOverlay({ stage, canvas, sharp, slides, carousel }) {
   const loaded = new Map();
   let shown = false;
   let wanted = -1;
+  let fadeStart = 0;
 
   const place = () => {
     const rect = carousel.frontRect();
@@ -201,6 +202,7 @@ function mountSharpOverlay({ stage, canvas, sharp, slides, carousel }) {
     sharp.style.left = `${canvasBox.left - stageBox.left + rect.left - rect.border}px`;
     sharp.style.top = `${canvasBox.top - stageBox.top + rect.top - rect.border}px`;
     sharp.style.borderWidth = `${rect.border}px`;
+    sharp.style.borderColor = rect.borderColor;
     sharp.style.width = `${rect.width + 2 * rect.border}px`;
     sharp.style.height = `${rect.height + 2 * rect.border}px`;
   };
@@ -208,6 +210,8 @@ function mountSharpOverlay({ stage, canvas, sharp, slides, carousel }) {
   const hide = () => {
     if (!shown) return;
     shown = false;
+    // obrys na canvasie musi wrócić w tej samej klatce, w której znika kopia
+    carousel.sharpCover = 0;
     sharp.style.transition = 'none';
     sharp.style.opacity = '0';
   };
@@ -219,6 +223,7 @@ function mountSharpOverlay({ stage, canvas, sharp, slides, carousel }) {
     // wymuszenie przeliczenia stylu, żeby przejście ruszyło od zera,
     // a nie zostało scalone z wyłączeniem transition przy zgaszeniu
     void sharp.offsetWidth;
+    fadeStart = performance.now();
     sharp.style.transition = `opacity ${SHARPEN_MS}ms linear`;
     sharp.style.opacity = '1';
   };
@@ -239,7 +244,13 @@ function mountSharpOverlay({ stage, canvas, sharp, slides, carousel }) {
     place();
   }).observe(canvas);
 
+  // Przejście jest liniowe i znamy jego start, więc postęp liczymy z czasu —
+  // dokładnie tak samo, jak robi to przeglądarka. Odczytywanie `opacity`
+  // z `getComputedStyle` co klatkę wymuszałoby przeliczanie stylów.
+  const cover = () => (shown ? Math.min(1, (performance.now() - fadeStart) / SHARPEN_MS) : 0);
+
   return (settledFlag) => {
+    carousel.sharpCover = cover();
     if (!settledFlag) {
       wanted = -1;
       hide();

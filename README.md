@@ -100,6 +100,17 @@ a obraz i obrys biorą go z tego samego miejsca. Zmierzone na przekroju przez
 lewą krawędź: ramka zajmuje dokładnie jedną kolumnę pikseli (85, 106, 30),
 sąsiednie z obu stron są tłem i treścią.
 
+**Wraz z pojawianiem się kopii obrys przedniego kafla gaśnie na canvasie**
+(`sharpCover`), a przejmuje go ramka nakładki — wtedy i obraz, i ramka idą
+z renderera przeglądarki, więc obie są ostre i dokładnie jednopikselowe.
+Postęp liczony jest z czasu, bo przejście jest liniowe i znamy jego start;
+odczytywanie `opacity` z `getComputedStyle` co klatkę wymuszałoby przeliczanie
+stylów. Zmierzone wygaszanie obrysu: `cover` 0 → (83, 105, 29), 0,25 →
+(66, 83, 25), 0,5 → (49, 59, 20), 0,75 → (30, 36, 15), 1 → (13, 14, 11).
+Przekazanie działa w obie strony w tej samej klatce: po zatrzymaniu obrys na
+canvasie jest zgaszony przy `opacity` nakładki 1, a tuż po ruszeniu wraca
+(76, 97, 34) przy `opacity` 0.
+
 Przy ruchu karuzeli kopia znika **natychmiast** (`transition: none`, żeby nie
 wlokła się za kaflem), po zatrzymaniu wraca liniowym fadem 280 ms. Zmierzone:
 w ruchu `opacity` 0 z `transition: none`, 30 ms po zatrzymaniu 0,109 przy
