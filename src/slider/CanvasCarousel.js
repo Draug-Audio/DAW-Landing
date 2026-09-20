@@ -692,20 +692,6 @@ export class CanvasCarousel {
     quad(ctx);
     ctx.fill();
 
-    // odblask na krawędzi natarcia
-    if (front < 0.999) {
-      const leading = rel > 0 ? left : right;
-      const trailing = rel > 0 ? right : left;
-      const rim = ctx.createLinearGradient(leading.x, 0, trailing.x, 0);
-      rim.addColorStop(0, `rgba(200,255,61,${0.1 + 0.22 * (1 - front) * (0.3 + energy)})`);
-      rim.addColorStop(0.16, 'rgba(200,255,61,0)');
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.fillStyle = rim;
-      quad(ctx);
-      ctx.fill();
-      ctx.globalCompositeOperation = 'source-over';
-    }
-
     // Nakładka ekranu — ten sam rzut co obraz, więc skraca się z kaflem.
     // Wyłącznie na kaflach pobocznych: przedni ma być czysty, bo w spoczynku
     // przykrywa go ostra kopia w DOM, a siatka byłaby pod nią i tak niewidoczna.
