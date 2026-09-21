@@ -129,6 +129,27 @@ const DEFAULTS = {
    * ramka w odbiciu domykała kształt, a nie ściągała na siebie uwagi.
    */
   reflectionBorder: 0.45,
+  /**
+   * Siła rwania idzie za prędkością przesuwania, liczoną w slajdach na sekundę.
+   * Poniżej `glitchSpeedIn` nie rwie wcale, od `glitchSpeedFull` rwie z pełną
+   * mocą. Dzięki temu szarpnięcie jest tym mocniejsze, im szybciej leci
+   * karuzela, i cichnie razem z nią — bez osobnej obwiedni w czasie.
+   *
+   * Próg dobrany do zmierzonych prędkości szczytowych: klik strzałki osiąga
+   * ok. 4,6 slajda/s, mocny rzut palcem ok. 6,7, skok o dwa slajdy ok. 9,4.
+   * Zwykłe przejście wypada więc w połowie skali, a pełna siła zostaje dla
+   * ruchu, który użytkownik naprawdę rozpędził.
+   */
+  glitchSpeedIn: 0.6,
+  glitchSpeedFull: 7,
+  /** wygięcie odpowiedzi; poniżej 1 podbija średnie prędkości */
+  glitchGamma: 0.9,
+  /**
+   * Czas cichnięcia w sekundach. Narost jest natychmiastowy, opadanie
+   * opóźnione — inaczej pojedyncze wahnięcie prędkości między klatkami
+   * migotałoby pasami.
+   */
+  glitchRelease: 0.12,
   /** ile pasów obrazu maksymalnie rwie się w jednej klatce */
   glitchBands: 9,
   /** maksymalna wysokość rwanego pasa w px, odniesiona do szerokości 1400 */
@@ -180,8 +201,8 @@ export class CanvasCarousel {
     this.vel = 0;
     this.index = 0;
     this.energy = 0;
-    this.rawEnergy = 0;
     this.burst = 0;
+    /** czas od wyzwolenia obwiedni rwania; `Infinity` znaczy „nie trwa” */
     this.time = 0;
     this.running = false;
     this.visible = true;
@@ -247,8 +268,6 @@ export class CanvasCarousel {
     if (instant) {
       this.pos = this.targetPos;
       this.vel = 0;
-    } else {
-      this.burst = 1;
     }
     return this;
   }
@@ -275,6 +294,20 @@ export class CanvasCarousel {
       // był przykryty — nakładka przejmuje go, żeby nie rozjechały się barwą
       borderColor: `rgba(200,255,61,${(0.08 + 0.3).toFixed(3)})`,
     };
+  }
+
+  /**
+   * Siła rwania dla zadanej prędkości przesuwania (slajdy na sekundę).
+   * Narost natychmiastowy, opadanie ze stałą `glitchRelease` — pasy nie
+   * migoczą między klatkami, ale gasną razem z zatrzymaniem karuzeli.
+   */
+  _driveGlitch(speed, dt) {
+    const { glitchSpeedIn, glitchSpeedFull, glitchGamma, glitchRelease } = this.opt;
+    const raw = clamp((speed - glitchSpeedIn) / (glitchSpeedFull - glitchSpeedIn), 0, 1);
+    const drive = glitchGamma === 1 ? raw : raw ** glitchGamma;
+    this.burst = drive > this.burst
+      ? drive
+      : lerp(this.burst, drive, 1 - Math.exp(-dt / glitchRelease));
   }
 
   /** Krycie obrysu kafla; dla przedniego gaśnie pod ostrą kopią. */
@@ -427,15 +460,8 @@ export class CanvasCarousel {
 
     // energia = ile „slajdów na sekundę” przelatuje pod kamerą
     const target = clamp(speed / 2.6, 0, 1);
-    /**
-     * Wartość chwilowa, bez wygładzania. `energy` rośnie natychmiast, ale
-     * opada z opóźnieniem — trzyma więc jeszcze ok. 0,3, gdy kafel stoi już
-     * na celu. Do bramkowania efektów, które na nieruchomym kaflu rzucają się
-     * w oczy, potrzebna jest prędkość bieżąca.
-     */
-    this.rawEnergy = target;
     this.energy = target > this.energy ? target : lerp(this.energy, target, 1 - Math.exp(-dt * 7));
-    this.burst = Math.max(0, this.burst - dt / 0.5);
+    this._driveGlitch(speed, dt);
 
     const settled = wrapIndex(Math.round(this.pos), this.count);
     if (settled !== this.settledIndex && Math.abs(this.pos - this.targetPos) < 0.04) {
@@ -1121,15 +1147,17 @@ export class CanvasCarousel {
   /** Rozerwane pasy obrazu — tym mocniejsze, im szybszy obrót. */
   _drawGlitch(ctx, energy) {
     /*
-     * Bramka na realnym ruchu, nie na samym `burst`. Przesunięty w bok pas
-     * obrazu to na pionowej krawędzi kafla schodek — przy szybkim obrocie
-     * ginie w rozmyciu i aberracji, ale przy dociąganiu do pozycji kafel jest
-     * już niemal nieruchomy i ostry, więc schodek na ramce rzuca się w oczy.
-     * `burst` sam z siebie trwa pół sekundy niezależnie od prędkości, więc bez
-     * tej bramki potrafił odpalać glitch na praktycznie stojącym kaflu.
+     * Siła bierze się wprost z prędkości przesuwania (`_driveGlitch`): szybki
+     * rzut rwie mocno, powolne dociąganie ledwie muska, a stojący kafel nie
+     * rwie się wcale. Osobna bramka na ruchu jest więc zbędna — przy braku
+     * ruchu `burst` sam schodzi do zera.
+     *
+     * Ma to znaczenie na krawędzi kafla: przesunięty w bok pas obrazu to na
+     * pionowym obrysie schodek. Przy szybkim obrocie ginie on w rozmyciu
+     * i aberracji, ale na niemal nieruchomym, ostrym kaflu rzucałby się
+     * w oczy — i tam właśnie siła jest już bliska zeru.
      */
-    const motion = smoothstep(0.22, 0.45, this.rawEnergy);
-    const intensity = Math.max(energy, this.burst * 0.85) * motion;
+    const intensity = this.burst;
     if (intensity < 0.12) return;
 
     const { w, h } = this;
@@ -1202,6 +1230,8 @@ export class CanvasCarousel {
       if (!this.pointer.active || (e.pointerId != null && e.pointerId !== this.pointer.id)) return;
       this.pointer.active = false;
       el.releasePointerCapture?.(this.pointer.id);
+      // puszczenie po przeciągnięciu też wyzwala obwiednię — inaczej
+      // dociąganie po drag-and-drop byłoby jedynym ruchem bez rwania
       const flick = clamp(this.pointer.vel, -6, 6);
       const projected = this.pos + flick * 0.24;
       const anchor = Math.round(this.pos);
