@@ -24,12 +24,6 @@
       transition: filter 0.2s ease, transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
-    // gołe obrazki (wtyczki one-knob) — podświetlenie i uniesienie samego obrazka
-    > img:hover {
-      filter: drop-shadow(0 0 1px $ring-3);
-      transform: translateY(-3px);
-    }
-
     @include below($bp-lg) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     @include below($bp-sm) { grid-template-columns: minmax(0, 1fr); }
 
@@ -148,6 +142,79 @@
     line-height: 1.55;
     color: $text-dim;
     text-wrap: pretty;
+  }
+
+  // ── lista Ratio w szufladzie wtyczki one-knob ──
+  // wiersz: parametr | pasek od środka | wartość ze znakiem
+  &__ratios-title {
+    @include mono(9.5px, 0.16em);
+    margin-bottom: 8px;
+    color: $text-muted;
+  }
+
+  &__ratios {
+    display: grid;
+    gap: 7px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 36px 38px;
+      align-items: center;
+      gap: 8px;
+    }
+  }
+
+  &__param {
+    overflow: hidden;
+    font-size: 12px;
+    color: $text-dim;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  // tor z kreską środka; wypełnienie od środka, długość = |ratio|
+  &__bar {
+    position: relative;
+    height: 4px;
+    background: #262d33;
+    border-radius: 2px;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: -2px;
+      bottom: -2px;
+      left: 50%;
+      width: 1px;
+      background: $text-muted;
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: calc(var(--r) * 50%);
+      background: $lime;
+      border-radius: 0 2px 2px 0;
+    }
+
+    .is-neg > &::after {
+      left: auto;
+      right: 50%;
+      border-radius: 2px 0 0 2px;
+    }
+  }
+
+  &__ratio {
+    @include mono(10.5px, 0.02em);
+    color: $lime;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
   }
 
   // dotyk: opis zawsze widoczny, w przepływie, pod kartą

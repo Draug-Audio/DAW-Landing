@@ -603,6 +603,12 @@ dostają `inert`. Przy `prefers-reduced-motion` kroki mają czas 0.
   więc siatka nie skacze. Na ekranach bez najechania (`hover: none`) opis
   stoi pod kartą na stałe; czytniki ekranu czytają go zawsze (`figcaption`).
   Opisy oparte na tym, co każda wtyczka pokazuje w makiecie.
+- Wtyczki one-knob mają taką samą kartę z szufladą, ale w szufladzie jest
+  tylko lista „Ratio”: 4–6 konkretnych parametrów z wagą, z jaką każdy idzie
+  za gałką (ujemna — parametr maleje, gdy gałka rośnie). Pasek rośnie od
+  kreski środka w prawo albo w lewo, długość = |ratio|, wartość ze znakiem
+  cyframi o stałej szerokości. Wagi są przykładowe — pod spodem dobiera je
+  agent.
 - Zdjęcie z sekcji „Jak powstał DAW” to PNG 4606 × 2624 (5,6 MB). Tutaj jest
   jako WebP 2200 px, q90 / 250 kB — **z kanałem alfa**, bo to wycinanka na
   przezroczystym tle. Odrzucenie alfy przy konwersji odsłania surowe zielone
