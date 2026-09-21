@@ -195,6 +195,16 @@
 
   &::after { animation-delay: -3.5s; }
 
+  // Muzyka gra: impulsy w takt utworu, postęp 0–1 z pliku timeline.js.
+  // Pozycja pasma liniowo od -180 px (nad osią) do 100% + 180 px (pod nią).
+  &.is-synced {
+    &::before,
+    &::after { animation: none; }
+
+    &::before { background-position: 0 calc(var(--pulse-a, 0) * 100% + (2 * var(--pulse-a, 0) - 1) * #{$pulse}); }
+    &::after { background-position: 0 calc(var(--pulse-b, 0) * 100% + (2 * var(--pulse-b, 0) - 1) * #{$pulse}); }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     &::before,
     &::after { display: none; }

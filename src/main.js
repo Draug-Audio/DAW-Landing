@@ -60,4 +60,7 @@ mountFeatures(document.querySelector('#funkcje'));
 // oś czasu współpracy: dymki szerokości swojej treści
 mountTimeline(document.querySelector('.timeline'), {
   alignTo: document.querySelector('.features__grid'),
+  // impulsy na osi w takt muzyki, gdy gra
+  sound,
+  reducedMotion,
 });

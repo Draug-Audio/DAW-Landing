@@ -619,7 +619,12 @@ dostają `inert`. Przy `prefers-reduced-motion` kroki mają czas 0.
   0,33 px; bez tego po zaokrągleniu do pikseli był schodek 1 px). Po osi
   biegną z góry na dół dwa subtelne białe impulsy (pasmo 180 px, krycie
   do 0,45, cykl 7 s z przerwą, drugi przesunięty o pół cyklu), pod kropkami;
-  przy `prefers-reduced-motion` ich nie ma.
+  przy `prefers-reduced-motion` ich nie ma. Gdy gra muzyka, impulsy idą za
+  taktami utworu: nowy na każdą „raz” (co 4 uderzenia, 2,5 s przy 96 BPM),
+  każdy przebiega oś w dwa takty — parzyste takty na `::before`, nieparzyste
+  na `::after`. Postęp z `beatPosition()` (z poprawką na opóźnienie wyjścia)
+  trafia do `--pulse-a` / `--pulse-b`; pętla `requestAnimationFrame` chodzi
+  tylko, gdy muzyka gra, a oś jest na ekranie. Po pauzie wraca animacja CSS.
 - Loga w „Integracjach” (`logo-{claude,deepseek,gpt,grok}.webp`) znormalizowane
   do jednego formatu: kwadrat 256 × 256, przezroczyste tło, znak przycięty do
   obrysu i wpasowany w 224 px na środku, bezstratny WebP (5–13 kB). Grok miał

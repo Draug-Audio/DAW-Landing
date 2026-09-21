@@ -15,7 +15,19 @@
  * lewych krawędzi, zwykle ułamek piksela, który po zaokrągleniu dawał
  * widoczny schodek 1 px. Gdy kolumny nie leżą obok siebie albo odcinek nad osią
  * jest ukryty (wąski ekran), przesunięcia nie ma.
+ *
+ * Trzecia: impulsy na osi. Bez muzyki biegną z animacji CSS. Gdy muzyka gra,
+ * idą za taktami utworu — nowy impuls na każdą „raz” (co 4 uderzenia), a każdy
+ * przebiega całą oś w ciągu dwóch taktów, więc na osi są naraz dwa: parzyste
+ * takty na `::before`, nieparzyste na `::after`. Skrypt w każdej klatce liczy
+ * postęp obu z `beatPosition()` i podaje go w `--pulse-a` / `--pulse-b`; pętla
+ * chodzi tylko, gdy muzyka gra, a oś jest na ekranie.
  */
+
+/** uderzeń w takcie (4/4) */
+const BAR = 4;
+/** ile taktów trwa przejście impulsu przez całą oś */
+const TRAVEL_BARS = 2;
 
 const range = document.createRange();
 
@@ -32,7 +44,10 @@ const longestLine = (el) => {
   return right > left ? right - left : 0;
 };
 
-export function mountTimeline(timeline, { alignTo } = {}) {
+/** reszta z dzielenia zawsze nieujemna (przed pierwszą „raz” pozycja jest ujemna) */
+const mod = (x, n) => ((x % n) + n) % n;
+
+export function mountTimeline(timeline, { alignTo, sound, reducedMotion = false } = {}) {
   if (!timeline) return;
   const cards = [...timeline.querySelectorAll('.timeline__card')];
   const leadIn = timeline.querySelector('.timeline__lead-in span');
@@ -75,4 +90,37 @@ export function mountTimeline(timeline, { alignTo } = {}) {
   if (alignTo) new ResizeObserver(align).observe(alignTo);
   // font z sieci zmienia szerokości linii
   document.fonts?.ready.then(fit);
+
+  if (sound && !reducedMotion) syncPulses(timeline, sound);
+}
+
+/** impulsy na osi w takt muzyki — patrz opis modułu */
+function syncPulses(timeline, sound) {
+  const span = BAR * TRAVEL_BARS;
+  let visible = false;
+  let frame = 0;
+
+  const tick = () => {
+    frame = 0;
+    const beat = sound.beatPosition();
+    if (beat === null || !visible) {
+      timeline.classList.remove('is-synced');
+      return;
+    }
+    timeline.classList.add('is-synced');
+    // impuls A startuje na taktach 0, 2, 4…, B na 1, 3, 5…
+    timeline.style.setProperty('--pulse-a', (mod(beat, span) / span).toFixed(4));
+    timeline.style.setProperty('--pulse-b', (mod(beat - BAR, span) / span).toFixed(4));
+    frame = requestAnimationFrame(tick);
+  };
+  const start = () => {
+    if (!frame && visible && sound.isPlaying()) frame = requestAnimationFrame(tick);
+  };
+
+  new IntersectionObserver(([entry]) => {
+    visible = entry.isIntersecting;
+    start();
+  }).observe(timeline);
+  // start i pauza muzyki; po pauzie pętla sama się kończy i wraca animacja CSS
+  sound.onChange(start);
 }
