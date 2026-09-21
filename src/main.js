@@ -6,7 +6,14 @@ import { mountSoundPlayer } from './audio/SoundPlayer.js';
 import { SpeakerRings, svgSpeakers } from './audio/SpeakerRings.js';
 
 // ── muzyka w tle + pierścienie hero jako kolumny głośnikowe ──
-const sound = new BackgroundSound(`${import.meta.env.BASE_URL}assets/background.mp3`, { volume: 0.5 });
+// Tempo i pierwsza „raz” zmierzone z nagrania: dopasowanie siatki do
+// obwiedni pasm daje dokładnie 96,000 BPM bez dryfu; stopa akcentuje
+// uderzenie w 0,025 s, a werbel gra na 2 i 4 — to jest początek taktu.
+const sound = new BackgroundSound(`${import.meta.env.BASE_URL}assets/background.mp3`, {
+  volume: 0.5,
+  bpm: 96,
+  downbeat: 0.025,
+});
 const soundToggle = document.querySelector('[data-sound-toggle]');
 if (soundToggle) {
   // przycisk ma sens dopiero z działającym skryptem — bez JS nic nie gra

@@ -23,6 +23,13 @@ import { clamp } from '../slider/math.js';
  * i CSS, a bez JS strona pokazuje po prostu statyczne SVG. W ciszy canvas
  * rysuje dokładnie to samo.
  *
+ * W środkowej kolumnie dodatkowo pulsuje pierścień w takt utworu (4/4):
+ * na „raz” rodzi się wewnątrz jako równe koło, rozszerza się i rozmywa;
+ * na każdym kolejnym uderzeniu zrównuje się z następnym pierścieniem
+ * kolumny, szybkim przejściem przejmuje jego falę i rusza dalej, a na
+ * „cztery” wychodzi poza ostatni pierścień i gaśnie. Trzy przetworniki dają
+ * cztery odcinki drogi — dokładnie jeden takt.
+ *
  * Każda scena ma własną pętlę, bramkowaną widocznością — animuje się tylko
  * sekcja, która jest na ekranie (albo obie, gdy widać obie). Widmo liczy się
  * raz na klatkę, nawet gdy scen jest kilka (`BackgroundSound.frameSpectrum`).
@@ -69,6 +76,33 @@ const EXCURSION = 9;
 /** ile miejsca pierścień potrzebuje ponad swój promień, żeby się nie przyciąć */
 const ringMargin = (r) => reachFor(r) + EXCURSION + 2;
 
+/** puls w takt w środkowej kolumnie */
+const PULSE = {
+  /** promień narodzin jako ułamek najmniejszego pierścienia */
+  start: 0.2,
+  /** próbek na połowę obwodu (obwód jest lustrzany) */
+  samples: 120,
+  /** czas przejęcia fali przy uderzeniu, s */
+  morph: 0.09,
+  /** czas pojawienia się na „raz”, s */
+  fadeIn: 0.06,
+  /** rozmycie pod koniec uderzenia, px */
+  blur: 12,
+  /** warstw rozmycia — linia rozciągnięta wzdłuż normalnej */
+  layers: 7,
+  alpha: 0.42,
+  width: 1.6,
+  /** o ile przygasa do końca uderzenia (0–1) */
+  fade: 0.35,
+  /**
+   * Poświata rosnąca z rozmyciem: mnożnik „tuszu” na każdy piksel rozmycia.
+   * Przy samym zachowaniu tuszu rozmyty puls rozkładał światło na ok. 11 px
+   * i w trakcie ruchu spadał do 5–7 / 255 — błyskał tylko na uderzeniach,
+   * a rozszerzania prawie nie było widać.
+   */
+  glow: 0.2,
+};
+
 /**
  * Pasma zwrotnicy dla `n` przetworników — równe w skali logarytmicznej.
  * Dla trzech przetworników daje punkty podziału ok. 290 Hz i 2,1 kHz, czyli
@@ -97,21 +131,19 @@ function buildSpeakers(groups) {
     const bands = crossover(rings.length);
     const last = Math.max(1, rings.length - 1);
     const drivers = rings.map((ring, j) => makeDriver(ring, bands[j], j / last));
-    return { cx: group.cx, cy: group.cy, channel, drivers };
+    const pulse = channel === 'mid' ? makePulse(drivers) : null;
+    return { cx: group.cx, cy: group.cy, channel, drivers, pulse };
   });
 }
 
 /**
  * @param {number} t pozycja w kolumnie: 0 = woofer, 1 = tweeter
  */
-function makeDriver({ r, color }, band, t) {
-  // próbka co ok. 14 px obwodu, parzyście, bo pierścień jest lustrzany
-  const count = 2 * Math.round(clamp((TAU * r) / 14, 40, 200) / 2);
-  const half = count / 2;
+/** kierunki próbek na lustrzanym obwodzie: od dołu (π/2) do góry, obie strony */
+function mirroredDirs(half) {
   const dirs = new Float32Array(half * 4);
   for (let k = 0; k < half; k += 1) {
     const frac = (k + 0.5) / half;
-    // na dole (π/2) najniższe częstotliwości pasma, u góry najwyższe
     const right = Math.PI / 2 - frac * Math.PI;
     const left = Math.PI / 2 + frac * Math.PI;
     dirs[k * 4] = Math.cos(right);
@@ -119,6 +151,15 @@ function makeDriver({ r, color }, band, t) {
     dirs[k * 4 + 2] = Math.cos(left);
     dirs[k * 4 + 3] = Math.sin(left);
   }
+  return dirs;
+}
+
+function makeDriver({ r, color }, band, t) {
+  // próbka co ok. 14 px obwodu, parzyście, bo pierścień jest lustrzany;
+  // na dole najniższe częstotliwości pasma, u góry najwyższe
+  const count = 2 * Math.round(clamp((TAU * r) / 14, 40, 200) / 2);
+  const half = count / 2;
+  const dirs = mirroredDirs(half);
   const [f0, f1] = band;
   const edges = new Float32Array(half + 1);
   for (let k = 0; k <= half; k += 1) edges[k] = f0 * (f1 / f0) ** (k / half);
@@ -133,6 +174,8 @@ function makeDriver({ r, color }, band, t) {
     values: new Float32Array(half),
     /** wartości po wygładzeniu przestrzennym — z nich liczony jest kształt */
     shape: new Float32Array(half),
+    /** promień w każdej próbce — wejście do rysowania obrysu */
+    radii: new Float32Array(half),
     /** punkty obrysu: prawa strona od dołu do góry, lewa z góry na dół */
     pts: new Float32Array(count * 2),
     level: 0,
@@ -148,6 +191,40 @@ function makeDriver({ r, color }, band, t) {
     tilt: null,
   };
 }
+
+/**
+ * Puls środkowej kolumny. Przystanki promienia: narodziny wewnątrz, kolejne
+ * pierścienie od najmniejszego, a za ostatnim tyle, ile wynosi odstęp między
+ * dwoma zewnętrznymi. Zasięg (`extent`) mówi, ile miejsca potrzebuje canvas.
+ */
+function makePulse(drivers) {
+  const inner = [...drivers].reverse(); // od najmniejszego do największego
+  const outer = inner[inner.length - 1];
+  const gap = inner.length > 1 ? outer.r - inner[inner.length - 2].r : outer.r * 0.25;
+  const half = PULSE.samples;
+  return {
+    inner,
+    gap,
+    half,
+    dirs: mirroredDirs(half),
+    disp: new Float32Array(half),
+    radii: new Float32Array(half),
+    pts: new Float32Array(half * 4),
+    extent: outer.r + gap + outer.reach + outer.excursion + PULSE.blur + 2,
+  };
+}
+
+/** kształt pierścienia w danym miejscu obwodu (0 = dół, 1 = góra), w px */
+function sampleShape(driver, frac) {
+  const last = driver.half - 1;
+  const x = clamp(frac * driver.half - 0.5, 0, last);
+  const i = Math.floor(x);
+  const a = driver.shape[i];
+  const b = driver.shape[Math.min(i + 1, last)];
+  return (a + (b - a) * (x - i)) * driver.reach;
+}
+
+const smooth = (x) => x * x * (3 - 2 * x);
 
 /** pozycje brzegów pasm w indeksach FFT — liczone raz na częstotliwość próbkowania */
 function binMap(driver, binHz) {
@@ -197,11 +274,10 @@ export function svgSpeakers(container) {
   return {
     canvas,
     watch: [container],
+    /** kolumny we współrzędnych kontenera */
     measure() {
       const cb = container.getBoundingClientRect();
       const placed = [];
-      let top = Infinity;
-      let bottom = -Infinity;
       for (const { svg, rings } of groups) {
         const box = svg.getBoundingClientRect();
         if (!box.width || !rings.length) continue; // kolumna schowana na tej szerokości
@@ -210,27 +286,26 @@ export function svgSpeakers(container) {
         const s = Math.min(box.width / vb.width, box.height / vb.height);
         const ox = box.left - cb.left + (box.width - vb.width * s) / 2 - vb.x * s;
         const oy = box.top - cb.top + (box.height - vb.height * s) / 2 - vb.y * s;
-        const mapped = rings.map((ring) => ({
-          cx: ox + ring.cx * s, cy: oy + ring.cy * s, r: ring.r * s, color: ring.color,
-        }));
-        for (const ring of mapped) {
-          const m = ring.r + ringMargin(ring.r);
-          top = Math.min(top, ring.cy - m);
-          bottom = Math.max(bottom, ring.cy + m);
-        }
-        placed.push(mapped);
+        placed.push({
+          cx: ox + rings[0].cx * s,
+          cy: oy + rings[0].cy * s,
+          rings: rings.map((ring) => ({ r: ring.r * s, color: ring.color })),
+        });
       }
-      if (!placed.length) return [];
-
-      top = Math.floor(top);
-      canvas.style.top = `${top}px`;
-      canvas.style.height = `${Math.ceil(bottom) - top}px`;
-      const left = canvas.getBoundingClientRect().left - cb.left;
-      return placed.map((rings) => ({
-        cx: rings[0].cx - left,
-        cy: rings[0].cy - top,
-        rings: rings.map((ring) => ({ r: ring.r, color: ring.color })),
-      }));
+      return placed;
+    },
+    /**
+     * Ustawia pion canvasu (we współrzędnych kontenera) i zwraca jego
+     * przesunięcie względem kontenera. Nad początkiem dokumentu i tak nic
+     * nie widać, więc canvas nie sięga wyżej — w hero oszczędza to kilkaset
+     * wierszy pikseli.
+     */
+    place(top, bottom) {
+      const cb = container.getBoundingClientRect();
+      const y = Math.max(Math.floor(top), -Math.floor(cb.top + window.scrollY));
+      canvas.style.top = `${y}px`;
+      canvas.style.height = `${Math.ceil(bottom) - y}px`;
+      return { left: canvas.getBoundingClientRect().left - cb.left, top: y };
     },
   };
 }
@@ -268,8 +343,29 @@ export class SpeakerRings {
   }
 
   resize() {
-    // źródło przestawia pion canvasu, więc jego pudełko czytamy po pomiarze
     const groups = this.source.measure();
+    if (!groups.length) return;
+    // zmiana geometrii zeruje stan pierścieni — i tak wybrzmiewa w 0,2 s
+    const speakers = buildSpeakers(groups);
+
+    // pion canvasu: zasięg pierścieni z zapasem na odkształcenie, a w
+    // środkowej kolumnie — zasięg pulsu, który wychodzi poza ostatni pierścień
+    let top = Infinity;
+    let bottom = -Infinity;
+    for (const speaker of speakers) {
+      let extent = speaker.pulse ? speaker.pulse.extent : 0;
+      for (const d of speaker.drivers) extent = Math.max(extent, d.r + ringMargin(d.r));
+      top = Math.min(top, speaker.cy - extent);
+      bottom = Math.max(bottom, speaker.cy + extent);
+    }
+    const offset = this.source.place(top, bottom);
+    for (const speaker of speakers) {
+      speaker.cx -= offset.left;
+      speaker.cy -= offset.top;
+    }
+    this.speakers = speakers;
+
+    // pudełko canvasu dopiero po osadzeniu
     const box = this.canvas.getBoundingClientRect();
     if (!box.width || !box.height) return;
 
@@ -279,10 +375,7 @@ export class SpeakerRings {
     if (this.canvas.width !== width) this.canvas.width = width;
     if (this.canvas.height !== height) this.canvas.height = height;
     this.k = k;
-
-    // zmiana geometrii zeruje stan pierścieni — i tak wybrzmiewa w 0,2 s
-    this.speakers = buildSpeakers(groups);
-    this._draw();
+    this._draw(null);
   }
 
   _wake() {
@@ -303,6 +396,7 @@ export class SpeakerRings {
     this.last = now;
 
     const binHz = this.sound.binHz;
+    const beat = this.sound.beatPosition();
     let live = false;
     let energy = 0;
     for (const speaker of this.speakers) {
@@ -310,7 +404,7 @@ export class SpeakerRings {
       if (data) live = true;
       for (const driver of speaker.drivers) energy += this._update(driver, data, binHz, dt);
     }
-    this._draw();
+    this._draw(beat);
 
     // gdy muzyka stanie, pierścienie wybrzmiewają do zera i pętla gaśnie
     if (this.visible && (live || energy > 1e-3)) this.raf = requestAnimationFrame(this._frame);
@@ -353,10 +447,20 @@ export class SpeakerRings {
     }
 
     driver.level = sum / half;
+
+    // Wygładzenie 1-2-1 — wartość pasma to maksimum przedziałów FFT, więc
+    // sąsiednie próbki potrafią skakać i linia byłaby postrzępiona. Brzegi
+    // lustrzane: na dole i u góry sąsiadem skrajnej próbki jest ona sama.
+    // Liczone tu, a nie przy rysowaniu, bo z kształtu korzysta też puls.
+    const { shape } = driver;
+    const lastK = half - 1;
+    for (let k = 0; k < half; k += 1) {
+      shape[k] = (values[k === 0 ? 0 : k - 1] + 2 * values[k] + values[k === lastK ? lastK : k + 1]) / 4;
+    }
     return driver.level;
   }
 
-  _draw() {
+  _draw(beat) {
     const { ctx, canvas, k } = this;
     if (!k) return;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -372,8 +476,13 @@ export class SpeakerRings {
         const silent = driver.level < 1e-3;
         ctx.beginPath();
         // w ciszy dokładny okrąg — ten sam co w markupie
-        if (silent) ctx.arc(cx, cy, r, 0, TAU);
-        else this._ringPath(driver, cx, cy, r);
+        if (silent) {
+          ctx.arc(cx, cy, r, 0, TAU);
+        } else {
+          const { radii, shape, reach, half } = driver;
+          for (let i = 0; i < half; i += 1) radii[i] = r + shape[i] * reach;
+          this._mirroredPath(cx, cy, half, driver.dirs, radii, driver.pts);
+        }
         ctx.lineWidth = 1;
         ctx.strokeStyle = driver.color;
         ctx.stroke();
@@ -384,38 +493,103 @@ export class SpeakerRings {
         ctx.strokeStyle = `rgba(${LIME},${(driver.alpha * Math.min(1, driver.level * 2)).toFixed(3)})`;
         ctx.stroke();
       }
+      // puls na wierzchu — w chwili uderzenia nakłada się ostro na pierścień
+      if (speaker.pulse && beat != null) this._drawPulse(speaker, beat);
     }
+    ctx.globalAlpha = 1;
   }
 
   /**
-   * Obrys pierścienia odkształconego widmem. Wartości są najpierw wygładzane
-   * filtrem 1-2-1 — wartość pasma to maksimum przedziałów FFT, więc sąsiednie
-   * próbki potrafią skakać i linia byłaby postrzępiona. Brzegi są lustrzane:
-   * na dole i u góry sąsiadem skrajnej próbki jest ona sama po drugiej stronie.
+   * Puls w takt. Takt dzieli się na tyle odcinków, ile jest przystanków
+   * (3 przetworniki → 4 uderzenia): na „raz” równe koło rodzi się wewnątrz
+   * i biegnie do najmniejszego pierścienia; na każdym kolejnym uderzeniu
+   * stoi dokładnie na następnym pierścieniu (także z jego wychyleniem
+   * membrany), w `PULSE.morph` przejmuje jego falę i rusza dalej; na
+   * „cztery” wychodzi poza ostatni pierścień i gaśnie.
+   *
+   * W każdym odcinku: ruch z wyhamowaniem (ease-out), rozmycie od zera do
+   * `PULSE.blur` i przygasanie — ostry jest tylko w chwili uderzenia.
    */
-  _ringPath(driver, cx, cy, r) {
+  _drawPulse(speaker, beat) {
     const { ctx } = this;
-    const { values, shape, pts, dirs, half, reach } = driver;
-    const last = half - 1;
-    for (let k = 0; k < half; k += 1) {
-      const prev = values[k === 0 ? 0 : k - 1];
-      const next = values[k === last ? last : k + 1];
-      shape[k] = (prev + 2 * values[k] + next) / 4;
+    const { pulse, cx, cy } = speaker;
+    const { inner, half, disp, radii } = pulse;
+    const segments = inner.length + 1;
+    const beatDur = 60 / this.sound.bpm;
+
+    const cycle = ((beat % segments) + segments) % segments;
+    const seg = Math.floor(cycle);
+    const u = cycle - seg;
+    const ease = 1 - (1 - u) ** 3;
+
+    const liveR = (d) => d.r + d.level * d.excursion;
+    const outer = inner[inner.length - 1];
+    const stops = [inner[0].r * PULSE.start, ...inner.map(liveR), liveR(outer) + pulse.gap];
+    const radius = stops[seg] + (stops[seg + 1] - stops[seg]) * ease;
+
+    // fala: na „raz” żadna (równe koło), potem przejście z fali poprzedniego
+    // pierścienia na falę tego, na którym puls właśnie stoi
+    const target = seg > 0 ? inner[seg - 1] : null;
+    const from = seg > 1 ? inner[seg - 2] : null;
+    const morph = seg > 0 ? smooth(Math.min(1, (u * beatDur) / PULSE.morph)) : 1;
+    for (let j = 0; j < half; j += 1) {
+      const frac = (j + 0.5) / half;
+      const a = from ? sampleShape(from, frac) : 0;
+      const b = target ? sampleShape(target, frac) : 0;
+      disp[j] = a + (b - a) * morph;
     }
 
-    // pętla bez szwu: prawa strona od dołu do góry, lewa z góry na dół
+    const blur = PULSE.blur * ease;
+    let alpha = PULSE.alpha * (1 - PULSE.fade * ease);
+    if (seg === 0) alpha *= Math.min(1, (u * beatDur) / PULSE.fadeIn);
+    if (seg === segments - 1) alpha *= (1 - u) ** 1.5;
+    if (alpha < 0.004) return;
+
+    // Rozmycie jako linia rozciągnięta wzdłuż normalnej: kilka kopii
+    // przesuniętych promieniowo, z wagami Gaussa. Dla cienkiej linii to jest
+    // właśnie rozmycie (wzdłuż stycznej nic się nie zmienia), a koszt jest
+    // stały — `ctx.filter` rozmywałby warstwę wielkości całego pierścienia.
+    // „Tusz” (krycie × grubość) rośnie z rozmyciem o `PULSE.glow` — sam
+    // zachowany tusz rozlewałby się na tyle pikseli, że puls w ruchu znikał.
+    const { layers } = PULSE;
+    const width = PULSE.width * (1 + PULSE.glow * blur);
+    const sigma = Math.max(blur / 2, 0.01);
+    const lw = Math.max(1, (2 * blur) / (layers - 1));
+    const spread = [];
+    let sum = 0;
+    for (let i = 0; i < layers; i += 1) {
+      const offset = ((i / (layers - 1)) * 2 - 1) * blur;
+      const w = Math.exp(-(offset * offset) / (2 * sigma * sigma));
+      spread.push([offset, w]);
+      sum += w;
+    }
+    ctx.lineWidth = lw;
+    ctx.strokeStyle = `rgb(${LIME})`;
+    for (const [offset, w] of spread) {
+      ctx.globalAlpha = Math.min(alpha, (alpha * width * w) / (lw * sum));
+      for (let j = 0; j < half; j += 1) radii[j] = radius + offset + disp[j];
+      ctx.beginPath();
+      this._mirroredPath(cx, cy, half, pulse.dirs, radii, pulse.pts);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /**
+   * Zamknięty obrys z promieni w lustrzanych próbkach: prawa strona od dołu
+   * do góry, lewa z góry na dół — pętla bez szwu. Krzywa przez środki
+   * odcinków z próbkami jako punktami kontrolnymi, bez załamań.
+   */
+  _mirroredPath(cx, cy, half, dirs, radii, pts) {
+    const { ctx } = this;
     const n = half * 2;
     for (let i = 0; i < n; i += 1) {
       const right = i < half;
       const j = right ? i : n - 1 - i;
       const o = j * 4 + (right ? 0 : 2);
-      const radius = r + shape[j] * reach;
-      pts[i * 2] = cx + dirs[o] * radius;
-      pts[i * 2 + 1] = cy + dirs[o + 1] * radius;
+      pts[i * 2] = cx + dirs[o] * radii[j];
+      pts[i * 2 + 1] = cy + dirs[o + 1] * radii[j];
     }
-
-    // krzywa przez środki odcinków z próbkami jako punktami kontrolnymi —
-    // gładka, bez załamań w miejscach próbek
     ctx.moveTo((pts[(n - 1) * 2] + pts[0]) / 2, (pts[(n - 1) * 2 + 1] + pts[1]) / 2);
     for (let i = 0; i < n; i += 1) {
       const j = (i + 1) % n;

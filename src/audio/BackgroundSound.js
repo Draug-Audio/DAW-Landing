@@ -52,9 +52,12 @@ function writePreference(enabled) {
 export class BackgroundSound {
   /**
    * @param {string} src
-   * @param {{volume?: number, fftSize?: number}} [options]
+   * @param {{volume?: number, fftSize?: number, bpm?: number, downbeat?: number}} [options]
+   *   `bpm` i `downbeat` (czas pierwszej „raz” w pliku, w sekundach) opisują
+   *   siatkę rytmiczną tego konkretnego utworu — bez nich `beatPosition()`
+   *   zwraca null.
    */
-  constructor(src, { volume = 0.5, fftSize = 4096 } = {}) {
+  constructor(src, { volume = 0.5, fftSize = 4096, bpm = 0, downbeat = 0 } = {}) {
     this.audio = new Audio();
     this.audio.src = src;
     this.audio.loop = true;
@@ -67,6 +70,8 @@ export class BackgroundSound {
     this.volume = readVolume(volume);
     this.output = null;
     this.fftSize = fftSize;
+    this.bpm = bpm;
+    this.downbeat = downbeat;
     this.enabled = readPreference();
     this.ctx = null;
     this.analysers = null;
@@ -130,6 +135,21 @@ export class BackgroundSound {
       slot.stamp = stamp;
     }
     return slot.data;
+  }
+
+  /**
+   * Pozycja w siatce rytmicznej: liczba uderzeń od pierwszej „raz” (ułamkowa),
+   * więc `Math.floor(p) % 4` to numer uderzenia w takcie 4/4.
+   *
+   * Czas pomniejszony o opóźnienie wyjścia (`baseLatency + outputLatency`):
+   * `currentTime` mówi, co dekoder oddał do grafu, a słychać to dopiero po tym
+   * opóźnieniu — bez poprawki obraz wyprzedzałby dźwięk o kilkadziesiąt ms.
+   * @returns {number | null} null, gdy nic nie gra albo utwór nie ma tempa
+   */
+  beatPosition() {
+    if (!this.bpm || !this.isPlaying()) return null;
+    const latency = this.ctx ? (this.ctx.baseLatency || 0) + (this.ctx.outputLatency || 0) : 0;
+    return ((this.audio.currentTime - latency - this.downbeat) * this.bpm) / 60;
   }
 
   onChange(listener) {

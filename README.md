@@ -357,6 +357,42 @@ jak membrana — woofer do 9 px, tweeter ledwie 1,5 px.
 
 Bez JS zostają statyczne SVG, a w ciszy canvas rysuje dokładnie to samo.
 
+### Puls w takt
+
+W środkowej kolumnie obu sekcji pulsuje pierścień w rytmie utworu, takt 4/4:
+
+1. **raz** — wewnątrz rodzi się równe koło, rozszerza się i rozmywa w stronę
+   najmniejszego pierścienia;
+2. **dwa** — staje dokładnie na nim (z jego wychyleniem membrany), w 90 ms
+   przejmuje jego falę i rusza dalej, znów się rozmywając;
+3. **trzy** — to samo z drugim pierścieniem;
+4. **cztery** — przejmuje falę trzeciego, wychodzi poza niego o odstęp między
+   dwoma zewnętrznymi i gaśnie przed następną „raz”.
+
+Trzy przetworniki dają cztery odcinki drogi — dokładnie jeden takt. W każdym
+odcinku ruch wyhamowuje (ease-out), rozmycie rośnie od zera do 12 px, a puls
+przygasa; ostry jest tylko w chwili uderzenia. Rozmycie to kilka kopii linii
+przesuniętych wzdłuż normalnej z wagami Gaussa — dla cienkiej linii to jest
+właśnie rozmycie, a koszt stały; `ctx.filter` rozmywałby warstwę wielkości
+całego pierścienia. Samo zachowanie „tuszu” rozlewało światło na ok. 11 px
+i puls w ruchu spadał do 5–7 / 255 (błyskał tylko na uderzeniach), więc
+poświata rośnie z rozmyciem — w ruchu 26–38 / 255, na uderzeniach 84–134.
+
+Siatka rytmu jest zmierzona z nagrania, nie przepisana z opisu: dopasowanie
+siatki do obwiedni pasm (niskie ≈ stopa, 400 Hz, powyżej 1,8 kHz ≈ werbel
+i hi-hat) daje dokładnie **96,000 BPM** bez dryfu przez cały utwór
+(przeszukanie 90–102 BPM, potem ±0,2 co 0,005). Pierwsza „raz” wypada na
+**0,025 s**: stopa akcentuje to uderzenie (`[1, 0,70, 0,66, 0,56]` dla
+kolejnych czterech), a werbel gra na 2 i 4 (`[0,48, 0,96, 0,55, 1]`).
+Obie liczby siedzą w `main.js` obok ścieżki do pliku, bo opisują ten
+konkretny utwór. Pozycja w takcie to `currentTime` minus opóźnienie wyjścia
+audio (`baseLatency + outputLatency`) — inaczej obraz wyprzedzałby dźwięk.
+
+Zmierzone na pikselach canvasu, wzdłuż promienia na godzinie 3: „raz” +0,02
+→ 88 px (start 72), „dwa” → 360 (pierścień 360, szerokość 1 px), „trzy” →
+537–553, „cztery” → 715–734 (pierścienie 520 i 700 plus fala, którą puls
+jeszcze niesie), „cztery” +0,9 → zgasł.
+
 Kalibracja, zmierzona na tym utworze:
 
 - Surowe widmo opada o ok. 4,7 dB/okt. poniżej 1 kHz i 7,7 powyżej. Bez
@@ -371,7 +407,10 @@ Kalibracja, zmierzona na tym utworze:
 
 Koszt klatki: ok. 0,03 ms po stronie JS; z wymuszonym wykonaniem na GPU
 (odczyt 1 px) ok. 0,9 ms — to górna granica, z synchronizacją w cenie; tyle
-samo co przy wcześniejszej wersji z kreskami wokół pierścieni.
+samo co przy wcześniejszej wersji z kreskami wokół pierścieni. Puls w takt
+podnosi to w hero do ok. 1,7 ms (7 warstw rozmycia na obwodzie do 880 px).
+Canvas nie sięga nad początek dokumentu — w hero oszczędza to ponad 400
+wierszy pikseli, bo środkowa kolumna z pulsem sięga 957 px od środka.
 
 Każda sekcja ma własną pętlę, bramkowaną `IntersectionObserver`-em: animuje się
 tylko ta, która jest na ekranie, albo obie, gdy widać obie. Gdy sekcja zejdzie
