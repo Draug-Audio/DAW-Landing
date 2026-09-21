@@ -88,6 +88,14 @@ const PULSE = {
   fadeIn: 0.06,
   /** rozmycie pod koniec uderzenia, px */
   blur: 12,
+  /**
+   * Wykładnik krzywej rozmycia (i idącej za nim poświaty i przygasania) w
+   * obrębie uderzenia: `u ** 4`. Przez pierwszą połowę uderzenia puls jest
+   * praktycznie ostry (≤ 0,75 px), rozmywa się dopiero końcówka. Wcześniej
+   * rozmycie szło krzywą ruchu (ease-out) i narastało zaraz po uderzeniu —
+   * ostra była tylko jedna klatka.
+   */
+  blurCurve: 4,
   /** warstw rozmycia — linia rozciągnięta wzdłuż normalnej */
   layers: 7,
   alpha: 0.42,
@@ -507,8 +515,9 @@ export class SpeakerRings {
    * membrany), w `PULSE.morph` przejmuje jego falę i rusza dalej; na
    * „cztery” wychodzi poza ostatni pierścień i gaśnie.
    *
-   * W każdym odcinku: ruch z wyhamowaniem (ease-out), rozmycie od zera do
-   * `PULSE.blur` i przygasanie — ostry jest tylko w chwili uderzenia.
+   * W każdym odcinku ruch wyhamowuje (ease-out), a rozmycie, poświata
+   * i przygasanie idą osobną krzywą (`PULSE.blurCurve`): przez pierwszą
+   * połowę uderzenia puls jest ostry, rozmywa się dopiero pod koniec.
    */
   _drawPulse(speaker, beat) {
     const { ctx } = this;
@@ -539,8 +548,9 @@ export class SpeakerRings {
       disp[j] = a + (b - a) * morph;
     }
 
-    const blur = PULSE.blur * ease;
-    let alpha = PULSE.alpha * (1 - PULSE.fade * ease);
+    const soft = u ** PULSE.blurCurve;
+    const blur = PULSE.blur * soft;
+    let alpha = PULSE.alpha * (1 - PULSE.fade * soft);
     if (seg === 0) alpha *= Math.min(1, (u * beatDur) / PULSE.fadeIn);
     if (seg === segments - 1) alpha *= (1 - u) ** 1.5;
     if (alpha < 0.004) return;

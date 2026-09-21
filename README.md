@@ -370,8 +370,11 @@ W środkowej kolumnie obu sekcji pulsuje pierścień w rytmie utworu, takt 4/4:
    dwoma zewnętrznymi i gaśnie przed następną „raz”.
 
 Trzy przetworniki dają cztery odcinki drogi — dokładnie jeden takt. W każdym
-odcinku ruch wyhamowuje (ease-out), rozmycie rośnie od zera do 12 px, a puls
-przygasa; ostry jest tylko w chwili uderzenia. Rozmycie to kilka kopii linii
+odcinku ruch wyhamowuje (ease-out), a rozmycie (do 12 px), poświata
+i przygasanie idą osobną krzywą `u⁴`: przez pierwszą połowę uderzenia puls jest
+praktycznie ostry (≤ 0,75 px), rozmywa się dopiero końcówka. Wcześniej
+rozmycie szło krzywą ruchu i narastało zaraz po uderzeniu — ostra była
+tylko jedna klatka. Rozmycie to kilka kopii linii
 przesuniętych wzdłuż normalnej z wagami Gaussa — dla cienkiej linii to jest
 właśnie rozmycie, a koszt stały; `ctx.filter` rozmywałby warstwę wielkości
 całego pierścienia. Samo zachowanie „tuszu” rozlewało światło na ok. 11 px
