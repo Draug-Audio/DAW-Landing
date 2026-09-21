@@ -140,7 +140,6 @@
     @include below($bp-sm) {
       margin-left: 0;
       align-items: flex-start;
-      width: 100%;
     }
   }
 
@@ -150,7 +149,11 @@
   }
 
   &__progress {
-    width: 96px;
+    // Pasek postępu równy całemu rzędowi kropek. Kolumna nawigacji zwęża się
+    // do swojej najszerszej zawartości, czyli właśnie do rzędu kropek, więc
+    // szerokość trzyma się liczby slajdów sama — bez powtarzania tu arytmetyki
+    // „liczba kropek × 22 px + odstępy”.
+    width: 100%;
     height: 1px;
     background: $line-strong;
     overflow: hidden;
