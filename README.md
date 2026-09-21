@@ -311,9 +311,8 @@ pod maksimum, 90 % czasu w 10 dB) — liniowa amplituda dałaby prawie płaski
 prostokąt, a tak widać intro, kulminację, przełamanie i wyciszenie.
 Policzona raz, z nagrania, i zapisana w `src/data/track.js` (ok. 1 KB):
 liczenie jej u użytkownika wymagałoby pobrania całych 7,6 MB przed
-odtwarzaniem. Dalej
-z przewijaniem (natywny `input[type=range]` — klawiatura i czytniki działają od
-ręki) i gałka głośności w stylu DAW, z podpisem po prawej. Gałka to tor na
+odtwarzaniem. Sama oś pozwala przewijać (natywny `input[type=range]` —
+klawiatura i czytniki działają od ręki). Na końcu gałka głośności w stylu DAW, z podpisem po prawej. Gałka to tor na
 270° (od 7:30 do 4:30) przycięty do jasnych nóżek na końcach zakresu, więc
 pokazuje skalę, a nie pełny okrąg; na nim łuk wartości, w środku krótki
 wskaźnik — bez piasty i pierścieni wewnętrznych. Całość leży na
