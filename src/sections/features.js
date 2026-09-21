@@ -106,7 +106,8 @@ export function mountFeatures(section) {
 
   const render = (index) => {
     const tile = tiles[index];
-    no.textContent = tile.querySelector('.feature__no').textContent;
+    const pad = (n) => String(n).padStart(2, '0');
+    no.textContent = `${pad(index + 1)}/${pad(tiles.length)}`;
     title.textContent = tile.querySelector('h3').textContent;
     body.replaceChildren(tile.querySelector('template').content.cloneNode(true));
     buttons.forEach((button, i) => button.setAttribute('aria-expanded', String(i === index)));
@@ -178,14 +179,19 @@ export function mountFeatures(section) {
     if (busy || current < 0) return;
     busy = true;
     const next = (current + delta + tiles.length) % tiles.length;
-    await run(body, [{ opacity: 1 }, { opacity: 0, transform: `translateX(${-delta * 12}px)` }], TIME.swap / 2);
+    // tytuł i treść wyjeżdżają w stronę przeciwną do kierunku zmiany,
+    // nowe wjeżdżają z drugiej strony
+    const slide = [title, body];
+    const out = [{ opacity: 1 }, { opacity: 0, transform: `translateX(${-delta * 12}px)` }];
+    const inn = [{ opacity: 0, transform: `translateX(${delta * 12}px)` }, { opacity: 1, transform: 'none' }];
+    await Promise.all(slide.map((el) => run(el, out, TIME.swap / 2)));
     render(next);
-    body.getAnimations().forEach((a) => a.cancel());
+    slide.forEach((el) => el.getAnimations().forEach((a) => a.cancel()));
     await Promise.all([
-      run(body, [{ opacity: 0, transform: `translateX(${delta * 12}px)` }, { opacity: 1, transform: 'none' }], TIME.swap / 2),
+      ...slide.map((el) => run(el, inn, TIME.swap / 2)),
       setHeight(detailHeight()),
     ]);
-    body.getAnimations().forEach((a) => a.cancel());
+    slide.forEach((el) => el.getAnimations().forEach((a) => a.cancel()));
     busy = false;
   };
 

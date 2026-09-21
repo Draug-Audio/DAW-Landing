@@ -124,8 +124,14 @@
     gap: 12px;
   }
 
-  // numer w pasku ma ten sam styl co w kafelku, ale bez odstępu pod spodem
-  &__no.feature__no { margin: 0; }
+  // numer karty z liczbą wszystkich, np. 01/06 — większy niż w kafelku,
+  // czerwony jak nagłówki sekcji
+  &__no {
+    @include mono(14px, 0.14em);
+    color: $red;
+    // stała szerokość cyfr, żeby strzałki nie drgały przy zmianie numeru
+    font-variant-numeric: tabular-nums;
+  }
 
   &__btn {
     display: grid;

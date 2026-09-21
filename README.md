@@ -560,8 +560,10 @@ na telefonie siatka 1519 → 713 px (duża karta jest niższa od tabeli kafli
 jeden pod drugim). Po zwinięciu wysokość wraca do `auto`, z-indeksy
 i animacje są czyszczone.
 
-W miejscu numeru pasek `‹ 02 ›` — strzałki przełączają funkcje (na końcach
-zawijają), w tej samej linii po prawej przycisk zwinięcia. Treść w dwóch
+W miejscu numeru pasek `‹ 02/06 ›` — numer z liczbą wszystkich funkcji,
+większy niż w kafelku (14 px) i czerwony jak nagłówki sekcji; strzałki
+przełączają funkcje (na końcach zawijają), a tytuł i treść przy zmianie
+wyjeżdżają w stronę przeciwną do kierunku i wjeżdżają z drugiej strony, w tej samej linii po prawej przycisk zwinięcia. Treść w dwóch
 kolumnach: rozbudowany opis i grafika — na razie szkielet diagramu w SVG,
 osobny dla każdej funkcji, do podmiany na docelowe grafiki. Na wąskim ekranie
 kolumny idą jedna pod drugą. Treść rozwiniętego widoku siedzi w `<template>`
