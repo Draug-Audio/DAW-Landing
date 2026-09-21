@@ -338,8 +338,13 @@ Trzy grupy współśrodkowych okręgów w tle to trzy kolumny głośnikowe:
 Pasma dzieli zwrotnica równa w skali logarytmicznej — dla trzech przetworników
 wypadają punkty ok. 290 Hz i 2,1 kHz, w okolicy typowych kolumn trójdrożnych.
 Wzdłuż pierścienia biegnie jego pasmo, lustrzanie: niskie na dole, wysokie
-u góry. Pierścień do tego „oddycha” jak membrana — woofer do 9 px, tweeter
-ledwie 1,5 px.
+u góry. Widmo odkształca sam pierścień — w każdym kierunku promień rośnie
+o wartość częstotliwości przypadającej na ten kąt (do 12 px + 6 % promienia) —
+a linia jaśnieje limonką w miarę głośności pasma. Wartości przed rysowaniem
+przechodzą przez filtr 1-2-1 (pasmo to maksimum przedziałów FFT, więc sąsiednie
+próbki skaczą), a obrys to krzywa przez środki odcinków, bez załamań w punktach
+próbek. W ciszy rysowany jest dokładny okrąg. Cały pierścień do tego „oddycha”
+jak membrana — woofer do 9 px, tweeter ledwie 1,5 px.
 
 Geometria jest czytana z SVG w markupie; bez JS zostają statyczne okręgi,
 a w ciszy canvas rysuje dokładnie to samo co SVG (zgodność środków i promieni
@@ -358,7 +363,8 @@ Kalibracja, zmierzona na tym utworze:
   0,44 / 0,58 / 0,50.
 
 Koszt klatki: ok. 0,03 ms po stronie JS; z wymuszonym wykonaniem na GPU
-(odczyt 1 px) ok. 0,95 ms — to górna granica, z synchronizacją w cenie. Pętla
+(odczyt 1 px) ok. 0,9 ms — to górna granica, z synchronizacją w cenie; tyle
+samo co przy wcześniejszej wersji z kreskami wokół pierścieni. Pętla
 działa tylko przy grającej muzyce i widocznym hero, a po zatrzymaniu
 pierścienie wybrzmiewają do zera i pętla gaśnie. `prefers-reduced-motion`
 zostawia muzykę, ale pierścienie stoją.

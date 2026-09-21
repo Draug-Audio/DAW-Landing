@@ -11,8 +11,11 @@ import { clamp } from '../slider/math.js';
  *
  * Wzdłuż każdego pierścienia biegnie jego pasmo w skali logarytmicznej,
  * lustrzanie po obu stronach: najniższe częstotliwości pasma na dole, najwyższe
- * u góry. Do tego pierścień „oddycha” jak membrana — wychylenie rośnie z mocą
- * pasma i maleje ku tweeterowi, który w prawdziwej kolumnie prawie się nie rusza.
+ * u góry. Widmo odkształca sam pierścień — w każdym kierunku promień rośnie
+ * o wartość częstotliwości, która na ten kąt przypada — a linia jaśnieje
+ * limonką w miarę głośności pasma. Do tego cały pierścień „oddycha” jak
+ * membrana: wychylenie rośnie z mocą pasma i maleje ku tweeterowi, który
+ * w prawdziwej kolumnie prawie się nie rusza.
  *
  * Geometria jest czytana z SVG w markupie, więc układ okręgów żyje w jednym
  * miejscu, a bez JS strona pokazuje po prostu statyczne okręgi. W ciszy canvas
@@ -49,8 +52,6 @@ const CURVE = 1.6;
 /** stałe czasowe: narost szybki jak transjent, opadanie jak wybrzmienie */
 const ATTACK = 0.028;
 const RELEASE = 0.2;
-/** progi jasności kresek — każdy rysowany jedną ścieżką */
-const BUCKETS = 5;
 /** budżet pikseli canvasu; pierścienie są cienkie i dalekie od ostrości UI */
 const MAX_PIXELS = 4.2e6;
 const LIME = '200,255,61';
@@ -124,6 +125,10 @@ function makeDriver({ r, color }, band, t) {
     dirs,
     edges,
     values: new Float32Array(half),
+    /** wartości po wygładzeniu przestrzennym — z nich liczony jest kształt */
+    shape: new Float32Array(half),
+    /** punkty obrysu: prawa strona od dołu do góry, lewa z góry na dół */
+    pts: new Float32Array(count * 2),
     level: 0,
     // nachylenie wyrównuje energię pasm; to lekkie podbicie jest tylko dla oka —
     // cienka kreska na małym pierścieniu czyta się słabiej niż gruba na dużym
@@ -281,50 +286,68 @@ export class SpeakerRings {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.setTransform(k * s, 0, 0, k * s, k * this.ox, k * this.oy);
     const px = 1 / s; // 1 px CSS w jednostkach viewBoxa
-    ctx.lineCap = 'butt';
+    ctx.lineJoin = 'round';
 
     for (const speaker of this.speakers) {
       const { cx, cy } = speaker;
       for (const driver of speaker.drivers) {
-        // membrana: wychylenie z mocą pasma
+        // membrana: wychylenie całego pierścienia z mocą pasma
         const r = driver.r + driver.level * driver.excursion * px;
+        const silent = driver.level < 1e-3;
+        ctx.beginPath();
+        // w ciszy dokładny okrąg — ten sam co w SVG z markupu
+        if (silent) ctx.arc(cx, cy, r, 0, TAU);
+        else this._ringPath(driver, cx, cy, r, px);
         ctx.lineWidth = px;
         ctx.strokeStyle = driver.color;
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, TAU);
         ctx.stroke();
+        if (silent) continue;
 
-        if (driver.level < 1e-3) continue;
-        this._drawBars(driver, cx, cy, r + 3 * px, px);
+        // ta sama linia jeszcze raz, limonką, tym jaśniej, im głośniej gra pasmo
+        ctx.lineWidth = driver.width * px;
+        ctx.strokeStyle = `rgba(${LIME},${(driver.alpha * Math.min(1, driver.level * 2)).toFixed(3)})`;
+        ctx.stroke();
       }
     }
   }
 
-  /** kreski widma, pogrupowane jasnością — jedna ścieżka na próg */
-  _drawBars(driver, cx, cy, base, px) {
+  /**
+   * Obrys pierścienia odkształconego widmem. Wartości są najpierw wygładzane
+   * filtrem 1-2-1 — wartość pasma to maksimum przedziałów FFT, więc sąsiednie
+   * próbki potrafią skakać i linia byłaby postrzępiona. Brzegi są lustrzane:
+   * na dole i u góry sąsiadem skrajnej próbki jest ona sama po drugiej stronie.
+   */
+  _ringPath(driver, cx, cy, r, px) {
     const { ctx } = this;
-    const { values, dirs, half, reach, alpha, width } = driver;
-    ctx.lineWidth = width * px;
-    for (let b = 0; b < BUCKETS; b += 1) {
-      const lo = b / BUCKETS;
-      const hi = (b + 1) / BUCKETS;
-      const top = b === BUCKETS - 1;
-      let any = false;
-      ctx.beginPath();
-      for (let i = 0; i < half; i += 1) {
-        const v = values[i];
-        if (v < 0.02 || v < lo || (v >= hi && !top)) continue;
-        const end = base + v * reach * px;
-        const o = i * 4;
-        ctx.moveTo(cx + dirs[o] * base, cy + dirs[o + 1] * base);
-        ctx.lineTo(cx + dirs[o] * end, cy + dirs[o + 1] * end);
-        ctx.moveTo(cx + dirs[o + 2] * base, cy + dirs[o + 3] * base);
-        ctx.lineTo(cx + dirs[o + 2] * end, cy + dirs[o + 3] * end);
-        any = true;
-      }
-      if (!any) continue;
-      ctx.strokeStyle = `rgba(${LIME},${(alpha * hi).toFixed(3)})`;
-      ctx.stroke();
+    const { values, shape, pts, dirs, half, reach } = driver;
+    const last = half - 1;
+    for (let k = 0; k < half; k += 1) {
+      const prev = values[k === 0 ? 0 : k - 1];
+      const next = values[k === last ? last : k + 1];
+      shape[k] = (prev + 2 * values[k] + next) / 4;
     }
+
+    // pętla bez szwu: prawa strona od dołu do góry, lewa z góry na dół
+    const n = half * 2;
+    for (let i = 0; i < n; i += 1) {
+      const right = i < half;
+      const j = right ? i : n - 1 - i;
+      const o = j * 4 + (right ? 0 : 2);
+      const radius = r + shape[j] * reach * px;
+      pts[i * 2] = cx + dirs[o] * radius;
+      pts[i * 2 + 1] = cy + dirs[o + 1] * radius;
+    }
+
+    // krzywa przez środki odcinków z próbkami jako punktami kontrolnymi —
+    // gładka, bez załamań w miejscach próbek
+    ctx.moveTo((pts[(n - 1) * 2] + pts[0]) / 2, (pts[(n - 1) * 2 + 1] + pts[1]) / 2);
+    for (let i = 0; i < n; i += 1) {
+      const j = (i + 1) % n;
+      ctx.quadraticCurveTo(
+        pts[i * 2], pts[i * 2 + 1],
+        (pts[i * 2] + pts[j * 2]) / 2, (pts[i * 2 + 1] + pts[j * 2 + 1]) / 2,
+      );
+    }
+    ctx.closePath();
   }
 }
