@@ -62,12 +62,33 @@ export class SyncedDots {
     });
   }
 
+  /**
+   * Podświetlenie to okno szerokości jednej kropki, przesuwające się po rzędzie
+   * razem z pozycją karuzeli. Kropka pokazuje tę część okna, która na nią
+   * przypada — a że okno nadchodzi z jednej strony, a odchodzi w drugą,
+   * wycinek musi być zakotwiczony przy właściwej krawędzi. Inaczej pas rozjeżdża
+   * się na dwie strony: jeden koniec gaśnie w lewo, drugi rośnie w prawo.
+   *
+   * Strona zmienia się dokładnie wtedy, gdy okno mija środek kropki, czyli przy
+   * wypełnieniu 1 — a `scaleX(1)` jest tożsamością, więc przeskok zakotwiczenia
+   * nie daje żadnego skoku obrazu.
+   */
   update(position) {
     for (let i = 0; i < this.count; i += 1) {
-      const distance = Math.abs(wrapDelta(i - position, this.count));
+      const rel = wrapDelta(i - position, this.count);
+      const distance = Math.abs(rel);
       const fill = clamp(1 - distance, 0, 1);
       const node = this.nodes[i];
       node.style.setProperty('--dot-fill', fill.toFixed(3));
+
+      // `rel < 0` — okno już minęło tę kropkę, więc widoczny wycinek leży przy
+      // jej prawej krawędzi; `rel > 0` — dopiero nadchodzi, wycinek przy lewej
+      const origin = rel < 0 ? 'right' : 'left';
+      if (node.dataset.origin !== origin) {
+        node.dataset.origin = origin;
+        node.style.setProperty('--dot-origin', origin);
+      }
+
       const current = fill > 0.5;
       if (node.dataset.current !== String(current)) {
         node.dataset.current = String(current);

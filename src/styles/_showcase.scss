@@ -195,7 +195,10 @@
     inset: 0;
     background: $lime;
     transform: scaleX(var(--dot-fill, 0));
-    transform-origin: left center;
+    // Krawędź zakotwiczenia ustawia JS razem z wypełnieniem (patrz
+    // `SyncedDots.update`): kropka minięta kurczy się do prawej, nadchodząca
+    // rośnie od lewej, więc jasny pas jedzie przez rząd w jedną stronę.
+    transform-origin: var(--dot-origin, left) center;
   }
 
   &:hover &__track { background: $text-ghost; }
