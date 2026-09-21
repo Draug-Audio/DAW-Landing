@@ -5,8 +5,8 @@ import { bandLevel } from './spectrum.js';
  * Retro analizator widma za zdjęciem w sekcji „Jak powstał DAW”: siatka
  * poziomych segmentów „diod”, minimalnie jaśniejszych od tła, w której słupki
  * zapalają całe segmenty od dołu — jak w starym korektorze graficznym, w barwach
- * miernika poziomu (zieleń, wyżej bursztyn i czerwień), z białym znacznikiem
- * szczytu. Na
+ * miernika poziomu (zieleń, wyżej bursztyn i czerwień), ze znacznikiem szczytu
+ * w kolorze swojego wiersza. Na
  * górze i na dole siatki zostaje margines jednego niewidocznego segmentu.
  *
  * Kolumny to pasma tercjowe ISO 266 od 31,5 Hz do 16 kHz, wiersze — poziom.
@@ -41,8 +41,6 @@ const GRID = {
   rowGap: 0.3,
   /** segment zgaszony — minimalnie jaśniejszy od tła sekcji */
   off: 'rgba(232, 236, 232, 0.01)',
-  /** znacznik szczytu — segment, który zostaje dłużej nad słupkiem */
-  peak: '#ffffff',
   /** stałe czasowe słupka: narost i opadanie, s */
   attack: 0.03,
   release: 0.22,
@@ -229,12 +227,13 @@ export class SpectrumGrid {
     }
 
     // znaczniki szczytu — jeden segment nad słupkiem
-    ctx.fillStyle = GRID.peak;
+    // w zwykłym kolorze swojego wiersza, jakby zapalił się ten jeden segment
     for (let c = 0; c < lit.length; c += 1) {
-      const p = Math.round(clamp(this.peak[c], 0, 1) * rows) - 1;
+      const p = Math.min(Math.round(clamp(this.peak[c], 0, 1) * rows) - 1, rows - 1);
       if (p < lit[c] || p < 0) continue;
       const [x, w] = this.xs[c];
-      const [y, h] = this.ys[Math.min(p, rows - 1)];
+      const [y, h] = this.ys[p];
+      ctx.fillStyle = this.rowStyles[p];
       ctx.fillRect(x, y, w, h);
     }
   }
