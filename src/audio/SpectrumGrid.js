@@ -4,7 +4,9 @@ import { bandLevel } from './spectrum.js';
 /**
  * Retro analizator widma za zdjęciem w sekcji „Jak powstał DAW”: siatka
  * poziomych segmentów „diod”, minimalnie jaśniejszych od tła, w której słupki
- * zapalają całe segmenty od dołu — jak w starym korektorze graficznym. Na
+ * zapalają całe segmenty od dołu — jak w starym korektorze graficznym, w barwach
+ * miernika poziomu (zieleń, wyżej bursztyn i czerwień), z białym znacznikiem
+ * szczytu. Na
  * górze i na dole siatki zostaje margines jednego niewidocznego segmentu.
  *
  * Kolumny to pasma tercjowe ISO 266 od 31,5 Hz do 16 kHz, wiersze — poziom.
@@ -38,15 +40,9 @@ const GRID = {
   /** szczelina między wierszami jako ułamek podziałki pionowej */
   rowGap: 0.3,
   /** segment zgaszony — minimalnie jaśniejszy od tła sekcji */
-  off: 'rgba(232, 236, 232, 0.02)',
-  /**
-   * Krycie zapalonych segmentów: najniższy i najwyższy wiersz. Dół musi być
-   * wyraźny — zdjęcie odsłania go po bokach pod biurkiem, a przy 0,12
-   * zapalony segment ledwie odróżniał się od zgaszonego.
-   */
-  lit: [0.24, 0.36],
-  /** krycie znacznika szczytu */
-  peak: 0.5,
+  off: 'rgba(232, 236, 232, 0.01)',
+  /** znacznik szczytu — segment, który zostaje dłużej nad słupkiem */
+  peak: '#ffffff',
   /** stałe czasowe słupka: narost i opadanie, s */
   attack: 0.03,
   release: 0.22,
@@ -57,7 +53,29 @@ const GRID = {
   /** budżet pikseli canvasu */
   maxPixels: 3e6,
 };
-const LIME = '200,255,61';
+
+/**
+ * Barwa zapalonego segmentu według jego wysokości na skali, od dna po szczyt —
+ * jak w mierniku poziomu: jednolita zieleń do połowy, potem przejście w
+ * bursztyn na trzech czwartych i w czerwień na samej górze. Kolory kryjące,
+ * przejścia liniowe między przystankami.
+ */
+const METER = [
+  [0, [0x4b, 0xdf, 0x89]],
+  [0.5, [0x4b, 0xdf, 0x89]],
+  [0.75, [0xfe, 0xa8, 0x23]],
+  [1, [0xfe, 0x5a, 0x45]],
+];
+
+function meterColor(t) {
+  let i = 1;
+  while (i < METER.length - 1 && t > METER[i][0]) i += 1;
+  const [t0, c0] = METER[i - 1];
+  const [t1, c1] = METER[i];
+  const u = clamp((t - t0) / (t1 - t0 || 1), 0, 1);
+  const [r, g, b] = c0.map((v, k) => Math.round(v + (c1[k] - v) * u));
+  return `rgb(${r},${g},${b})`;
+}
 
 export class SpectrumGrid {
   /**
@@ -138,10 +156,8 @@ export class SpectrumGrid {
       return [y0, Math.round(H - (r + 1) * rowPitch - rowGap / 2) - y0];
     });
     this.rows = rows;
-    this.rowStyles = Array.from({ length: rows }, (_, r) => {
-      const t = rows > 1 ? r / (rows - 1) : 0;
-      return `rgba(${LIME},${(GRID.lit[0] + (GRID.lit[1] - GRID.lit[0]) * t).toFixed(3)})`;
-    });
+    // kolor każdego wiersza ze środka jego miejsca na skali
+    this.rowStyles = Array.from({ length: rows }, (_, r) => meterColor((r + 0.5) / rows));
 
     const b = this.base.getContext('2d');
     b.clearRect(0, 0, W, H);
@@ -213,7 +229,7 @@ export class SpectrumGrid {
     }
 
     // znaczniki szczytu — jeden segment nad słupkiem
-    ctx.fillStyle = `rgba(${LIME},${GRID.peak})`;
+    ctx.fillStyle = GRID.peak;
     for (let c = 0; c < lit.length; c += 1) {
       const p = Math.round(clamp(this.peak[c], 0, 1) * rows) - 1;
       if (p < lit[c] || p < 0) continue;

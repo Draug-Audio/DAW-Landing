@@ -485,7 +485,7 @@ muzykę, ale pierścienie stoją.
 ### Retro analizator za zdjęciem
 
 Za zdjęciem w sekcji „Jak powstał DAW” stoi siatka poziomych segmentów
-„diod” minimalnie jaśniejszych od tła (krycie 0,02), w której słupki zapalają
+„diod” minimalnie jaśniejszych od tła (krycie 0,01), w której słupki zapalają
 całe segmenty od dołu, jak w starym korektorze graficznym. Kolumny to 28 pasm
 tercjowych ISO 266 od 31,5 Hz do 16 kHz. Wysokość zdjęcia jest dzielona na
 całe wiersze, z których skrajny górny i dolny zostają puste — margines na
@@ -501,8 +501,11 @@ prześwituje jak ściana za stanowiskiem: nad monitorem i głośnikami, w
 szczelinach między nimi, na skrajnych kolumnach i po bokach pod biurkiem.
 Obecna wersja zdjęcia ma ograniczony kanał alfa — przejść półprzezroczystych
 jest 2,7 % zamiast 16 %, a krzesło i cień pod producentem są kryjące.
-Krycie zapalonych segmentów 0,24 na dole i 0,36 u góry — przy 0,12 dół ledwie
-odróżniał się od zgaszonych.
+
+Zapalone segmenty mają pełne, kryjące barwy miernika poziomu według swojej
+wysokości na skali: do połowy jednolita zieleń `#4bdf89`, na trzech
+czwartych bursztyn `#fea823`, na szczycie czerwień `#fe5a45`, z liniowymi
+przejściami między tymi przystankami. Znacznik szczytu jest biały.
 
 Poziomy na prawdziwym nagraniu (analizator jak na stronie, offline):
 średnio 42 %, do sufitu dochodzi 1 % słupków; w intro grają tylko basy,
