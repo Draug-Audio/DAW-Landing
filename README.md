@@ -294,7 +294,14 @@ AudioContext; pobierany jest tylko nagłówek pliku (`preload="metadata"`), żeb
 odtwarzacz znał długość utworu.
 
 Na środku paska nawigacji siedzi odtwarzacz: okrągły play / pauza (krążek
-identyczny z korpusem gałki — 28 px, to samo tło i krawędź), oś czasu
+identyczny z korpusem gałki — 28 px, to samo tło i krawędź), z poświatą
+migającą w rytm — osobna warstwa (`will-change: opacity`), której pętla zmienia
+wyłącznie krycie, więc nic się nie przemalowuje. Błysk na każdym uderzeniu,
+zanik wykładniczy 140 ms (przed kolejnym uderzeniem już zgaszony), „raz”
+mocniej (1 wobec 0,6). Rytm z tej samej siatki co puls pierścieni; pętla
+chodzi tylko przy grającej muzyce, a przy `prefers-reduced-motion` poświata
+nie miga. 1,6 błysku na sekundę mieści się w progu WCAG 2.3.1 (3 / s).
+Dalej oś czasu
 z przewijaniem (natywny `input[type=range]` — klawiatura i czytniki działają od
 ręki) i gałka głośności w stylu DAW, z podpisem po prawej. Gałka to tor na
 270° (od 7:30 do 4:30) przycięty do jasnych nóżek na końcach zakresu, więc

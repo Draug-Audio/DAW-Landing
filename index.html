@@ -24,6 +24,8 @@
        więc startuje ukryty; stan i głośność czyta z src/audio. -->
   <div class="player" data-player role="group" aria-label="Muzyka w tle" hidden>
     <button class="player__play" type="button" data-player-play aria-label="Odtwórz muzykę w tle">
+      <!-- poświata w rytm: osobna warstwa, JS zmienia wyłącznie jej krycie -->
+      <span class="player__glow" data-player-glow aria-hidden="true"></span>
       <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor">
         <!-- trójkąt przesunięty w prawo: środek ciężkości na 8,2 zamiast 7,3,
              inaczej w okrągłym przycisku ucieka optycznie w lewo -->

@@ -6,6 +6,11 @@ import { Knob } from './Knob.js';
  * i elementu audio, więc zgadza się z wyłącznikiem i z pierścieniami hero.
  */
 
+/** zanik błysku poświaty po uderzeniu, s — przed kolejnym (625 ms) już zgaszony */
+const GLOW_DECAY = 0.14;
+/** siła błysku na „raz” i na pozostałych uderzeniach taktu */
+const GLOW_ACCENT = [1, 0.6, 0.6, 0.6];
+
 function formatTime(seconds) {
   if (!Number.isFinite(seconds)) return '--:--';
   const s = Math.max(0, Math.floor(seconds));
@@ -37,6 +42,34 @@ export function mountSoundPlayer(root, sound) {
   };
   sound.onChange(syncPlay);
   syncPlay();
+
+  // ── poświata w rytm ───────────────────────────────────────
+  // Osobna warstwa pod przyciskiem, a pętla zmienia wyłącznie jej krycie —
+  // warstwa jest promowana (`will-change`), więc miganie nie przemalowuje
+  // niczego. Rytm z tej samej siatki co puls pierścieni, z poprawką na
+  // opóźnienie wyjścia audio. Pętla chodzi tylko przy grającej muzyce.
+  const glow = play.querySelector('[data-player-glow]');
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let glowFrame = 0;
+  const beatGlow = () => {
+    glowFrame = 0;
+    const beat = sound.beatPosition();
+    if (beat == null) {
+      glow.style.opacity = '0';
+      return;
+    }
+    const n = Math.floor(beat);
+    const seconds = ((beat - n) * 60) / sound.bpm;
+    const level = GLOW_ACCENT[((n % 4) + 4) % 4] * Math.exp(-seconds / GLOW_DECAY);
+    // odtwarzacz schowany poniżej progu szerokości — nic nie zapisujemy
+    if (play.offsetParent !== null) glow.style.opacity = level.toFixed(3);
+    glowFrame = requestAnimationFrame(beatGlow);
+  };
+  if (glow && !reducedMotion) {
+    sound.onChange(() => {
+      if (!glowFrame && sound.isPlaying()) glowFrame = requestAnimationFrame(beatGlow);
+    });
+  }
 
   // ── oś czasu ──────────────────────────────────────────────
   let scrubbing = false;

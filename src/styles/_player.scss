@@ -34,6 +34,10 @@ $bp-player: 1240px;
   // 1 px krawędzi, czyli 28 px średnicy — ten sam kolor tła, ta sama krawędź
   // i to samo szare podświetlenie fokusu.
   &__play {
+    position: relative;
+    // własny kontekst nakładania: poświata (z-index −1) zostaje pod ikoną,
+    // a nie ucieka pod tło nagłówka
+    isolation: isolate;
     flex: none;
     display: grid;
     place-items: center;
@@ -52,6 +56,26 @@ $bp-player: 1240px;
     &:focus-visible { background: color.mix($text, $panel-hover, 3%); }
 
     &[data-state='playing'] { color: $lime; }
+  }
+
+  // Poświata w rytm: pierścień światła wokół przycisku, na osobnej warstwie.
+  // Środek przezroczysty aż do krawędzi przycisku (14 z 26 px promienia),
+  // więc tarcza i ikona się nie zmieniają. Krycie ustawia JS co klatkę.
+  &__glow {
+    position: absolute;
+    inset: -12px;
+    z-index: -1;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle closest-side,
+      transparent 50%,
+      rgba(200, 255, 61, 0.55) 56%,
+      rgba(200, 255, 61, 0.16) 74%,
+      transparent 100%
+    );
+    opacity: 0;
+    pointer-events: none;
+    will-change: opacity;
   }
 
   &__icon-pause { display: none; }

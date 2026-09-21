@@ -91,7 +91,7 @@ const PULSE = {
    * Warstwa rozmycia jest gotowym obrazem skalowanym do bieżącego promienia,
    * więc rozmycie rośnie razem z pulsem samo z siebie.
    */
-  blurRatio: 0.075,
+  blurRatio: 0.1,
   /**
    * Pasków na profil rozmycia (±2σ), gdy przeglądarka nie ma `ctx.filter`
    * (Safari < 18) — każdy szeroki na ½σ. Obraz powstaje wtedy w niższej
@@ -116,7 +116,7 @@ const PULSE = {
    * uderzenia to krycie pulsu (0,42 · 0,65 ≈ 0,27) razy ten współczynnik —
    * przy 0,33 ok. 0,09 (wcześniej 0,55 → ok. 0,15).
    */
-  glow: 0.33,
+  glow: 0.22,
   /** budżet pikseli obrazu rozmycia — jak dla canvasu sceny */
   spritePixels: 4e6,
 };
