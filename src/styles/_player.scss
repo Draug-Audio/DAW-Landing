@@ -221,6 +221,9 @@ $track-fill: $lime;
     @include mono(11px, 0.04em);
     color: $text-faint;
     font-variant-numeric: tabular-nums;
+
+    // tytuł utworu pisany tak, jak go podano — bez wersalików
+    &--title { text-transform: none; }
   }
 }
 
