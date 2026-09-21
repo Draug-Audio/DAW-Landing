@@ -31,6 +31,20 @@
     z-index: -2;
   }
 
+  // Widmo na pierścieniach (src/hero/SpeakerRings.js). W pionie to samo pudełko
+  // co SVG wyżej, w poziomie tylko szerokość okna — 2500 px canvasu przy gęstym
+  // ekranie to kilkanaście megapikseli, z czego większość poza kadrem.
+  &__spectrum {
+    position: absolute;
+    top: -430px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100vw;
+    height: 1500px;
+    pointer-events: none;
+    z-index: -2;
+  }
+
   &__copy {
     position: relative;
     max-width: 960px;

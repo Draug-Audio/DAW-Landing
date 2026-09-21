@@ -17,8 +17,12 @@ npm run preview
 index.html              markup całej strony (semantyczne klasy zamiast inline style)
 public/assets/          1–8.webp (zrzuty slajdów), logo, wtyczki, zdjęcie
 src/
-  main.js               punkt wejścia — style + montaż slidera
+  main.js               punkt wejścia — style, slider, muzyka i pierścienie
   data/slides.js        treść slajdów (src / numer / tytuł / opis)
+  audio/
+    BackgroundSound.js  muzyka w tle, wyłącznik, analiza widma L / środek / P
+  hero/
+    SpeakerRings.js     pierścienie hero jako kolumny głośnikowe
   styles/               SCSS, jeden partial na sekcję
     _tokens.scss        paleta, typografia, rytm, breakpointy, miksiny
   slider/
@@ -279,6 +283,58 @@ Wartości sprzed i po zmianie wyglądu kafelka nie są porównywalne — pomiary
 potrafią się rozjechać o połowę między sesjami panelu podglądu, więc liczby mają
 sens jako rząd wielkości, nie jako różnica.
 
+## Muzyka w tle i pierścienie hero
+
+`public/assets/background.mp3` gra w pętli z połową głośności (wzmocnienie 0,5
+na wyjściu grafu Web Audio). **Rusza przy pierwszym kliknięciu, dotknięciu albo
+klawiszu, nie przy wejściu na stronę** — przeglądarki blokują dźwięk bez gestu
+użytkownika i nie da się tego obejść. Do tego momentu nie powstaje nawet
+AudioContext, a plik nie jest pobierany (`preload="none"`).
+
+W nagłówku jest wyłącznik (`aria-pressed`); WCAG 1.4.2 wymaga, żeby dźwięk
+grający sam z siebie dało się zatrzymać. Wybór zapamiętuje `localStorage`, więc
+kto wyłączył muzykę, nie usłyszy jej przy kolejnej wizycie. W ukrytej karcie
+muzyka pauzuje i wraca po powrocie.
+
+Trzy grupy współśrodkowych okręgów w tle to trzy kolumny głośnikowe:
+
+| kolumna | kanał | woofer (największy) | średniotonowy | tweeter (najmniejszy) |
+|---|---|---|---|---|
+| lewa (x 240) | lewy | 40–288 Hz | 288–2080 Hz | 2,08–15 kHz |
+| środkowa (x 1100) | suma | 〃 | 〃 | 〃 |
+| prawa (x 1960) | prawy | 〃 | 〃 | 〃 |
+
+Pasma dzieli zwrotnica równa w skali logarytmicznej — dla trzech przetworników
+wypadają punkty ok. 290 Hz i 2,1 kHz, w okolicy typowych kolumn trójdrożnych.
+Wzdłuż pierścienia biegnie jego pasmo, lustrzanie: niskie na dole, wysokie
+u góry. Pierścień do tego „oddycha” jak membrana — woofer do 9 px, tweeter
+ledwie 1,5 px.
+
+Geometria jest czytana z SVG w markupie; bez JS zostają statyczne okręgi,
+a w ciszy canvas rysuje dokładnie to samo co SVG (zgodność środków i promieni
+do 0,5 px).
+
+Kalibracja, zmierzona na tym utworze:
+
+- Surowe widmo opada o ok. 4,7 dB/okt. poniżej 1 kHz i 7,7 powyżej. Bez
+  korekcji tweeter drgał średnio na 0,02 przy 0,5 wooferu. Korekcja 6 dB/okt.
+  (analizatory studyjne stosują 3–6) wyrównuje utwór do 0,39–0,47 w całym paśmie.
+- Korekcja podnosi też ciszę: puste przedziały nad pasmem mp3 przechodziły próg
+  i tweeter stał na stałej kresce 0,024, identycznej we wszystkich kanałach.
+  Stąd bramka ciszy przed korekcją.
+- Średnie poziomy (woofer / średni / tweeter, środkowa kolumna): intro 0,30 /
+  0,07 / 0 — intro nie ma góry, środek utworu 0,54 / 0,56 / 0,39, ok. 110 s
+  0,44 / 0,58 / 0,50.
+
+Koszt klatki: ok. 0,03 ms po stronie JS; z wymuszonym wykonaniem na GPU
+(odczyt 1 px) ok. 0,95 ms — to górna granica, z synchronizacją w cenie. Pętla
+działa tylko przy grającej muzyce i widocznym hero, a po zatrzymaniu
+pierścienie wybrzmiewają do zera i pętla gaśnie. `prefers-reduced-motion`
+zostawia muzykę, ale pierścienie stoją.
+
+Plik ma 7,65 MB (320 kbps stereo, 3:11). Do tła w zupełności wystarczy
+128–160 kbps — ok. 3–3,8 MB.
+
 ## Uwagi
 
 - Zrzuty slajdów (`1`–`8`) przekonwertowane z PNG na WebP: 2561 kB → 723 kB.
@@ -293,4 +349,5 @@ sens jako rząd wielkości, nie jako różnica.
   i promień policzą się same.
 - Fonty (Archivo, IBM Plex Mono) idą z Google Fonts zamiast 20 plików woff2
   zaszytych w mockupie.
-- W trybie deweloperskim instancja slidera siedzi pod `window.__showcase`.
+- W trybie deweloperskim instancja slidera siedzi pod `window.__showcase`,
+  muzyka pod `window.__sound`, a pierścienie pod `window.__speakers`.

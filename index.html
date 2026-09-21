@@ -24,6 +24,14 @@
     <a href="#agent">Agent</a>
     <a href="#cennik">Cennik</a>
   </nav>
+  <button class="sound-toggle" type="button" data-sound-toggle aria-pressed="true" aria-label="Muzyka w tle" hidden>
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+      <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/>
+      <path class="sound-toggle__wave" d="M15.5 9.2a4 4 0 0 1 0 5.6" stroke-linecap="round"/>
+      <path class="sound-toggle__wave sound-toggle__wave--far" d="M18.2 6.8a7.5 7.5 0 0 1 0 10.4" stroke-linecap="round"/>
+      <path class="sound-toggle__off" d="m16 9.5 5 5m0-5-5 5" stroke-linecap="round"/>
+    </svg>
+  </button>
   <a class="btn btn--primary btn--sm" href="#cennik">Zdobądź DAW</a>
 </header>
 
@@ -32,8 +40,11 @@
   <!-- ─────────────────────────── HERO ─────────────────────────── -->
   <section class="hero">
     <div class="hero__halo" aria-hidden="true"></div>
+    <!-- Okręgi tła. Każda grupa współśrodkowa to kolumna głośnikowa: JS czyta
+         stąd geometrię i rysuje na canvasie widmo muzyki w tle, a ten SVG
+         zostaje jako wersja statyczna, gdy skrypt nie ruszy. -->
     <div class="hero__rings" aria-hidden="true">
-      <svg viewBox="-150 -250 2500 1500" width="2500" height="1500" fill="none">
+      <svg viewBox="-150 -250 2500 1500" width="2500" height="1500" fill="none" data-hero-rings>
         <circle cx="1100" cy="470" r="520" stroke="#1c2118" stroke-width="1"></circle>
         <circle cx="1100" cy="470" r="360" stroke="#232a1d" stroke-width="1"></circle>
         <circle cx="1100" cy="470" r="700" stroke="#161a14" stroke-width="1"></circle>
