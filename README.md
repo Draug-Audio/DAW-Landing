@@ -536,6 +536,17 @@ Plik ma 7,65 MB (320 kbps stereo, 3:11). Do tła w zupełności wystarczy
 - Zrzuty slajdów (`1`–`8`) przekonwertowane z PNG na WebP: 2561 kB → 723 kB.
   Bezstratnie, żeby tekst interfejsu został ostry; wyjątkiem jest `2`, w dużej
   mierze fotograficzne GUI wtyczek, zapisane stratnie q97.
+- Panele wtyczek (`plugin-*.webp`) to zrzuty z `Mockups/DAW Plugins.html`
+  z kanałem alfa: Edge bez interfejsu (puppeteer-core), przezroczyste tło
+  strony i przodków panelu, zrzut samego elementu z `omitBackground`, gęstość
+  2×. Cień panelu wyłączony na czas zrzutu — maluje się poza zaokrągleniem,
+  także w wyciętych rogach prostokąta, i rogi miały alfę 5–11 zamiast 0.
+  Bezstratny WebP: te same piksele co PNG, 444 kB zamiast 1126 kB — mniej niż
+  dawne zrzuty w 1× na jasnym tle (486 kB). Panel ma własną ciemną krawędź,
+  więc strona nie rysuje wokół obrazka ramki (prostokątna wisiałaby wokół
+  zaokrąglonego panelu); podświetlenie po najechaniu to `drop-shadow`, który
+  obrysowuje kształt z kanału alfa. Makieta ma też serię „OK” (wtyczki na
+  jedną gałkę) oraz Sampler, Drumpad i Syntezator — na stronie ich nie ma.
 - Zdjęcie z sekcji „Jak powstał DAW” to PNG 4606 × 2624 (5,6 MB). Tutaj jest
   jako WebP 2200 px, q90 / 250 kB — **z kanałem alfa**, bo to wycinanka na
   przezroczystym tle. Odrzucenie alfy przy konwersji odsłania surowe zielone

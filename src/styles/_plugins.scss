@@ -12,14 +12,18 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 20px;
 
+    // Zrzuty paneli z kanałem alfa: zaokrąglone rogi są przezroczyste, a panel
+    // ma własną ciemną krawędź. Prostokątna ramka wokół obrazka wisiałaby
+    // wokół zaokrąglonego panelu, więc podświetlenie idzie z `drop-shadow`,
+    // który obrysowuje kształt z kanału alfa, a nie pudełko.
     img {
       width: 100%;
       height: auto;
-      border: 1px solid $line-plugin;
-      transition: border-color 0.2s ease, transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+      filter: drop-shadow(0 0 0 transparent);
+      transition: filter 0.2s ease, transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 
       &:hover {
-        border-color: $ring-3;
+        filter: drop-shadow(0 0 1px $ring-3);
         transform: translateY(-3px);
       }
     }
