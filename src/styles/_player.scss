@@ -104,8 +104,8 @@ $bp-player: 1240px;
     align-items: center;
   }
 
-  // Obwiednia utworu od linii w górę i w dół — cień, nie wykres: ledwie
-  // widoczna szarość, a odegrana część w przygaszonej limonce.
+  // Obwiednia utworu od linii w górę i w dół: w kolorze toru osi czasu,
+  // a odegrana część w przygaszonej limonce.
   &__wave {
     position: absolute;
     left: 0;
@@ -116,7 +116,7 @@ $bp-player: 1240px;
     overflow: visible;
     pointer-events: none;
 
-    path { fill: rgba(232, 236, 232, 0.07); }
+    path { fill: $line-bright; }
 
     &--played {
       clip-path: inset(0 calc(100% - var(--progress)) 0 0);
