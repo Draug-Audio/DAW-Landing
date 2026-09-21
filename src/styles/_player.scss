@@ -30,6 +30,9 @@ $bp-player: 1240px;
 
   @include below($bp-player) { display: none; }
 
+  // Okrągły, identyczny z krążkiem gałki: korpus gałki ma promień 13,5 plus
+  // 1 px krawędzi, czyli 28 px średnicy — ten sam kolor tła, ta sama krawędź
+  // i to samo szare podświetlenie fokusu.
   &__play {
     flex: none;
     display: grid;
@@ -37,18 +40,16 @@ $bp-player: 1240px;
     width: 28px;
     height: 28px;
     padding: 0;
-    border: 1px solid $line-bright;
-    border-radius: 2px;
-    background: transparent;
+    border: 1px solid $line;
+    border-radius: 50%;
+    background: $panel-hover;
     color: $text-muted;
     cursor: pointer;
-    transition: border-color 0.18s ease, color 0.18s ease;
+    transition: background-color 0.15s ease, color 0.18s ease;
 
-    &:hover,
-    &:focus-visible {
-      border-color: $lime;
-      color: $lime;
-    }
+    &:hover { color: $lime; }
+
+    &:focus-visible { background: color.mix($text, $panel-hover, 3%); }
 
     &[data-state='playing'] { color: $lime; }
   }

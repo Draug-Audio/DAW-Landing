@@ -294,7 +294,8 @@ użytkownika i nie da się tego obejść. Do tego momentu nie powstaje nawet
 AudioContext; pobierany jest tylko nagłówek pliku (`preload="metadata"`), żeby
 odtwarzacz znał długość utworu.
 
-Na środku paska nawigacji siedzi odtwarzacz: play / pauza, oś czasu
+Na środku paska nawigacji siedzi odtwarzacz: okrągły play / pauza (krążek
+identyczny z korpusem gałki — 28 px, to samo tło i krawędź), oś czasu
 z przewijaniem (natywny `input[type=range]` — klawiatura i czytniki działają od
 ręki) i gałka głośności w stylu DAW, z podpisem po prawej. Gałka to tor na
 270° (od 7:30 do 4:30) przycięty do jasnych nóżek na końcach zakresu, więc

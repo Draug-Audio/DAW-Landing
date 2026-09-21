@@ -25,7 +25,9 @@
   <div class="player" data-player role="group" aria-label="Muzyka w tle" hidden>
     <button class="player__play" type="button" data-player-play aria-label="Odtwórz muzykę w tle">
       <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor">
-        <path class="player__icon-play" d="M4.5 2.8v10.4L13 8z"/>
+        <!-- trójkąt przesunięty w prawo: środek ciężkości na 8,2 zamiast 7,3,
+             inaczej w okrągłym przycisku ucieka optycznie w lewo -->
+        <path class="player__icon-play" d="M5.4 2.8v10.4L13.9 8z"/>
         <path class="player__icon-pause" d="M4 3h2.8v10H4zM9.2 3H12v10H9.2z"/>
       </svg>
     </button>
