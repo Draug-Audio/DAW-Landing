@@ -296,8 +296,12 @@ odtwarzacz znał długość utworu.
 
 Na środku paska nawigacji siedzi odtwarzacz: play / pauza, oś czasu
 z przewijaniem (natywny `input[type=range]` — klawiatura i czytniki działają od
-ręki) i gałka głośności w stylu DAW. Gałka ma łuk 270° od 7:30 do 4:30,
-sterowanie jak w DAW: przeciąganie w pionie (180 px = pełny zakres, z Shiftem
+ręki) i gałka głośności w stylu DAW, z podpisem po prawej. Gałka to jeden
+pierścień-tor z łukiem wartości na 270° (od 7:30 do 4:30), krótki wskaźnik
+wewnątrz i jasne nóżki na końcach zakresu — bez piasty i pierścieni
+wewnętrznych. Kontrolki nie mają obrysu fokusu; fokus z klawiatury pokazuje
+sam element (rozjaśniony tor gałki, uchwyt osi czasu, ramka przycisku).
+Sterowanie jak w DAW: przeciąganie w pionie (180 px = pełny zakres, z Shiftem
 5× dokładniej), kółko (3 %, z Shiftem 1 %), dwuklik = powrót do 50 %,
 klawiatura (strzałki, PageUp / PageDown, Home / End). Głośność jest liniowa,
 50 % = połowa amplitudy, zmiany idą z 15-milisekundowym poślizgiem, żeby nie

@@ -20,6 +20,12 @@ $bp-player: 1240px;
   display: flex;
   align-items: center;
   gap: 10px;
+  // kontrolka, nie tekst: dwuklik na gałce (reset) zaznaczałby podpis obok
+  user-select: none;
+
+  // Bez obrysów fokusu — fokus z klawiatury sygnalizuje sam element
+  // (ramka przycisku, uchwyt osi czasu, rozjaśniony tor gałki).
+  :focus { outline: none; }
 
   @include below($bp-player) { display: none; }
 
@@ -37,7 +43,8 @@ $bp-player: 1240px;
     cursor: pointer;
     transition: border-color 0.18s ease, color 0.18s ease;
 
-    &:hover {
+    &:hover,
+    &:focus-visible {
       border-color: $lime;
       color: $lime;
     }
@@ -116,17 +123,15 @@ $bp-player: 1240px;
       &::-webkit-slider-thumb { opacity: 1; }
       &::-moz-range-thumb { opacity: 1; }
     }
-
-    &:focus-visible { outline: 1px solid $lime; outline-offset: 2px; }
   }
 
-  // Etykieta nad wartością, wyrównane do gałki — jak na pasku kanału w DAW
+  // Podpis po prawej od gałki: etykieta nad wartością
   &__level {
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
+    align-items: flex-start;
     gap: 1px;
-    margin-left: 6px;
+    margin-left: -2px;
   }
 
   &__label {
@@ -143,6 +148,8 @@ $bp-player: 1240px;
 }
 
 // ── gałka ──
+// Jeden pierścień-tor, łuk wartości na nim, krótki wskaźnik w środku i jasne
+// nóżki na końcach zakresu — geometria w src/audio/Knob.js.
 .knob {
   flex: none;
   width: 32px;
@@ -150,56 +157,38 @@ $bp-player: 1240px;
   border-radius: 50%;
   cursor: ns-resize;
   touch-action: none;
+  outline: none;
 
   svg { display: block; overflow: visible; }
-
-  &:focus-visible { outline: 1px solid $lime; outline-offset: 2px; }
-
-  &__tick {
-    stroke: $text-whisper;
-    stroke-width: 1.2;
-    stroke-linecap: round;
-  }
 
   &__track {
     fill: none;
     stroke: $line-bright;
-    stroke-width: 2.4;
-    stroke-linecap: round;
+    stroke-width: 3;
+    transition: stroke 0.15s ease;
   }
 
   &__arc {
     fill: none;
     stroke: $lime;
-    stroke-width: 2.4;
+    stroke-width: 3;
     stroke-linecap: round;
   }
 
-  &__body { fill: #141714; }
-
-  &__rim {
-    fill: none;
-    stroke: rgba(200, 255, 61, 0.28);
-    stroke-width: 1.3;
-    stroke-linecap: round;
-  }
-
-  &__hub {
-    fill: none;
-    stroke: $text-ghost;
-    stroke-width: 1.1;
-  }
-
+  &__tick,
   &__pointer {
-    stroke: $text;
-    stroke-width: 1.6;
+    stroke: $text-muted;
     stroke-linecap: round;
-
-    &--inner { stroke: $text-ghost; }
   }
+
+  &__tick { stroke-width: 1.3; }
+  &__pointer { stroke-width: 1.7; }
 
   &:hover &__arc,
   &.is-dragging &__arc { stroke: $lime-soft; }
+
+  // fokus z klawiatury bez obrysu: rozjaśniony tor
+  &:focus-visible &__track { stroke: $text-ghost; }
 }
 
 // Wyłącznik dźwięku zostaje tylko tam, gdzie odtwarzacz się nie mieści —

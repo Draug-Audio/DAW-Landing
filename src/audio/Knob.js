@@ -1,8 +1,11 @@
 import { clamp } from '../slider/math.js';
 
 /**
- * Gałka w stylu DAW: łuk wartości na 270°, od 7:30 do 4:30 zgodnie z ruchem
- * wskazówek zegara, z przerwą na dole.
+ * Gałka w stylu DAW: pierścień-tor, na nim łuk wartości na 270° (od 7:30 do
+ * 4:30 zgodnie z ruchem wskazówek zegara), krótki wskaźnik wewnątrz pierścienia
+ * i nóżki na zewnątrz, na końcach zakresu. Bez piasty i pierścieni wewnętrznych.
+ * Proporcje z projektu gałki w DAW: tor grubości ok. 1/4 promienia, wskaźnik od
+ * 0,23 do 0,8 promienia, nóżki od 1,22 do 1,43.
  *
  * Sterowanie jak w DAW:
  * - przeciąganie w pionie — w górę więcej, w dół mniej; pełny zakres na
@@ -19,6 +22,8 @@ const START = -135;
 const DRAG_RANGE = 180;
 const SIZE = 32;
 const C = SIZE / 2;
+/** promień osi toru i łuku wartości */
+const R = 12;
 const NS = 'http://www.w3.org/2000/svg';
 
 /** punkt na okręgu; kąt w stopniach od godziny 12, zgodnie z ruchem wskazówek */
@@ -72,36 +77,28 @@ export class Knob {
 
   _build() {
     const svg = el('svg', { viewBox: `0 0 ${SIZE} ${SIZE}`, width: SIZE, height: SIZE, 'aria-hidden': 'true' });
-    const end = START + SWEEP;
     // nóżki na końcach zakresu — wystają na zewnątrz toru, jak na skali gałki
-    for (const deg of [START, end]) {
-      const [x0, y0] = point(13.6, deg);
-      const [x1, y1] = point(16, deg);
+    for (const deg of [START, START + SWEEP]) {
+      const [x0, y0] = point(R * 1.22, deg);
+      const [x1, y1] = point(R * 1.43, deg);
       svg.append(el('line', { class: 'knob__tick', x1: x0, y1: y0, x2: x1, y2: y1 }));
     }
-    svg.append(el('path', { class: 'knob__track', d: arc(13, START, end) }));
+    svg.append(el('circle', { class: 'knob__track', cx: C, cy: C, r: R }));
     this.valueArc = el('path', { class: 'knob__arc' });
-    svg.append(this.valueArc);
-    svg.append(el('circle', { class: 'knob__body', cx: C, cy: C, r: 10.4 }));
-    svg.append(el('path', { class: 'knob__rim', d: arc(8, START, end) }));
-    svg.append(el('circle', { class: 'knob__hub', cx: C, cy: C, r: 2.4 }));
-    this.pointerInner = el('line', { class: 'knob__pointer knob__pointer--inner' });
-    this.pointerOuter = el('line', { class: 'knob__pointer' });
-    svg.append(this.pointerInner, this.pointerOuter);
+    this.pointer = el('line', { class: 'knob__pointer' });
+    svg.append(this.valueArc, this.pointer);
     this.root.append(svg);
   }
 
   _render() {
     const deg = START + this.value * SWEEP;
-    if (this.value > 0.001) this.valueArc.setAttribute('d', arc(13, START, deg));
+    if (this.value > 0.001) this.valueArc.setAttribute('d', arc(R, START, deg));
     else this.valueArc.removeAttribute('d');
 
-    // wskaźnik: ciemniejszy przy piaście, jasny na końcu — jak na podglądzie
-    const [ax, ay] = point(2.4, deg);
-    const [bx, by] = point(5, deg);
-    const [cx, cy] = point(8.6, deg);
-    Object.entries({ x1: ax, y1: ay, x2: bx, y2: by }).forEach(([k, v]) => this.pointerInner.setAttribute(k, v.toFixed(3)));
-    Object.entries({ x1: bx, y1: by, x2: cx, y2: cy }).forEach(([k, v]) => this.pointerOuter.setAttribute(k, v.toFixed(3)));
+    const [ax, ay] = point(R * 0.23, deg);
+    const [bx, by] = point(R * 0.8, deg);
+    Object.entries({ x1: ax, y1: ay, x2: bx, y2: by })
+      .forEach(([k, v]) => this.pointer.setAttribute(k, v.toFixed(3)));
 
     const pct = Math.round(this.value * 100);
     this.root.setAttribute('aria-valuenow', String(pct));
