@@ -61,6 +61,10 @@
     white-space: nowrap;
   }
 
+  // przycisk rozciągnięty na szerokość karty (element flex) — tekst na środku
+  // także w wyróżnionym planie, gdzie .btn--primary nie ma text-align
+  .btn { text-align: center; }
+
   &__desc {
     font-size: 13px;
     line-height: 1.55;
