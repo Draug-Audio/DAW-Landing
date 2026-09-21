@@ -609,6 +609,13 @@ dostają `inert`. Przy `prefers-reduced-motion` kroki mają czas 0.
   kreski środka w prawo albo w lewo, długość = |ratio|, wartość ze znakiem
   cyframi o stałej szerokości. Wagi są przykładowe — pod spodem dobiera je
   agent.
+- Loga w „Integracjach” (`logo-{claude,deepseek,gpt,grok}.webp`) znormalizowane
+  do jednego formatu: kwadrat 256 × 256, przezroczyste tło, znak przycięty do
+  obrysu i wpasowany w 224 px na środku, bezstratny WebP (5–13 kB). Grok miał
+  białe logo na czarnym tle — alfa wzięta z jasności, kolor biały. DeepSeek
+  był SVG na białym zaokrąglonym kwadracie — kwadrat usunięty, reszta
+  wyrenderowana w Edge bez interfejsu z przezroczystym tłem. Kolory marek
+  zostały bez zmian; na stronie logo 32 px obok nazwy (logo z pustym alt).
 - Zdjęcie z sekcji „Jak powstał DAW” to PNG 4606 × 2624 (5,6 MB). Tutaj jest
   jako WebP 2200 px, q90 / 250 kB — **z kanałem alfa**, bo to wycinanka na
   przezroczystym tle. Odrzucenie alfy przy konwersji odsłania surowe zielone
