@@ -87,33 +87,32 @@ const PULSE = {
   /** czas pojawienia się na „raz”, s */
   fadeIn: 0.06,
   /**
-   * Rozmycie pod koniec uderzenia jako ułamek bieżącego promienia pulsu —
-   * rośnie razem z nim. 2,5 % daje ok. 2 px przy narodzinach, 13 px na
-   * środkowym pierścieniu hero (520 px, dawna stała wartość 12 px) i ok. 22 px
-   * za ostatnim (880 px).
+   * Rozmycie jako ułamek promienia pulsu (pełna szerokość, σ to połowa).
+   * Warstwa rozmycia jest gotowym obrazem skalowanym do bieżącego promienia,
+   * więc rozmycie rośnie razem z pulsem samo z siebie.
    */
-  blurRatio: 0.025,
+  blurRatio: 0.075,
+  /** pasków na profil rozmycia (±2σ) — każdy szeroki na ½σ */
+  blurBands: 9,
   /**
-   * Wykładnik krzywej rozmycia (i idącej za nim poświaty i przygasania) w
-   * obrębie uderzenia: `u ** 4`. Przez pierwszą połowę uderzenia puls jest
-   * praktycznie ostry (≤ 0,75 px), rozmywa się dopiero końcówka. Wcześniej
-   * rozmycie szło krzywą ruchu (ease-out) i narastało zaraz po uderzeniu —
-   * ostra była tylko jedna klatka.
+   * Wykładnik krzywej przejścia linia → rozmycie w obrębie uderzenia:
+   * `u ** 4`. Przez pierwszą połowę uderzenia widać praktycznie samą ostrą
+   * linię, rozmycie przejmuje dopiero końcówkę.
    */
   blurCurve: 4,
-  /** warstw rozmycia — linia rozciągnięta wzdłuż normalnej */
-  layers: 7,
+  /** krycie ostrej linii w chwili uderzenia */
   alpha: 0.42,
   width: 1.6,
-  /** o ile przygasa do końca uderzenia (0–1) */
+  /** o ile całość przygasa do końca uderzenia (0–1) */
   fade: 0.35,
   /**
-   * Poświata rosnąca z rozmyciem: mnożnik „tuszu” na każdy piksel rozmycia.
-   * Przy samym zachowaniu tuszu rozmyty puls rozkładał światło na ok. 11 px
-   * i w trakcie ruchu spadał do 5–7 / 255 — błyskał tylko na uderzeniach,
-   * a rozszerzania prawie nie było widać.
+   * Krycie warstwy rozmycia względem linii. Rozmyty okrąg rozkłada światło
+   * na kilkadziesiąt pikseli, więc przy tym samym kryciu co linia byłby
+   * ledwie widoczny.
    */
-  glow: 0.2,
+  glow: 0.55,
+  /** promień okręgu w obrazie rozmycia; obraz jest skalowany do pulsu */
+  spriteRadius: 240,
 };
 
 /**
@@ -215,6 +214,18 @@ function makePulse(drivers) {
   const outer = inner[inner.length - 1];
   const gap = inner.length > 1 ? outer.r - inner[inner.length - 2].r : outer.r * 0.25;
   const half = PULSE.samples;
+
+  // Obraz rozmycia: stały rozmiar, okrąg o promieniu `spriteRadius`, a fala
+  // zapisana w proporcji do promienia docelowego — najmniejszy docelowy to
+  // pierwszy pierścień, więc stąd największa możliwa fala w obrazie.
+  const R = PULSE.spriteRadius;
+  const sigma = (R * PULSE.blurRatio) / 2;
+  const maxWave = Math.max(...inner.map((d) => d.reach)) * (R / inner[0].r);
+  const spriteHalf = Math.ceil(R + maxWave + 2.5 * sigma);
+  const sprite = document.createElement('canvas');
+  sprite.width = spriteHalf * 2;
+  sprite.height = spriteHalf * 2;
+
   return {
     inner,
     gap,
@@ -223,6 +234,15 @@ function makePulse(drivers) {
     disp: new Float32Array(half),
     radii: new Float32Array(half),
     pts: new Float32Array(half * 4),
+    sprite,
+    spriteCtx: sprite.getContext('2d'),
+    spriteHalf,
+    sigma,
+    /** fala obrazu rozmycia — osobna, bo `disp` w tej samej klatce niesie linia */
+    glowDisp: new Float32Array(half),
+    /** numer uderzenia, dla którego obraz rozmycia jest aktualny */
+    spriteBeat: null,
+    // rozmycie sięga 2σ = blurRatio · promień poza linię
     extent: (outer.r + gap) * (1 + PULSE.blurRatio) + outer.reach + outer.excursion + 2,
   };
 }
@@ -238,6 +258,31 @@ function sampleShape(driver, frac) {
 }
 
 const smooth = (x) => x * x * (3 - 2 * x);
+
+/**
+ * Zamknięty obrys z promieni w lustrzanych próbkach: prawa strona od dołu
+ * do góry, lewa z góry na dół — pętla bez szwu. Krzywa przez środki
+ * odcinków z próbkami jako punktami kontrolnymi, bez załamań.
+ */
+function mirroredPath(ctx, cx, cy, half, dirs, radii, pts) {
+  const n = half * 2;
+  for (let i = 0; i < n; i += 1) {
+    const right = i < half;
+    const j = right ? i : n - 1 - i;
+    const o = j * 4 + (right ? 0 : 2);
+    pts[i * 2] = cx + dirs[o] * radii[j];
+    pts[i * 2 + 1] = cy + dirs[o + 1] * radii[j];
+  }
+  ctx.moveTo((pts[(n - 1) * 2] + pts[0]) / 2, (pts[(n - 1) * 2 + 1] + pts[1]) / 2);
+  for (let i = 0; i < n; i += 1) {
+    const j = (i + 1) % n;
+    ctx.quadraticCurveTo(
+      pts[i * 2], pts[i * 2 + 1],
+      (pts[i * 2] + pts[j * 2]) / 2, (pts[i * 2 + 1] + pts[j * 2 + 1]) / 2,
+    );
+  }
+  ctx.closePath();
+}
 
 /** pozycje brzegów pasm w indeksach FFT — liczone raz na częstotliwość próbkowania */
 function binMap(driver, binHz) {
@@ -494,7 +539,7 @@ export class SpeakerRings {
         } else {
           const { radii, shape, reach, half } = driver;
           for (let i = 0; i < half; i += 1) radii[i] = r + shape[i] * reach;
-          this._mirroredPath(cx, cy, half, driver.dirs, radii, driver.pts);
+          mirroredPath(ctx, cx, cy, half, driver.dirs, radii, driver.pts);
         }
         ctx.lineWidth = 1;
         ctx.strokeStyle = driver.color;
@@ -520,9 +565,9 @@ export class SpeakerRings {
    * membrany), w `PULSE.morph` przejmuje jego falę i rusza dalej; na
    * „cztery” wychodzi poza ostatni pierścień i gaśnie.
    *
-   * W każdym odcinku ruch wyhamowuje (ease-out), a rozmycie, poświata
-   * i przygasanie idą osobną krzywą (`PULSE.blurCurve`): przez pierwszą
-   * połowę uderzenia puls jest ostry, rozmywa się dopiero pod koniec.
+   * W każdym odcinku ruch wyhamowuje (ease-out), a przejście z ostrej linii
+   * w rozmycie idzie osobną krzywą (`PULSE.blurCurve`): przez pierwszą
+   * połowę uderzenia widać linię, rozmycie przejmuje dopiero końcówkę.
    */
   _drawPulse(speaker, beat) {
     const { ctx } = this;
@@ -554,65 +599,79 @@ export class SpeakerRings {
     }
 
     const soft = u ** PULSE.blurCurve;
-    const blur = radius * PULSE.blurRatio * soft;
     let alpha = PULSE.alpha * (1 - PULSE.fade * soft);
     if (seg === 0) alpha *= Math.min(1, (u * beatDur) / PULSE.fadeIn);
     if (seg === segments - 1) alpha *= (1 - u) ** 1.5;
     if (alpha < 0.004) return;
 
-    // Rozmycie jako linia rozciągnięta wzdłuż normalnej: kilka kopii
-    // przesuniętych promieniowo, z wagami Gaussa. Dla cienkiej linii to jest
-    // właśnie rozmycie (wzdłuż stycznej nic się nie zmienia), a koszt jest
-    // stały — `ctx.filter` rozmywałby warstwę wielkości całego pierścienia.
-    // „Tusz” (krycie × grubość) rośnie z rozmyciem o `PULSE.glow` — sam
-    // zachowany tusz rozlewałby się na tyle pikseli, że puls w ruchu znikał.
-    const { layers } = PULSE;
-    const width = PULSE.width * (1 + PULSE.glow * blur);
-    const sigma = Math.max(blur / 2, 0.01);
-    const lw = Math.max(1, (2 * blur) / (layers - 1));
-    const spread = [];
-    let sum = 0;
-    for (let i = 0; i < layers; i += 1) {
-      const offset = ((i / (layers - 1)) * 2 - 1) * blur;
-      const w = Math.exp(-(offset * offset) / (2 * sigma * sigma));
-      spread.push([offset, w]);
-      sum += w;
+    // Dwie warstwy zamiast rozmywania linii: ostra linia z falą i gotowy
+    // obraz rozmycia, animowany tylko skalą i kryciem. Przenikają się — im
+    // mocniejsze rozmycie, tym słabsza linia — więc całość wygląda jak linia,
+    // która się rozmywa, a kosztuje jeden obrys i jedno `drawImage`.
+    //
+    // Obraz rozmycia jest przebudowywany skokami, raz na tick metronomu,
+    // z falą pierścienia, na który puls właśnie wszedł. Tick wypada na
+    // początku uderzenia, gdy rozmycie jest jeszcze niewidoczne (`soft` ≈ 0),
+    // więc skok kształtu nie jest widoczny.
+    const tick = Math.floor(beat);
+    if (pulse.spriteBeat !== tick) {
+      this._rebuildGlow(pulse, target, stops[seg + 1]);
+      pulse.spriteBeat = tick;
     }
-    ctx.lineWidth = lw;
-    ctx.strokeStyle = `rgb(${LIME})`;
-    for (const [offset, w] of spread) {
-      ctx.globalAlpha = Math.min(alpha, (alpha * width * w) / (lw * sum));
-      for (let j = 0; j < half; j += 1) radii[j] = radius + offset + disp[j];
+
+    const lineAlpha = alpha * (1 - soft);
+    if (lineAlpha > 0.004) {
+      for (let j = 0; j < half; j += 1) radii[j] = radius + disp[j];
       ctx.beginPath();
-      this._mirroredPath(cx, cy, half, pulse.dirs, radii, pulse.pts);
+      mirroredPath(ctx, cx, cy, half, pulse.dirs, radii, pulse.pts);
+      ctx.globalAlpha = lineAlpha;
+      ctx.lineWidth = PULSE.width;
+      ctx.strokeStyle = `rgb(${LIME})`;
       ctx.stroke();
+    }
+
+    const glowAlpha = alpha * soft * PULSE.glow;
+    if (glowAlpha > 0.004) {
+      // okrąg obrazu (spriteRadius) trafia na bieżący promień; fala i szerokość
+      // rozmycia skalują się razem z nim
+      const size = pulse.spriteHalf * 2 * (radius / PULSE.spriteRadius);
+      ctx.globalAlpha = glowAlpha;
+      ctx.drawImage(pulse.sprite, cx - size / 2, cy - size / 2, size, size);
     }
     ctx.globalAlpha = 1;
   }
 
   /**
-   * Zamknięty obrys z promieni w lustrzanych próbkach: prawa strona od dołu
-   * do góry, lewa z góry na dół — pętla bez szwu. Krzywa przez środki
-   * odcinków z próbkami jako punktami kontrolnymi, bez załamań.
+   * Obraz rozmycia dla jednego uderzenia: fala pierścienia docelowego (albo
+   * równe koło na „raz”), rozmyta wzdłuż normalnej. Paski o szerokości ½σ
+   * przesunięte od fali w zakresie ±2σ, z kryciem równym profilowi Gaussa —
+   * nie nakładają się, więc krycie paska to wprost wartość profilu. Fala
+   * zapisana w proporcji do `refRadius`, bo obraz jest potem skalowany.
    */
-  _mirroredPath(cx, cy, half, dirs, radii, pts) {
-    const { ctx } = this;
-    const n = half * 2;
-    for (let i = 0; i < n; i += 1) {
-      const right = i < half;
-      const j = right ? i : n - 1 - i;
-      const o = j * 4 + (right ? 0 : 2);
-      pts[i * 2] = cx + dirs[o] * radii[j];
-      pts[i * 2 + 1] = cy + dirs[o + 1] * radii[j];
+  _rebuildGlow(pulse, target, refRadius) {
+    const { spriteCtx: g, spriteHalf: c, sigma, half, glowDisp, radii, pts, dirs } = pulse;
+    const R = PULSE.spriteRadius;
+    const waveScale = R / refRadius;
+    for (let j = 0; j < half; j += 1) {
+      glowDisp[j] = target ? sampleShape(target, (j + 0.5) / half) * waveScale : 0;
     }
-    ctx.moveTo((pts[(n - 1) * 2] + pts[0]) / 2, (pts[(n - 1) * 2 + 1] + pts[1]) / 2);
-    for (let i = 0; i < n; i += 1) {
-      const j = (i + 1) % n;
-      ctx.quadraticCurveTo(
-        pts[i * 2], pts[i * 2 + 1],
-        (pts[i * 2] + pts[j * 2]) / 2, (pts[i * 2 + 1] + pts[j * 2 + 1]) / 2,
-      );
+
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.globalAlpha = 1;
+    g.clearRect(0, 0, c * 2, c * 2);
+    g.lineJoin = 'round';
+    g.strokeStyle = `rgb(${LIME})`;
+    const bands = PULSE.blurBands;
+    const step = (4 * sigma) / (bands - 1);
+    g.lineWidth = step;
+    for (let i = 0; i < bands; i += 1) {
+      const offset = -2 * sigma + i * step;
+      g.globalAlpha = Math.exp(-(offset * offset) / (2 * sigma * sigma));
+      for (let j = 0; j < half; j += 1) radii[j] = R + offset + glowDisp[j];
+      g.beginPath();
+      mirroredPath(g, c, c, half, dirs, radii, pts);
+      g.stroke();
     }
-    ctx.closePath();
+    g.globalAlpha = 1;
   }
 }

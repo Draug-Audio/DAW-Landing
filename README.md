@@ -370,18 +370,32 @@ W środkowej kolumnie obu sekcji pulsuje pierścień w rytmie utworu, takt 4/4:
    dwoma zewnętrznymi i gaśnie przed następną „raz”.
 
 Trzy przetworniki dają cztery odcinki drogi — dokładnie jeden takt. W każdym
-odcinku ruch wyhamowuje (ease-out), a rozmycie (maksymalnie 2,5 % bieżącego
-promienia — rośnie z pulsem: ok. 2 px przy narodzinach, 13 px na środkowym
-pierścieniu hero, 22 px za ostatnim), poświata
-i przygasanie idą osobną krzywą `u⁴`: przez pierwszą połowę uderzenia puls jest
-praktycznie ostry (≤ 0,75 px), rozmywa się dopiero końcówka. Wcześniej
-rozmycie szło krzywą ruchu i narastało zaraz po uderzeniu — ostra była
-tylko jedna klatka. Rozmycie to kilka kopii linii
-przesuniętych wzdłuż normalnej z wagami Gaussa — dla cienkiej linii to jest
-właśnie rozmycie, a koszt stały; `ctx.filter` rozmywałby warstwę wielkości
-całego pierścienia. Samo zachowanie „tuszu” rozlewało światło na ok. 11 px
-i puls w ruchu spadał do 5–7 / 255 (błyskał tylko na uderzeniach), więc
-poświata rośnie z rozmyciem — w ruchu 26–38 / 255, na uderzeniach 84–134.
+odcinku ruch wyhamowuje (ease-out).
+
+Puls to dwie warstwy, które się przenikają:
+
+- **linia** — ostra, niesie falę (przejmuje kształt pierścienia), krycie
+  `1 − s`;
+- **rozmycie** — gotowy obraz (598 px, okrąg o promieniu 240 px, σ = 9 px),
+  animowany wyłącznie skalą i kryciem `s`. Skalowanie obrazu skaluje też
+  szerokość rozmycia, więc rośnie ono z pulsem samo z siebie (σ = 3,75 %
+  promienia).
+
+`s = u⁴` w obrębie uderzenia: przez pierwszą połowę widać praktycznie samą
+linię, rozmycie przejmuje dopiero końcówkę (wcześniej rozmycie szło krzywą
+ruchu i ostra była tylko jedna klatka). Zmierzone na pikselach: do 60 %
+uderzenia linia 1–2 px, jasność 94–119; przy 75–85 % linia przygasa (69 → 57);
+na końcu rozmycie ma 29–33 px szerokości i jasność 41–46.
+
+Obraz rozmycia jest przebudowywany skokami, raz na tick metronomu (sprawdzone:
+8 przebudów na 2 takty), z falą pierścienia, na który puls właśnie wszedł.
+Tick wypada na początku uderzenia, gdy rozmycie jest jeszcze niewidoczne, więc
+skoku kształtu nie widać. Rozmycie w obrazie to paski o szerokości ½σ
+przesunięte od fali w zakresie ±2σ, z kryciem równym profilowi Gaussa — nie
+nakładają się, więc krycie paska to wprost wartość profilu. Fala jest w nim
+zapisana w proporcji do promienia docelowego pierścienia, więc po
+przeskalowaniu siada tam, gdzie była linia. Każda scena ma własny obraz, bo
+fale hero i sekcji agenta się różnią.
 
 Siatka rytmu jest zmierzona z nagrania, nie przepisana z opisu: dopasowanie
 siatki do obwiedni pasm (niskie ≈ stopa, 400 Hz, powyżej 1,8 kHz ≈ werbel
@@ -410,10 +424,19 @@ Kalibracja, zmierzona na tym utworze:
   0,07 / 0 — intro nie ma góry, środek utworu 0,54 / 0,56 / 0,39, ok. 110 s
   0,44 / 0,58 / 0,50.
 
-Koszt klatki: ok. 0,03 ms po stronie JS; z wymuszonym wykonaniem na GPU
-(odczyt 1 px) ok. 0,9 ms — to górna granica, z synchronizacją w cenie; tyle
-samo co przy wcześniejszej wersji z kreskami wokół pierścieni. Puls w takt
-podnosi to w hero do ok. 1,7 ms (7 warstw rozmycia na obwodzie do 880 px).
+Koszt klatki całej sceny hero: ok. 0,3 ms, mierzone jako 120 klatek i jeden
+odczyt piksela na końcu (czeka na całą pracę GPU). Różnice między wariantami
+pulsu — dwie warstwy, przebudowa co klatkę, dawne 7 warstw obrysu — mieszczą
+się w szumie tego pomiaru (0,26–0,38 ms). Strukturalnie dwie warstwy robią
+mniej: jeden obrys i jedno `drawImage` na klatkę zamiast ośmiu obrysów, plus
+przebudowa obrazu (ok. 1 ms) raz na 625 ms.
+
+Uwaga do metodyki: wcześniejsze liczby w tym miejscu (0,9 ms, z pulsem
+1,7 ms) były mierzone z odczytem piksela po każdej klatce. To wymusza
+synchronizację z GPU w każdej klatce, a po kilku odczytach Chrome przełącza
+canvas na renderowanie programowe — wtedy skalowany obraz rozmycia kosztował
+6 ms. W normalnym działaniu nic z canvasu nie czyta, więc ten tryb się nie
+włącza.
 Canvas nie sięga nad początek dokumentu — w hero oszczędza to ponad 400
 wierszy pikseli, bo środkowa kolumna z pulsem sięga 957 px od środka.
 
