@@ -4,9 +4,8 @@ import { bandLevel } from './spectrum.js';
 /**
  * Retro analizator widma za zdjęciem w sekcji „Jak powstał DAW”: siatka
  * poziomych segmentów „diod”, minimalnie jaśniejszych od tła, w której słupki
- * zapalają całe segmenty od dołu — jak w starym korektorze graficznym. Siatka
- * zaczyna się nad dolną krawędzią zdjęcia (odstęp `bottom`) i sięga dokładnie
- * górnej.
+ * zapalają całe segmenty od dołu — jak w starym korektorze graficznym. Na
+ * górze i na dole siatki zostaje margines jednego niewidocznego segmentu.
  *
  * Kolumny to pasma tercjowe ISO 266 od 31,5 Hz do 16 kHz, wiersze — poziom.
  * Nad słupkiem zostaje znacznik szczytu: trzyma się chwilę, potem opada.
@@ -38,8 +37,6 @@ const GRID = {
   row: 0.4,
   /** szczelina między wierszami jako ułamek podziałki pionowej */
   rowGap: 0.3,
-  /** odstęp siatki od dolnej krawędzi zdjęcia, jako ułamek jego wysokości */
-  bottom: 0.08,
   /** segment zgaszony — minimalnie jaśniejszy od tła sekcji */
   off: 'rgba(232, 236, 232, 0.035)',
   /**
@@ -116,24 +113,25 @@ export class SpectrumGrid {
     }
 
     // Segmenty w pikselach urządzenia i na całych pikselach — retro „dioda” ma
-    // mieć ostre krawędzie. Kolumn tyle, ile pasm. Wiersze liczone od dołu:
-    // wypełniają dokładnie pas od odstępu `bottom` do górnej krawędzi, a
-    // szczelina leży pod każdym segmentem, więc najwyższy zaczyna się równo
-    // na krawędzi.
+    // mieć ostre krawędzie. Kolumn tyle, ile pasm. Wysokość zdjęcia dzielona
+    // na całe wiersze, z których skrajny górny i dolny zostają puste — margines
+    // na górze i na dole to jeden niewidoczny segment. Szczelina rozłożona po
+    // równo nad i pod segmentem, więc oba marginesy są identyczne.
     const cols = BANDS.length;
     const pitch = W / cols;
     const gap = Math.max(1, Math.round(pitch * GRID.gap));
-    const floor = H - Math.round(H * GRID.bottom);
-    const rows = Math.max(1, Math.round(floor / (pitch * GRID.row)));
-    const rowPitch = floor / rows;
+    const slots = Math.max(3, Math.round(H / (pitch * GRID.row)));
+    const rowPitch = H / slots;
     const rowGap = Math.max(1, Math.round(rowPitch * GRID.rowGap));
+    const rows = slots - 2;
     this.xs = Array.from({ length: cols }, (_, c) => {
       const x0 = Math.round(c * pitch + gap / 2);
       return [x0, Math.round((c + 1) * pitch - gap / 2) - x0];
     });
+    // wiersz r (od dołu) zajmuje miejsce r + 1 — miejsce 0 to pusty margines
     this.ys = Array.from({ length: rows }, (_, r) => {
-      const y0 = Math.round(floor - (r + 1) * rowPitch);
-      return [y0, Math.round(floor - r * rowPitch) - rowGap - y0];
+      const y0 = Math.round(H - (r + 2) * rowPitch + rowGap / 2);
+      return [y0, Math.round(H - (r + 1) * rowPitch - rowGap / 2) - y0];
     });
     this.rows = rows;
     this.rowStyles = Array.from({ length: rows }, (_, r) => {

@@ -487,11 +487,10 @@ muzykę, ale pierścienie stoją.
 Za zdjęciem w sekcji „Jak powstał DAW” stoi siatka poziomych segmentów
 „diod” minimalnie jaśniejszych od tła (krycie 0,035), w której słupki zapalają
 całe segmenty od dołu, jak w starym korektorze graficznym. Kolumny to 28 pasm
-tercjowych ISO 266 od 31,5 Hz do 16 kHz. Siatka zaczyna się 8 % wysokości nad
-dolną krawędzią zdjęcia i sięga dokładnie górnej: liczba wierszy jest
-zaokrąglana, a podziałka pionowa dopasowywana tak, żeby najwyższy segment
-zaczynał się równo na krawędzi (przy 1600 px okna 37 wierszy, segmenty
-29 × 11 px). Nad słupkiem znacznik szczytu: stoi 0,5 s, potem opada. Kalibracja widma wspólna z pierścieniami
+tercjowych ISO 266 od 31,5 Hz do 16 kHz. Wysokość zdjęcia jest dzielona na
+całe wiersze, z których skrajny górny i dolny zostają puste — margines na
+górze i na dole to jeden niewidoczny segment, identyczny po obu stronach
+(szczelina rozłożona po równo nad i pod segmentem). Nad słupkiem znacznik szczytu: stoi 0,5 s, potem opada. Kalibracja widma wspólna z pierścieniami
 (`src/audio/spectrum.js`), bufor widma na klatkę też — analiza liczy się raz.
 
 Zdjęcie jest wycinanką (43 % pikseli w pełni przezroczystych), więc siatka
