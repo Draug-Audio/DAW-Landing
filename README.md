@@ -313,7 +313,10 @@ prostokąt, a tak widać intro, kulminację, przełamanie i wyciszenie.
 Policzona raz, z nagrania, i zapisana w `src/data/track.js` (ok. 1 KB):
 liczenie jej u użytkownika wymagałoby pobrania całych 7,6 MB przed
 odtwarzaniem. Sama oś pozwala przewijać (natywny `input[type=range]` —
-klawiatura i czytniki działają od ręki). Na końcu gałka głośności w stylu DAW, z podpisem po prawej. Gałka to tor na
+klawiatura i czytniki działają od ręki); jej kciuk to głowica jak w DAW:
+pionowa linia 2 px w kolorze wypełnienia z obramowaniem 1 px w kolorze tła
+strony, wysoka na 20 px, żeby przecinała całą falę, widoczna przy najechaniu
+i fokusie. Na końcu gałka głośności w stylu DAW, z podpisem po prawej. Gałka to tor na
 270° (od 7:30 do 4:30) przycięty do jasnych nóżek na końcach zakresu, więc
 pokazuje skalę, a nie pełny okrąg; na nim łuk wartości, w środku krótki
 wskaźnik — bez piasty i pierścieni wewnętrznych. Całość leży na

@@ -137,7 +137,8 @@ $track-fill: $lime;
     position: relative;
     appearance: none;
     width: 220px;
-    height: 14px;
+    // tyle, ile kciuk — żeby nie wystawał poza suwak
+    height: 20px;
     margin: 0;
     background: transparent;
     cursor: pointer;
@@ -157,25 +158,31 @@ $track-fill: $lime;
       background: $track-fill;
     }
 
-    // uchwyt pojawia się dopiero przy najechaniu / fokusie
+    // Kciuk jak głowica w DAW: pionowa linia 2 px w kolorze wypełnienia,
+    // z obramowaniem 1 px w kolorze tła strony, które odcina ją od fali.
+    // Wysoki na 20 px, więc przecina całą falę (18 px). Pojawia się dopiero
+    // przy najechaniu i fokusie.
     &::-webkit-slider-thumb {
       appearance: none;
-      width: 8px;
-      height: 8px;
-      margin-top: -3px;
-      border: 0;
-      border-radius: 50%;
-      background: $lime;
+      box-sizing: border-box;
+      width: 4px;
+      height: 20px;
+      // wyśrodkowanie na torze 2 px: (2 − 20) / 2
+      margin-top: -9px;
+      border: 1px solid $bg;
+      border-radius: 0;
+      background: $track-fill;
       opacity: 0;
       transition: opacity 0.15s ease;
     }
 
     &::-moz-range-thumb {
-      width: 8px;
-      height: 8px;
-      border: 0;
-      border-radius: 50%;
-      background: $lime;
+      box-sizing: border-box;
+      width: 4px;
+      height: 20px;
+      border: 1px solid $bg;
+      border-radius: 0;
+      background: $track-fill;
       opacity: 0;
       transition: opacity 0.15s ease;
     }
