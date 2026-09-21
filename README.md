@@ -37,6 +37,23 @@ okna. Strzałki siedzą przy krawędziach kontenera od zewnątrz — rynna stron
 tylko 28 px, więc całkiem poza kontener wychodzą dopiero powyżej 1512 px
 szerokości okna; niżej siadają okrakiem na krawędzi, zamiast uciekać poza ekran.
 
+**Scena to dokładnie przedni kafel** — proporcja 2560 / 1392 i szerokość
+kontenera. Kafel jest do niej przypięty także w pionie (`frameTop` w
+`CanvasCarousel.resize`), a canvas wylewa się poza nią o 0,55 wysokości kafla
+w górę i w dół. Zmierzony zasięg treści to 0,48 wysokości kafla nad nim i 0,48
+pod nim przy pełnej energii (0,35 i 0,47 w spoczynku, licząc z kanałem alfa) —
+przy ciaśniejszym płótnie poświata urywała się widocznym kantem na jego
+krawędzi, a odbicie znikało w pół wygaszenia.
+
+Ten pas nie wchodzi do układu strony: canvas ma `z-index: -1` i wsuwa się pod
+treść hero i sekcji niżej, a opis siada 22 px pod samym slajdem. Zdarzenia
+obsługuje osobna przezroczysta warstwa (`showcase__surface`) w pionie sceny i
+na pełną szerokość okna — canvas leżący pod sąsiednimi sekcjami i tak by ich
+nie dostał, a gdyby to on był celem, zjadałby kliknięcia w hero. Płótno urosło
+o 72 % pikseli (1,99 → 3,42 Mpx przy oknie 1920), ale render kosztuje ok. 3 ms
+w obu wariantach — różnica ginie w rozrzucie pomiaru, bo czas idzie na paski
+kafli, nie na wypełnianie pustego tła.
+
 Osiem kafli leży na okręgu wokół kamery (co 45°) i jest rzutowanych
 perspektywicznie. Canvas 2D nie potrafi mapować tekstury na trapez, więc każdy
 kafel rysowany jest **pionowymi paskami** — każdy pasek dostaje własną skalę

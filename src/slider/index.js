@@ -37,6 +37,7 @@ export async function mountShowcase(root, slides) {
   const canvas = root.querySelector('[data-showcase-canvas]');
   const stage = root.querySelector('[data-showcase-stage]');
   const sharp = root.querySelector('[data-showcase-sharp]');
+  const surface = root.querySelector('[data-showcase-surface]');
   const captionsRoot = root.querySelector('[data-captions]');
   const dotsRoot = root.querySelector('[data-showcase-dots]');
   const progressBar = root.querySelector('[data-showcase-progress]');
@@ -109,6 +110,7 @@ export async function mountShowcase(root, slides) {
   carousel = new CanvasCarousel(canvas, {
     textures,
     frame: stage ?? canvas,
+    surface: surface ?? stage ?? canvas,
     options: { reducedMotion, gridFont: GRID_FONT },
     onFrame: ({ position, energy, settled }) => {
       captions.update(position);
@@ -139,7 +141,7 @@ export async function mountShowcase(root, slides) {
   root.addEventListener('pointerleave', resume);
   root.addEventListener('focusin', pause);
   root.addEventListener('focusout', resume);
-  canvas.addEventListener('pointerdown', pause);
+  (surface ?? canvas).addEventListener('pointerdown', pause);
   document.addEventListener('visibilitychange', () => (document.hidden ? stopAutoplay() : resume()));
   startAutoplay();
 

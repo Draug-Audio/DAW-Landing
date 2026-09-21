@@ -11,25 +11,46 @@
   position: relative;
   margin-top: 56px;
 
-  // Scena wyznacza szerokość PRZEDNIEGO kafla — canvas jest od niej szerszy,
-  // więc sąsiednie kafle wychodzą poza kontener aż po krawędzie okna.
-  // Wysokość: proporcja zrzutu (2560 / 1392) plus zapas na odbicie.
+  // Scena to dokładnie PRZEDNI kafel: jego proporcja (2560 / 1392) i szerokość
+  // kontenera. Canvas jest od niej i szerszy, i wyższy — sąsiednie kafle
+  // wychodzą poza kontener aż po krawędzie okna, a poświata i odbicie wylewają
+  // się nad scenę i pod nią. Dzięki temu układ strony nie rośnie o ten pas,
+  // a opis siada tuż pod slajdem.
   &__stage {
     position: relative;
-    aspect-ratio: 2560 / 1700;
+    aspect-ratio: 2560 / 1392;
   }
 
   &__canvas {
+    /* Zapas nad sceną i pod nią, w ułamku wysokości kafla. Zmierzony zasięg
+       treści to 0,51 wysokości kafla przy pełnej energii (0,42 w górę i 0,48
+       w dół w spoczynku) — poniżej tego poświata urywała się widocznym kantem
+       na krawędzi canvasu. */
+    --sc-bleed: 55%;
+
     position: absolute;
-    top: 0;
+    top: calc(-1 * var(--sc-bleed));
+    left: 50%;
+    // pod sąsiednie sekcje: canvas nachodzi na hero i na sekcję niżej, ale
+    // maluje się pod ich treścią i nie przechwytuje kliknięć w tym pasie
+    z-index: -1;
+    transform: translateX(-50%);
+    width: 100vw;
+    height: calc(100% + 2 * var(--sc-bleed));
+    // poświata, odbicie i winieta powstają wewnątrz canvasu — żadnych
+    // filtrów CSS na animowanym elemencie
+    pointer-events: none;
+  }
+
+  // Pas kafli: pion sceny, szerokość okna. Tu trafiają przeciągnięcia i kółko.
+  &__surface {
+    position: absolute;
+    inset: 0 auto;
     left: 50%;
     transform: translateX(-50%);
     width: 100vw;
-    height: 100%;
     touch-action: pan-y;
     cursor: grab;
-    // poświata, odbicie i winieta powstają wewnątrz canvasu — żadnych
-    // filtrów CSS na animowanym elemencie
 
     &:active { cursor: grabbing; }
   }

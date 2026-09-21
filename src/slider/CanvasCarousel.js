@@ -46,7 +46,11 @@ const DEFAULTS = {
    * przenikają; z nim mijają się, stykając krawędziami dokładnie w połowie.
    */
   edgeMeet: true,
-  /** pionowy środek okręgu (ułamek wysokości) — wyżej, bo pod spodem odbicie */
+  /**
+   * Pionowy środek okręgu jako ułamek wysokości canvasu. Używany tylko wtedy,
+   * gdy scena nie ma osobnego elementu odniesienia — normalnie kafel jest
+   * przypięty do górnej krawędzi `frame`, a canvas wylewa się poza nią.
+   */
   centerY: 0.44,
   maxStrips: 88,
   /**
@@ -184,10 +188,18 @@ export class CanvasCarousel {
    * @param {HTMLCanvasElement} canvas
    * @param {{textures: object[], options?: object, onFrame?: Function, onSettle?: Function}} config
    */
-  constructor(canvas, { textures, frame, options = {}, onFrame, onSettle }) {
+  constructor(canvas, { textures, frame, surface, options = {}, onFrame, onSettle }) {
     this.canvas = canvas;
     /** element wyznaczający szerokość przedniego kafla (kontener treści) */
     this.frame = frame ?? canvas;
+    /**
+     * Powierzchnia chwytu. Canvas wylewa się nad scenę i pod nią, więc jako
+     * cel zdarzeń zjadałby kliknięcia w sąsiednich sekcjach; leży zresztą pod
+     * ich treścią, więc i tak by ich nie dostał. Przeciąganie obsługuje osobna
+     * przezroczysta warstwa w samym pasie kafli — pełnej szerokości okna, żeby
+     * złapać też kafle poboczne.
+     */
+    this.surface = surface ?? canvas;
     this.ctx = context2d(canvas);
     this.textures = textures;
     this.count = textures.length;
@@ -355,12 +367,23 @@ export class CanvasCarousel {
     const dpr = Math.min(dprCap, this.opt.maxBackingWidth / rect.width);
     const w = Math.max(320, Math.round(rect.width * dpr));
     const h = Math.max(160, Math.round(rect.height * dpr));
-    const cardWidth = Math.round(this.frame.getBoundingClientRect().width * dpr);
-    if (w === this.w && h === this.h && cardWidth === this.cardWidth) return;
+    const frameRect = this.frame.getBoundingClientRect();
+    const cardWidth = Math.round(frameRect.width * dpr);
+    /*
+     * Kafel jest przypięty do pola `frame` — nie tylko szerokością, ale i
+     * pionem. Canvas wylewa się poza tę ramkę w górę i w dół, żeby poświata
+     * i odbicie miały gdzie zgasnąć; gdyby to one wyznaczały układ, scena
+     * rozpychałaby stronę o pas, który jest prawie w całości czarny.
+     */
+    const frameTop = this.frame === this.canvas
+      ? null
+      : Math.round((frameRect.top - rect.top) * dpr);
+    if (w === this.w && h === this.h && cardWidth === this.cardWidth && frameTop === this.frameTop) return;
 
     this.w = w;
     this.h = h;
     this.cardWidth = cardWidth;
+    this.frameTop = frameTop;
     for (const c of [this.canvas, this.stage, this.work, this.fx]) {
       c.width = w;
       c.height = h;
@@ -429,7 +452,9 @@ export class CanvasCarousel {
 
     this.geom = {
       cx: w / 2,
-      cy: h * opt.centerY,
+      // górna krawędź kafla równa się górnej krawędzi `frame`; `centerY`
+      // zostaje tylko na wypadek sceny bez osobnej ramki odniesienia
+      cy: this.frameTop == null ? h * opt.centerY : this.frameTop + border + cardH / 2,
       // Obrys kafla: dokładnie jeden piksel urządzenia, rysowany POZA polem
       // treści. Ułamkowa grubość rozmywałaby się na dwa piksele, a akurat ją
       // da się wyrównać do siatki.
@@ -1192,7 +1217,7 @@ export class CanvasCarousel {
   // ── wejście ────────────────────────────────────────────────
 
   _bindInput() {
-    const el = this.canvas;
+    const el = this.surface;
     const unit = () => Math.max(160, this.canvas.getBoundingClientRect().width * 0.52);
 
     const onDown = (e) => {

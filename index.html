@@ -62,6 +62,11 @@
     <div class="showcase" data-showcase>
       <div class="showcase__stage" data-showcase-stage>
         <canvas class="showcase__canvas" data-showcase-canvas></canvas>
+        <!-- Powierzchnia chwytu: pas kafli na pełną szerokość okna. Canvas leży
+             pod treścią sąsiednich sekcji i nie dostaje zdarzeń, a ta warstwa
+             nie wychodzi poza pion sceny, więc nie zabiera kliknięć hero ani
+             sekcji niżej. -->
+        <div class="showcase__surface" data-showcase-surface></div>
         <!-- Ostra kopia przedniego slajdu, rysowana przez renderer przeglądarki
              i ustawiona co do piksela na kaflu z canvasu. Znika natychmiast
              przy ruchu karuzeli, wraca fadem po zatrzymaniu. -->
