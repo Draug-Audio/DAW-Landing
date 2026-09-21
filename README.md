@@ -25,6 +25,8 @@ src/
     SoundPlayer.js      odtwarzacz na środku paska: play / pauza, oś czasu, gałka
     Knob.js             gałka w stylu DAW (270°, przeciąganie w pionie, klawiatura)
     SpeakerRings.js     okręgi w hero i w sekcji agenta jako kolumny głośnikowe
+    SpectrumGrid.js     retro analizator widma za zdjęciem w „Jak powstał DAW”
+    spectrum.js         wspólna kalibracja widma (nachylenie, bramka ciszy, okno)
   styles/               SCSS, jeden partial na sekcję
     _tokens.scss        paleta, typografia, rytm, breakpointy, miksiny
   slider/
@@ -479,6 +481,32 @@ klatkę, nawet przy dwóch widocznych sekcjach: `frameSpectrum` trzyma bufor na
 kanał, kluczowany znacznikiem czasu klatki z `requestAnimationFrame`
 (sprawdzone: 6 wywołań na klatkę, 3 analizy). `prefers-reduced-motion` zostawia
 muzykę, ale pierścienie stoją.
+
+### Retro analizator za zdjęciem
+
+Za zdjęciem w sekcji „Jak powstał DAW” stoi siatka kwadratowych „diod”
+minimalnie jaśniejszych od tła (krycie 0,035), w której słupki zapalają całe
+kratki od dołu, jak w starym korektorze graficznym. Kolumny to 28 pasm
+tercjowych ISO 266 od 31,5 Hz do 16 kHz, wierszy tyle, ile zmieści się
+w wysokości (przy 1600 px okna 15, kratki 29 px). Nad słupkiem znacznik
+szczytu: stoi 0,5 s, potem opada. Kalibracja widma wspólna z pierścieniami
+(`src/audio/spectrum.js`), bufor widma na klatkę też — analiza liczy się raz.
+
+Zdjęcie jest wycinanką (43 % pikseli w pełni przezroczystych), więc siatka
+prześwituje jak ściana za stanowiskiem: nad monitorem i głośnikami, w
+szczelinach między nimi, na skrajnych kolumnach i prawie na całej szerokości
+pod biurkiem. Stąd krycie zapalonych kratek 0,24 na dole i 0,36 u góry — przy
+0,12 dół, najlepiej odsłonięty, ledwie odróżniał się od zgaszonych kratek.
+
+Poziomy na prawdziwym nagraniu (analizator jak na stronie, offline):
+średnio 42 %, do sufitu dochodzi 1 % słupków; w intro grają tylko basy,
+w pełnych partiach słupki mają 36–100 % z wyraźnym konturem widma. Zera (18 %)
+to naprawdę cisza — intro i pasmo 16 kHz, gdzie mp3 nie ma już treści.
+
+Pętla chodzi tylko przy grającej muzyce i widocznej sekcji, po zatrzymaniu
+słupki opadają i pętla gaśnie; przy `prefers-reduced-motion` zostaje sama
+siatka. Zdjęcie dostało `width` / `height`, żeby jego pudełko (i siatka)
+miało właściwe proporcje, zanim plik się wczyta.
 
 Plik ma 7,65 MB (320 kbps stereo, 3:11). Do tła w zupełności wystarczy
 128–160 kbps — ok. 3–3,8 MB.

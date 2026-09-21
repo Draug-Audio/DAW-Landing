@@ -5,6 +5,7 @@ import { BackgroundSound } from './audio/BackgroundSound.js';
 import { mountSoundPlayer } from './audio/SoundPlayer.js';
 import { SpeakerRings, svgSpeakers } from './audio/SpeakerRings.js';
 import { backgroundTrack } from './data/track.js';
+import { SpectrumGrid } from './audio/SpectrumGrid.js';
 
 // ── muzyka w tle + pierścienie hero jako kolumny głośnikowe ──
 // tempo, pierwsza „raz” i obwiednia zmierzone z nagrania — src/data/track.js
@@ -28,6 +29,11 @@ const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matc
 const speakers = [...document.querySelectorAll('[data-speakers]')]
   .map((container) => new SpeakerRings(svgSpeakers(container), sound, { reducedMotion }));
 if (import.meta.env.DEV) window.__speakers = speakers;
+
+// retro analizator widma za zdjęciem w sekcji „Jak powstał DAW”
+const gridStage = document.querySelector('[data-spectrum-grid]');
+const spectrumGrid = gridStage ? new SpectrumGrid(gridStage, sound, { reducedMotion }) : null;
+if (import.meta.env.DEV) window.__grid = spectrumGrid;
 if (import.meta.env.DEV) window.__sound = sound;
 
 const showcase = document.querySelector('[data-showcase]');

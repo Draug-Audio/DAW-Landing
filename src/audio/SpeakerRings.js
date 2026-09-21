@@ -1,4 +1,5 @@
 import { clamp } from '../slider/math.js';
+import { SILENCE, FLOOR, CEIL, tiltAt } from './spectrum.js';
 
 /**
  * Dekoracyjne okręgi jako kolumny głośnikowe.
@@ -39,27 +40,8 @@ const TAU = Math.PI * 2;
 
 /** zakres, który dzielą między siebie przetworniki jednej kolumny */
 const RANGE = [40, 15000];
-/**
- * Korekcja nachylenia widma, w dB na oktawę względem 1 kHz. Muzyka traci
- * energię ku górze — w tym utworze ok. 4,7 dB/okt. poniżej 1 kHz i 7,7 powyżej
- * (zmierzone na średnich oktawowych). Bez korekcji tweeter prawie nie drgał
- * (średnio 0,02 przy 0,5 wooferu). 6 dB/okt. wyrównuje utwór do 0,39–0,47
- * w całym paśmie; analizatory studyjne stosują podobnie 3–6 dB/okt.
- */
-const TILT_DB = 6;
-/** zakres analizatora w dB (`maxDecibels - minDecibels` w BackgroundSound) */
-const RANGE_DB = 70;
-/**
- * Bramka ciszy przed korekcją, w jednostkach analizatora (0–255, ok. 0,27 dB
- * na jednostkę). Korekcja podnosi górę pasma nawet o 0,33 skali, więc bez
- * bramki pusty przedział — ponad pasmem mp3 albo w ciszy — przechodził próg
- * i tweeter stał na stałej, zerowej w rzeczywistości kresce.
- */
-const SILENCE = 16;
-/** okno odpowiedzi po korekcji (0–1 w skali dB analizatora): poniżej FLOOR —
- *  szum tła, od CEIL — pełne wychylenie */
-const FLOOR = 0.22;
-const CEIL = 0.7;
+// kalibracja widma (nachylenie, bramka ciszy, okno odpowiedzi) wspólna
+// z siatką analizatora — src/audio/spectrum.js
 /** wygięcie odpowiedzi; powyżej 1 tłumi tło, a akcenty zostawia */
 const CURVE = 1.6;
 /** stałe czasowe: narost szybki jak transjent, opadanie jak wybrzmienie */
@@ -316,7 +298,7 @@ function binMap(driver, binHz) {
     map[k * 2] = driver.edges[k] / binHz;
     map[k * 2 + 1] = driver.edges[k + 1] / binHz;
     const center = Math.sqrt(driver.edges[k] * driver.edges[k + 1]);
-    tilt[k] = (TILT_DB * Math.log2(center / 1000)) / RANGE_DB;
+    tilt[k] = tiltAt(center);
   }
   driver.map = map;
   driver.tilt = tilt;
