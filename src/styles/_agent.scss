@@ -93,6 +93,55 @@
     margin-top: 28px;
     @include mono(10px, 0.16em);
   }
+
+  // podakapit pod opisem: modele, z którymi pracuje agent
+  &__integrations { margin-top: 40px; }
+
+  &__subtitle {
+    margin-bottom: 14px;
+    font-size: 18px;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+  }
+}
+
+// siatka 2 × 2 kafli z logo modelu
+.integrations {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  max-width: 420px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  // linie siatki z tła prześwitującego przez szczeliny
+  background: $line;
+  border: 1px solid $line;
+
+  &__item {
+    display: grid;
+    place-items: center;
+    height: 84px;
+    padding: 0 16px;
+    background: $panel;
+
+    // logo — obrazek albo inline SVG w kolorze tekstu
+    img,
+    svg {
+      display: block;
+      max-width: 100%;
+      height: 26px;
+      width: auto;
+    }
+  }
+
+  // nazwa zamiast logo (do czasu podmiany na pliki z logami)
+  &__name {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: $text-soft;
+  }
 }
 
 .legend {
