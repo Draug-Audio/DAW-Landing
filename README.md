@@ -303,7 +303,7 @@ wskaźnik — bez piasty i pierścieni wewnętrznych. Całość leży na
 nieprzezroczystym korpusie, którego krawędź domyka dół gałki między nóżkami.
 Oba łuki mają płaskie końce: okrągła końcówka wystawałaby poza skalę o pół
 grubości. Kontrolki nie mają obrysu fokusu; fokus z klawiatury pokazuje
-sam element (lekko rozjaśniony korpus gałki, uchwyt osi czasu, ramka
+sam element (minimalnie rozjaśniony, szary korpus gałki, uchwyt osi czasu, ramka
 przycisku).
 Sterowanie jak w DAW: przeciąganie w pionie (180 px = pełny zakres, z Shiftem
 5× dokładniej), kółko (3 %, z Shiftem 1 %), dwuklik = powrót do 50 %,

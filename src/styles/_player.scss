@@ -198,9 +198,9 @@ $bp-player: 1240px;
   &:hover &__arc,
   &.is-dragging &__arc { stroke: $lime-soft; }
 
-  // fokus z klawiatury bez obrysu: korpus lekko rozjaśniony w stronę limonki
-  // (6 %), tor i skala zostają bez zmian
-  &:focus-visible &__body { fill: color.mix($lime, $panel-hover, 6%); }
+  // fokus z klawiatury bez obrysu: korpus minimalnie rozjaśniony w stronę
+  // neutralnej szarości (3 % jasnego tekstu), tor i skala zostają bez zmian
+  &:focus-visible &__body { fill: color.mix($text, $panel-hover, 3%); }
 }
 
 // Wyłącznik dźwięku zostaje tylko tam, gdzie odtwarzacz się nie mieści —
