@@ -8,12 +8,14 @@
  *
  * Otwarcie idzie krokami:
  * 1. z-index: kliknięty kafel nad box tła, box tła nad pozostałymi kaflami;
- * 2. box tła rozwija się od prostokąta kafla do całej tabeli i zakrywa treść
- *    pozostałych kafli — animowane są jego krawędzie, nie przycięcie, bo na
- *    czas ruchu ma własny border (`clip-path` by go obciął);
- * 3. treść kafla gaśnie, a treść dużej karty wchodzi — z własnym animowanym
- *    przycięciem, od prostokąta kafla do całości;
- * 4. wysokość układu dopasowuje się do treści dużej karty.
+ * 2. jednocześnie, w jednym czasie i tej samej krzywej:
+ *    - box tła rozwija się od prostokąta kafla do całej tabeli i zakrywa treść
+ *      pozostałych kafli — animowane są jego krawędzie, nie przycięcie, bo na
+ *      czas ruchu ma własny border (`clip-path` by go obciął),
+ *    - treść dużej karty odsłania się własnym przycięciem od prostokąta kafla
+ *      do całości, krok w krok z boxem,
+ *    - treść kafla gaśnie, a treść dużej karty wchodzi;
+ * 3. wysokość układu dopasowuje się do treści dużej karty.
  * Zwinięcie to te same kroki od końca, do kafla aktualnie pokazanej funkcji.
  *
  * Kroki łańcuchowane przez Web Animations API — każda animacja daje obietnicę
@@ -24,7 +26,7 @@
 
 const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
 /** czasy kroków w ms */
-const TIME = { box: 420, fade: 200, reveal: 380, height: 320, swap: 240 };
+const TIME = { morph: 420, height: 320, swap: 240 };
 
 export function mountFeatures(section) {
   const grid = section?.querySelector('.features__grid');
@@ -59,10 +61,25 @@ export function mountFeatures(section) {
   };
   const BOX_FULL = { top: '0px', right: '0px', bottom: '0px', left: '0px' };
 
-  /** ruch boxu tła; border widoczny tylko na czas animacji */
-  const moveBox = async (from, to) => {
+  /**
+   * Przejście kafel ↔ duża karta: box tła, przycięcie dużej karty i oba fade'y
+   * w jednym czasie i na tej samej krzywej. `expand` — od kafla do całości.
+   */
+  const morph = async (tile, expand) => {
+    const boxFrames = [boxAt(tile), BOX_FULL];
+    const clipFrames = [{ clipPath: clipOf(detail, tile) }, { clipPath: 'inset(0)' }];
+    const detailFade = [{ opacity: 0 }, { opacity: 1 }];
+    const tileFade = [{ opacity: 1 }, { opacity: 0 }];
+    const dir = (frames) => (expand ? frames : [...frames].reverse());
+    const merge = (a, b) => a.map((frame, i) => ({ ...frame, ...b[i] }));
+
+    // border boxu widoczny tylko na czas ruchu
     box.classList.add('is-moving');
-    await run(box, [from, to], TIME.box);
+    await Promise.all([
+      run(box, dir(boxFrames), TIME.morph),
+      run(detail, dir(merge(clipFrames, detailFade)), TIME.morph),
+      run(tile, dir(tileFade), TIME.morph),
+    ]);
     box.classList.remove('is-moving');
   };
 
@@ -109,21 +126,12 @@ export function mountFeatures(section) {
     tile.classList.add('is-lifted');
     box.hidden = false;
 
-    // 2. box tła od kafla do całej tabeli
-    await moveBox(boxAt(tile), BOX_FULL);
-
-    // 3. treść kafla gaśnie, treść dużej karty wchodzi z własnym przycięciem
+    // 2. box tła, przycięcie dużej karty i fade obu treści — razem
     render(index);
     detail.hidden = false;
-    await Promise.all([
-      run(tile, [{ opacity: 1 }, { opacity: 0 }], TIME.fade),
-      run(detail, [
-        { opacity: 0, clipPath: clipOf(detail, tile) },
-        { opacity: 1, clipPath: 'inset(0)' },
-      ], TIME.reveal),
-    ]);
+    await morph(tile, true);
 
-    // 4. wysokość układu do treści dużej karty
+    // 3. wysokość układu do treści dużej karty
     await setHeight(detailHeight());
 
     tiles.forEach((t) => { t.inert = true; });
@@ -139,28 +147,19 @@ export function mountFeatures(section) {
     const tile = tiles[index];
     tiles.forEach((t) => { t.inert = false; });
 
-    // 4 → wysokość z powrotem do tabeli
+    // 3 → wysokość z powrotem do tabeli
     await setHeight(tableHeight());
 
-    // 3 → treść dużej karty gaśnie do prostokąta kafla, treść kafla wraca;
-    // po nawigacji strzałkami to może być inny kafel niż kliknięty, więc jego
-    // treść najpierw chowamy, dopiero potem podnosimy go nad box
+    // 2 → razem: treść kafla wraca, treść dużej karty gaśnie, jej przycięcie
+    // i box tła zwijają się do prostokąta kafla; po nawigacji strzałkami to
+    // może być inny kafel niż kliknięty, więc jego treść najpierw chowamy,
+    // dopiero potem podnosimy go nad box
     tile.animate([{ opacity: 0 }], { fill: 'forwards' });
     tile.classList.add('is-lifted');
-    await Promise.all([
-      run(detail, [
-        { opacity: 1, clipPath: 'inset(0)' },
-        { opacity: 0, clipPath: clipOf(detail, tile) },
-      ], TIME.reveal),
-      run(tile, [{ opacity: 0 }, { opacity: 1 }], TIME.fade, { delay: ms(TIME.reveal - TIME.fade) }),
-    ]);
+    await morph(tile, false);
     detail.hidden = true;
-    detail.getAnimations().forEach((a) => a.cancel());
-
-    // 2 → box tła zwija się do kafla
-    await moveBox(BOX_FULL, boxAt(tile));
     box.hidden = true;
-    box.getAnimations().forEach((a) => a.cancel());
+    [detail, box].forEach((el) => el.getAnimations().forEach((a) => a.cancel()));
 
     // 1 → z-index i wysokość wracają do stanu spoczynku
     tiles.forEach((t) => {
