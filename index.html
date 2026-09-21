@@ -23,6 +23,12 @@
   <!-- Odtwarzacz muzyki w tle, na środku paska. Bez JS niczego nie odtwarza,
        więc startuje ukryty; stan i głośność czyta z src/audio. -->
   <div class="player" data-player role="group" aria-label="Muzyka w tle" hidden>
+    <!-- autor i tytuł — lustrzane odbicie podpisu gałki: etykieta nad wartością,
+         wyrównane do przycisku; tekst z src/data/track.js -->
+    <div class="player__level player__level--start">
+      <span class="player__label" data-player-author></span>
+      <span class="player__value" data-player-title></span>
+    </div>
     <button class="player__play" type="button" data-player-play aria-label="Odtwórz muzykę w tle">
       <!-- poświata w rytm: osobna warstwa, JS zmienia wyłącznie jej krycie -->
       <span class="player__glow" data-player-glow aria-hidden="true"></span>

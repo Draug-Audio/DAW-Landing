@@ -28,7 +28,7 @@ function wavePath(values) {
   return `M${top.join('L')}L${bottom.join('L')}Z`;
 }
 
-export function mountSoundPlayer(root, sound, { waveform } = {}) {
+export function mountSoundPlayer(root, sound, { waveform, author, title } = {}) {
   if (!root) return;
   const { audio } = sound;
   const play = root.querySelector('[data-player-play]');
@@ -47,6 +47,11 @@ export function mountSoundPlayer(root, sound, { waveform } = {}) {
   }
 
   root.hidden = false;
+
+  const authorEl = root.querySelector('[data-player-author]');
+  const titleEl = root.querySelector('[data-player-title]');
+  if (authorEl) authorEl.textContent = author ?? '';
+  if (titleEl) titleEl.textContent = title ?? '';
 
   // ── play / pauza ──────────────────────────────────────────
   // Przycisk wyłączony z automatycznego startu przy pierwszym geście —

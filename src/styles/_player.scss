@@ -8,10 +8,11 @@
 
 // Poniżej tej szerokości środek paska jest zajęty przez logo i nawigację —
 // odtwarzacz znika, a zostaje mały wyłącznik dźwięku (`.sound-toggle`).
-// Wiąże prawa strona: odtwarzacz ma 441 px, a nawigacja z CTA zaczyna się
-// 349 px od krawędzi okna. Styk wypada przy ok. 1140 px, przy 1180 zostawało
-// 20 px odstępu, przy 1240 — ok. 50.
-$bp-player: 1240px;
+// Wiąże prawa strona: odtwarzacz ma 514 px (z autorem i tytułem), a
+// nawigacja z CTA zaczyna się 349 px od krawędzi okna. Styk wypada przy ok.
+// 1225 px; przy 1320 zostaje ok. 45 px odstępu — tyle, co przy dawnych
+// 441 px i progu 1240.
+$bp-player: 1320px;
 
 // Kolory osi czasu — wspólne dla linii toru i cienia fali, żeby się nie
 // rozjechały: reszta utworu i część odegrana. Oba kryjące: linia leży na
@@ -201,6 +202,13 @@ $track-fill: $lime;
     align-items: flex-start;
     gap: 1px;
     margin-left: -2px;
+
+    // lustrzanie po lewej od przycisku play: autor nad tytułem, do prawej
+    &--start {
+      align-items: flex-end;
+      margin-left: 0;
+      margin-right: -2px;
+    }
   }
 
   &__label {

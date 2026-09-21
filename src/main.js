@@ -19,7 +19,7 @@ if (soundToggle) {
   soundToggle.hidden = false;
   sound.bindToggle(soundToggle);
 }
-mountSoundPlayer(document.querySelector('[data-player]'), sound, { waveform: backgroundTrack.waveform });
+mountSoundPlayer(document.querySelector('[data-player]'), sound, backgroundTrack);
 
 // Kolumny głośnikowe w hero i w sekcji agenta — zbudowane identycznie (osobny
 // SVG na grupę pierścieni) i renderowane tą samą ścieżką. Każda sekcja

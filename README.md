@@ -331,10 +331,15 @@ klawiatura (strzałki, PageUp / PageDown, Home / End). Głośność jest liniowa
 50 % = połowa amplitudy, zmiany idą z 15-milisekundowym poślizgiem, żeby nie
 trzaskały.
 
-Poniżej 1240 px środek paska zajmują logo i nawigacja, więc zamiast
+Po lewej od przycisku play stoi autor nad tytułem utworu — lustrzane odbicie
+podpisu gałki (te same style etykiety i wartości, wyrównane do przycisku);
+oba teksty idą z `src/data/track.js`.
+
+Poniżej 1320 px środek paska zajmują logo i nawigacja, więc zamiast
 odtwarzacza jest mały wyłącznik (`aria-pressed`) — ten sam stan, inny widok.
-Wiąże prawa strona: odtwarzacz ma 441 px, nawigacja z CTA zaczyna się 349 px od
-krawędzi; przy 1241 px zostaje 43 px odstępu. WCAG 1.4.2 wymaga, żeby dźwięk
+Wiąże prawa strona: odtwarzacz z autorem i tytułem ma 514 px, nawigacja z CTA
+zaczyna się 349 px od krawędzi; przy 1321 px zostaje 47 px odstępu (dawny
+próg 1240 px liczony był dla 441 px). WCAG 1.4.2 wymaga, żeby dźwięk
 grający sam z siebie dało się zatrzymać — na każdej szerokości jest czym.
 
 Wybór „włączone / wyłączone” i głośność zapamiętuje `localStorage`, więc kto

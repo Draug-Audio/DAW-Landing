@@ -5,6 +5,9 @@
  */
 export const backgroundTrack = {
   src: `${import.meta.env.BASE_URL}assets/background.mp3`,
+  /** podpis w odtwarzaczu: autor nad tytułem */
+  author: 'Author Name',
+  title: 'Background',
 
   /**
    * Tempo i pierwsza „raz” zmierzone z nagrania: dopasowanie siatki do
