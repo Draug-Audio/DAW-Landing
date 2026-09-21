@@ -65,7 +65,8 @@ kafli, nie na wypełnianie pustego tła.
 Osiem kafli leży na okręgu wokół kamery (co 45°) i jest rzutowanych
 perspektywicznie. Canvas 2D nie potrafi mapować tekstury na trapez, więc każdy
 kafel rysowany jest **pionowymi paskami** — każdy pasek dostaje własną skalę
-z rzutu, co daje realne skrócenie perspektywiczne zamiast zwykłego skalowania. Liczba pasków rośnie z
+z rzutu, co daje realne skrócenie perspektywiczne zamiast zwykłego skalowania.
+Liczba pasków rośnie z
 kątem obrotu; w spoczynku kafel jest płaski i idzie jednym `drawImage`, więc
 zostaje piksel w piksel ostry. Promień okręgu liczony jest z cięciwy między
 sąsiadami, więc rozstaw wygląda tak samo niezależnie od liczby slajdów, a
@@ -197,7 +198,8 @@ Niezależnie od tego `FontFace` musi dostać zakres `weight: '100 900'`, inaczej
 zgłasza się jako statyczny krój 400, przeglądarka w ogóle nie sięga po oś
 i każda waga poniżej 600 renderuje się identycznie (a powyżej — syntetycznie
 pogrubia). Sprawdzenie: ilość „tuszu” w atlasie musi rosnąć monotonicznie
-z wagą (100 → 243, 200 → 277, 400 → 381, 700 → 534, 900 → 637). Wszystkie znaki wypalane są raz do atlasu, więc rysowanie kafelka
+z wagą (100 → 243, 200 → 277, 400 → 381, 700 → 534, 900 → 637). Wszystkie znaki
+wypalane są raz do atlasu, więc rysowanie kafelka
 to `drawImage` z wycinka, a nie skład tekstu co klatkę.
 
 Jasność kafelka nie jest losowana z ciągłego przedziału, tylko ze **schodków**:
@@ -493,7 +495,9 @@ górze i na dole to jeden niewidoczny segment, identyczny po obu stronach
 (szczelina rozłożona po równo nad i pod segmentem). Siatka sięga ponad
 zdjęcie, przez górny odstęp figury (`--figure-pad`, 40 px): pas sekcji zaczyna
 się nad figurą, a kończy równo z dołem zdjęcia, więc bez tego od krawędzi pasa
-wychodziło 57 px u góry wobec 18 px na dole. Teraz 17 i 18 px. Nad słupkiem znacznik szczytu: stoi 0,5 s, potem opada. Kalibracja widma wspólna z pierścieniami
+wychodziło 57 px u góry wobec 18 px na dole. Teraz 17 i 18 px. Nad słupkiem
+znacznik szczytu: stoi 0,5 s, potem opada. Kalibracja widma wspólna z
+pierścieniami
 (`src/audio/spectrum.js`), bufor widma na klatkę też — analiza liczy się raz.
 
 Zdjęcie jest wycinanką (43 % pikseli w pełni przezroczystych), więc siatka
