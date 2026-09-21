@@ -105,38 +105,40 @@
   }
 }
 
-// siatka 2 × 2 kafli z logo modelu
+// siatka 2 × 2 kwadratowych kafli z logo modelu — bez tła i obramowania
+// z zewnątrz; zostają tylko linie między kaflami, które składają się w plus
 .integrations {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1px;
-  max-width: 420px;
+  max-width: 360px;
   margin: 0;
   padding: 0;
   list-style: none;
-  // linie siatki z tła prześwitującego przez szczeliny
-  background: $line;
-  border: 1px solid $line;
 
   &__item {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    height: 84px;
-    padding: 0 16px;
-    background: $panel;
+    gap: 14px;
+    aspect-ratio: 1;
+    padding: 16px;
+
+    // pionowa kreska plusa — prawa krawędź lewej kolumny
+    &:nth-child(odd) { border-right: 1px solid $line-bright; }
+    // pozioma kreska plusa — dolna krawędź górnego rzędu
+    &:nth-child(-n + 2) { border-bottom: 1px solid $line-bright; }
 
     // logo: kwadrat 256 px z przezroczystym tłem, znak wpasowany w 224 px
     img {
       flex: none;
-      width: 32px;
-      height: 32px;
+      width: 64px;
+      height: 64px;
     }
   }
 
   &__name {
-    font-size: 17px;
+    font-size: 15px;
     font-weight: 600;
     letter-spacing: -0.01em;
     color: $text-soft;

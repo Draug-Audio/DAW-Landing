@@ -615,7 +615,9 @@ dostają `inert`. Przy `prefers-reduced-motion` kroki mają czas 0.
   białe logo na czarnym tle — alfa wzięta z jasności, kolor biały. DeepSeek
   był SVG na białym zaokrąglonym kwadracie — kwadrat usunięty, reszta
   wyrenderowana w Edge bez interfejsu z przezroczystym tłem. Kolory marek
-  zostały bez zmian; na stronie logo 32 px obok nazwy (logo z pustym alt).
+  zostały bez zmian; na stronie kwadratowe kafle 2 × 2
+  bez tła i zewnętrznej ramki — tylko linie między kaflami, które składają
+  się w plus; logo 64 px, nazwa pod nim (logo z pustym alt).
 - Zdjęcie z sekcji „Jak powstał DAW” to PNG 4606 × 2624 (5,6 MB). Tutaj jest
   jako WebP 2200 px, q90 / 250 kB — **z kanałem alfa**, bo to wycinanka na
   przezroczystym tle. Odrzucenie alfy przy konwersji odsłania surowe zielone
