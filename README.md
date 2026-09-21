@@ -485,7 +485,7 @@ muzykę, ale pierścienie stoją.
 ### Retro analizator za zdjęciem
 
 Za zdjęciem w sekcji „Jak powstał DAW” stoi siatka poziomych segmentów
-„diod” minimalnie jaśniejszych od tła (krycie 0,035), w której słupki zapalają
+„diod” minimalnie jaśniejszych od tła (krycie 0,02), w której słupki zapalają
 całe segmenty od dołu, jak w starym korektorze graficznym. Kolumny to 28 pasm
 tercjowych ISO 266 od 31,5 Hz do 16 kHz. Wysokość zdjęcia jest dzielona na
 całe wiersze, z których skrajny górny i dolny zostają puste — margines na

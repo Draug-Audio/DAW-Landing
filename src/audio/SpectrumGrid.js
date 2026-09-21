@@ -38,11 +38,11 @@ const GRID = {
   /** szczelina między wierszami jako ułamek podziałki pionowej */
   rowGap: 0.3,
   /** segment zgaszony — minimalnie jaśniejszy od tła sekcji */
-  off: 'rgba(232, 236, 232, 0.035)',
+  off: 'rgba(232, 236, 232, 0.02)',
   /**
    * Krycie zapalonych segmentów: najniższy i najwyższy wiersz. Dół musi być
    * wyraźny — zdjęcie odsłania go po bokach pod biurkiem, a przy 0,12
-   * zapalony segment ledwie odróżniał się od zgaszonego (0,035).
+   * zapalony segment ledwie odróżniał się od zgaszonego.
    */
   lit: [0.24, 0.36],
   /** krycie znacznika szczytu */
