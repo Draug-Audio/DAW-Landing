@@ -112,11 +112,11 @@ const PULSE = {
   /** o ile całość przygasa do końca uderzenia (0–1) */
   fade: 0.35,
   /**
-   * Krycie warstwy rozmycia względem linii. Rozmyty okrąg rozkłada światło
-   * na kilkadziesiąt pikseli, więc przy tym samym kryciu co linia byłby
-   * ledwie widoczny.
+   * Krycie warstwy rozmycia względem linii. Szczyt profilu pod koniec
+   * uderzenia to krycie pulsu (0,42 · 0,65 ≈ 0,27) razy ten współczynnik —
+   * przy 0,33 ok. 0,09 (wcześniej 0,55 → ok. 0,15).
    */
-  glow: 0.55,
+  glow: 0.33,
   /** budżet pikseli obrazu rozmycia — jak dla canvasu sceny */
   spritePixels: 4e6,
 };
