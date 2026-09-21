@@ -46,10 +46,25 @@
   &__sub { margin-top: 72px; }
 
   &__subtitle {
-    margin-bottom: 24px;
+    margin-bottom: 12px;
     font-size: clamp(20px, 2vw, 26px);
     letter-spacing: -0.02em;
     font-weight: 700;
+  }
+
+  // krótki opis przeznaczenia wtyczek one-knob pod podtytułem
+  &__subdesc {
+    max-width: 72ch;
+    margin-bottom: 28px;
+    font-size: 15px;
+    line-height: 1.6;
+    color: $text-dim;
+    text-wrap: pretty;
+
+    strong {
+      color: $lime;
+      font-weight: 600;
+    }
   }
 }
 
