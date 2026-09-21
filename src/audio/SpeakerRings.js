@@ -86,8 +86,13 @@ const PULSE = {
   morph: 0.09,
   /** czas pojawienia się na „raz”, s */
   fadeIn: 0.06,
-  /** rozmycie pod koniec uderzenia, px */
-  blur: 12,
+  /**
+   * Rozmycie pod koniec uderzenia jako ułamek bieżącego promienia pulsu —
+   * rośnie razem z nim. 2,5 % daje ok. 2 px przy narodzinach, 13 px na
+   * środkowym pierścieniu hero (520 px, dawna stała wartość 12 px) i ok. 22 px
+   * za ostatnim (880 px).
+   */
+  blurRatio: 0.025,
   /**
    * Wykładnik krzywej rozmycia (i idącej za nim poświaty i przygasania) w
    * obrębie uderzenia: `u ** 4`. Przez pierwszą połowę uderzenia puls jest
@@ -218,7 +223,7 @@ function makePulse(drivers) {
     disp: new Float32Array(half),
     radii: new Float32Array(half),
     pts: new Float32Array(half * 4),
-    extent: outer.r + gap + outer.reach + outer.excursion + PULSE.blur + 2,
+    extent: (outer.r + gap) * (1 + PULSE.blurRatio) + outer.reach + outer.excursion + 2,
   };
 }
 
@@ -549,7 +554,7 @@ export class SpeakerRings {
     }
 
     const soft = u ** PULSE.blurCurve;
-    const blur = PULSE.blur * soft;
+    const blur = radius * PULSE.blurRatio * soft;
     let alpha = PULSE.alpha * (1 - PULSE.fade * soft);
     if (seg === 0) alpha *= Math.min(1, (u * beatDur) / PULSE.fadeIn);
     if (seg === segments - 1) alpha *= (1 - u) ** 1.5;

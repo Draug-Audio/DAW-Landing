@@ -370,7 +370,9 @@ W środkowej kolumnie obu sekcji pulsuje pierścień w rytmie utworu, takt 4/4:
    dwoma zewnętrznymi i gaśnie przed następną „raz”.
 
 Trzy przetworniki dają cztery odcinki drogi — dokładnie jeden takt. W każdym
-odcinku ruch wyhamowuje (ease-out), a rozmycie (do 12 px), poświata
+odcinku ruch wyhamowuje (ease-out), a rozmycie (maksymalnie 2,5 % bieżącego
+promienia — rośnie z pulsem: ok. 2 px przy narodzinach, 13 px na środkowym
+pierścieniu hero, 22 px za ostatnim), poświata
 i przygasanie idą osobną krzywą `u⁴`: przez pierwszą połowę uderzenia puls jest
 praktycznie ostry (≤ 0,75 px), rozmywa się dopiero końcówka. Wcześniej
 rozmycie szło krzywą ruchu i narastało zaraz po uderzeniu — ostra była
