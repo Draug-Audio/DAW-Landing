@@ -59,16 +59,37 @@
 // nachodzi na rząd poniżej zamiast przesuwać siatkę; karta dostaje wtedy
 // z-index nad sąsiadami. Na ekranach bez najechania (dotyk) opis stoi pod
 // kartą na stałe. Czytniki ekranu czytają opis zawsze — jest w figcaption.
+//
+// Dwa poziomy: komórka siatki (.plugin) rozciąga się do wysokości rzędu, a
+// karta (.plugin__card) ma wysokość swojej grafiki. Grafiki w rzędzie mają
+// różne proporcje, więc gdy szuflada wisiała na komórce, przy niższych
+// grafikach startowała pod nimi z przerwą (Drumpad 35 px, Equalizer 22 px).
 .plugin {
-  position: relative;
-  margin: 0;
-  outline: none;
-  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  min-width: 0;
 
-  // obrazek nad szufladą — jej górne 12 px chowa się pod dolną krawędzią karty
-  img {
+  &__card {
     position: relative;
-    z-index: 1;
+    margin: 0;
+    outline: none;
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+
+    // obrazek nad szufladą — jej górne 12 px chowa się pod dolną krawędzią karty
+    img {
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (hover: hover) {
+      &:hover,
+      &:focus-visible {
+        z-index: 3;
+        transform: translateY(-3px);
+
+        img { filter: drop-shadow(0 0 1px $ring-3); }
+
+        .plugin__info { transform: none; }
+      }
+    }
   }
 
   &__drawer {
@@ -114,18 +135,6 @@
     text-wrap: pretty;
   }
 
-  @media (hover: hover) {
-    &:hover,
-    &:focus-visible {
-      z-index: 3;
-      transform: translateY(-3px);
-
-      img { filter: drop-shadow(0 0 1px $ring-3); }
-
-      .plugin__info { transform: none; }
-    }
-  }
-
   // dotyk: opis zawsze widoczny, w przepływie, pod kartą
   @media (hover: none) {
     &__drawer {
@@ -138,7 +147,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    &,
+    &__card,
     &__info { transition: none; }
   }
 }

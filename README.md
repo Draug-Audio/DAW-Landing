@@ -549,7 +549,10 @@ Plik ma 7,65 MB (320 kbps stereo, 3:11). Do tła w zupełności wystarczy
   wtyczek z makiety (siatka 3 × 3: najpierw instrumenty — Sampler, Drumpad,
   Syntezator — potem efekty) i podsekcja „Inteligentne wtyczki one-knob”
   z serią „OK” w jednym rzędzie (6 kolumn; poniżej 1100 px 3, na telefonie 2).
-- Pełna wtyczka to karta (`figure.plugin`, `tabindex="0"`): po najechaniu albo
+- Pełna wtyczka to karta (`figure.plugin__card`, `tabindex="0"`) w komórce
+  siatki (`div.plugin`). Komórka ma wysokość rzędu, karta — wysokość swojej
+  grafiki; grafiki mają różne proporcje, a szuflada wisząca na komórce
+  startowała pod niższymi z przerwą (Drumpad 35 px). Po najechaniu albo
   fokusie z klawiatury unosi się, a spod dolnej krawędzi wysuwa się szuflada
   z opisem tego, czym wtyczka się wyróżnia. Szuflada leży poza przepływem
   i nachodzi na rząd poniżej (karta dostaje wtedy z-index nad sąsiadami),
