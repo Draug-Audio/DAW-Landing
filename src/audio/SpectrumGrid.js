@@ -87,7 +87,11 @@ export class SpectrumGrid {
     this.last = 0;
     this._frame = this._frame.bind(this);
 
-    new ResizeObserver(() => this.resize()).observe(stage);
+    // wymiary z samego canvasu: sięga ponad zdjęcie (przez górny odstęp
+    // figury), więc pudełko zdjęcia to za mało
+    const resize = new ResizeObserver(() => this.resize());
+    resize.observe(stage);
+    resize.observe(this.canvas);
     new IntersectionObserver(([entry]) => {
       this.visible = entry.isIntersecting;
       if (!this.visible && this.raf) {
@@ -102,7 +106,7 @@ export class SpectrumGrid {
   }
 
   resize() {
-    const box = this.stage.getBoundingClientRect();
+    const box = this.canvas.getBoundingClientRect();
     if (!box.width || !box.height) return;
     const k = Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(GRID.maxPixels / (box.width * box.height)));
     const W = Math.round(box.width * k);

@@ -32,15 +32,18 @@
   }
 
   &__figure {
+    // górny odstęp zdjęcia — potrzebny też siatce analizatora, która go przykrywa
+    --figure-pad: 40px;
+
     position: relative;
-    padding: 40px 40px 0 0;
+    padding: var(--figure-pad) var(--figure-pad) 0 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
 
     img { width: 100%; height: auto; }
 
-    @include below($bp-md) { padding: 40px 0 0; }
+    @include below($bp-md) { padding: var(--figure-pad) 0 0; }
   }
 
   // Pudełko zdjęcia: canvas analizatora leży dokładnie pod nim, a własny
@@ -54,12 +57,18 @@
       display: block;
     }
 
+    // Siatka sięga ponad zdjęcie, przez górny odstęp figury: pas sekcji
+    // zaczyna się nad figurą, więc tylko wtedy margines siatki od krawędzi
+    // pasa jest u góry taki sam jak na dole (dół zdjęcia to dół pasa).
+    // Wysokość jawna — canvas jako element zastępowany nie rozciągnie się
+    // między `top` a `bottom`, tylko wziąłby wysokość swojej bitmapy.
     .spectrum-grid {
       position: absolute;
-      inset: 0;
+      top: calc(-1 * var(--figure-pad));
+      left: 0;
       z-index: -1;
       width: 100%;
-      height: 100%;
+      height: calc(100% + var(--figure-pad));
       pointer-events: none;
     }
   }

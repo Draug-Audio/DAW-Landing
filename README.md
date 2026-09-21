@@ -490,7 +490,10 @@ całe segmenty od dołu, jak w starym korektorze graficznym. Kolumny to 28 pasm
 tercjowych ISO 266 od 31,5 Hz do 16 kHz. Wysokość zdjęcia jest dzielona na
 całe wiersze, z których skrajny górny i dolny zostają puste — margines na
 górze i na dole to jeden niewidoczny segment, identyczny po obu stronach
-(szczelina rozłożona po równo nad i pod segmentem). Nad słupkiem znacznik szczytu: stoi 0,5 s, potem opada. Kalibracja widma wspólna z pierścieniami
+(szczelina rozłożona po równo nad i pod segmentem). Siatka sięga ponad
+zdjęcie, przez górny odstęp figury (`--figure-pad`, 40 px): pas sekcji zaczyna
+się nad figurą, a kończy równo z dołem zdjęcia, więc bez tego od krawędzi pasa
+wychodziło 57 px u góry wobec 18 px na dole. Teraz 17 i 18 px. Nad słupkiem znacznik szczytu: stoi 0,5 s, potem opada. Kalibracja widma wspólna z pierścieniami
 (`src/audio/spectrum.js`), bufor widma na klatkę też — analiza liczy się raz.
 
 Zdjęcie jest wycinanką (43 % pikseli w pełni przezroczystych), więc siatka
