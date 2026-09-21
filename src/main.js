@@ -7,6 +7,7 @@ import { SpeakerRings, svgSpeakers } from './audio/SpeakerRings.js';
 import { backgroundTrack } from './data/track.js';
 import { SpectrumGrid } from './audio/SpectrumGrid.js';
 import { mountFeatures } from './sections/features.js';
+import { mountTimeline } from './sections/timeline.js';
 
 // ── muzyka w tle + pierścienie hero jako kolumny głośnikowe ──
 // tempo, pierwsza „raz” i obwiednia zmierzone z nagrania — src/data/track.js
@@ -55,3 +56,8 @@ if (showcase) {
 
 // „Kluczowe funkcje”: kafel rozsuwa się do rozmiaru całej tabeli
 mountFeatures(document.querySelector('#funkcje'));
+
+// oś czasu współpracy: dymki szerokości swojej treści
+mountTimeline(document.querySelector('.timeline'), {
+  alignTo: document.querySelector('.features__grid'),
+});

@@ -158,6 +158,47 @@
   @include below($bp-lg) { order: 2; }
 
   $cols: minmax(0, 1fr) 13px minmax(0, 1fr);
+  // Przesunięcie linii osi, żeby szła dokładnie w linii kreski między
+  // pierwszą a drugą kolumną „Kluczowych funkcji” nad nią. Liczone w
+  // skrypcie (src/sections/timeline.js) — obie siatki mają ułamkowe szerokości
+  // kolumn, a różnica rzędu ⅓ px po zaokrągleniu do pikseli ekranu daje
+  // widoczny schodek.
+  $axis-shift: var(--axis-shift, 0px);
+
+  position: relative;
+
+  // Subtelne białe impulsy biegnące po linii osi z góry na dół: dwie
+  // nakładki (::before, ::after) na całej długości osi — od odcinka nad nią
+  // po wygaszenie pod ostatnim wierszem — z jasnym pasmem w tle, które
+  // przesuwa się `background-position`. Druga idzie z opóźnieniem pół cyklu.
+  // Nakładki leżą nad linią, pod kropkami.
+  $pulse: 180px;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    z-index: 1;
+    top: -$section-gap;
+    // pod ostatnim wierszem oś wygasa na 140 px (&__tail) — impuls razem z nią
+    bottom: -140px;
+    left: calc(50% - 0.5px + #{$axis-shift});
+    width: 1px;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0)) no-repeat;
+    background-size: 1px $pulse;
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 140px), transparent);
+    pointer-events: none;
+    animation: timeline-pulse 7s linear infinite;
+
+    @include below($bp-lg) { top: 0; }
+  }
+
+  &::after { animation-delay: -3.5s; }
+
+  @media (prefers-reduced-motion: reduce) {
+    &::before,
+    &::after { display: none; }
+  }
 
   &__lead-in,
   &__tail,
@@ -176,6 +217,7 @@
       justify-self: center;
       width: 1px;
       height: 100%;
+      transform: translateX($axis-shift);
       background: $line-strong;
     }
 
@@ -191,6 +233,7 @@
       justify-self: center;
       width: 1px;
       height: 140px;
+      transform: translateX($axis-shift);
       background: linear-gradient(to bottom, $line-strong, rgba(35, 38, 35, 0));
     }
   }
@@ -210,12 +253,15 @@
       content: '';
       width: 1px;
       background: $line-strong;
+      transform: translateX($axis-shift);
     }
 
     i {
       position: absolute;
       top: 50%;
-      transform: translateY(-50%);
+      transform: translate($axis-shift, -50%);
+      // nad impulsami biegnącymi po osi
+      z-index: 2;
       width: 7px;
       height: 7px;
       border-radius: 50%;
@@ -223,6 +269,7 @@
   }
 
   &__card {
+    position: relative;
     background: $panel;
     border: 1px solid $line-strong;
     border-radius: 2px;
@@ -230,6 +277,17 @@
     margin: 6px 0;
     width: fit-content;
     max-width: 100%;
+
+    // linia łącząca dymek z kropką na osi: przez odstęp kolumn (14 px) i pół
+    // kolumny osi (13 px) do krawędzi kropki (7 px) — 17 px
+    &::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 17px;
+      height: 1px;
+      background: $line-strong;
+    }
   }
 
   &__label {
@@ -242,7 +300,8 @@
     font-size: 13px;
     line-height: 1.55;
     color: $text-soft;
-    text-wrap: pretty;
+    // wyrównane linie — dymek przycięty do najdłuższej nie ma poszarpanej krawędzi
+    text-wrap: balance;
   }
 
   &__row--agent {
@@ -254,6 +313,12 @@
       text-align: left;
       border-color: $line-agent;
       margin-right: 24px;
+
+      // linia od lewej krawędzi dymka (poza obramowaniem) do kropki
+      &::before {
+        right: calc(100% + 1px);
+        background: $line-agent;
+      }
     }
 
     .timeline__label { color: $lime; }
@@ -266,6 +331,16 @@
       grid-column: 1;
       justify-self: end;
       text-align: right;
+
+      &::before { left: calc(100% + 1px); }
     }
   }
+}
+
+// impuls od nad górną krawędzią osi do pod dolną; ostatnie 30 % cyklu to
+// przerwa, żeby impulsy nie szły jednym ciągiem
+@keyframes timeline-pulse {
+  0% { background-position: 0 -180px; }
+  70%,
+  100% { background-position: 0 calc(100% + 180px); }
 }

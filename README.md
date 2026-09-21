@@ -609,6 +609,17 @@ dostają `inert`. Przy `prefers-reduced-motion` kroki mają czas 0.
   kreski środka w prawo albo w lewo, długość = |ratio|, wartość ze znakiem
   cyframi o stałej szerokości. Wagi są przykładowe — pod spodem dobiera je
   agent.
+- Oś czasu współpracy: dymki mają szerokość najdłuższej linii tekstu
+  (`src/sections/timeline.js` mierzy linie przez `Range.getClientRects()`;
+  samo `fit-content` przy złamanym tekście bierze całą kolumnę), linie
+  wyrównane `text-wrap: balance`. Każdy dymek ma kreskę do swojej kropki
+  (17 px: odstęp kolumn 14 px + pół kolumny osi − promień kropki). Linia osi
+  jest przedłużeniem kreski między 1. a 2. kolumną „Kluczowych funkcji” —
+  skrypt mierzy obie i przesuwa oś o różnicę (`--axis-shift`, przy 1448 px
+  0,33 px; bez tego po zaokrągleniu do pikseli był schodek 1 px). Po osi
+  biegną z góry na dół dwa subtelne białe impulsy (pasmo 180 px, krycie
+  do 0,45, cykl 7 s z przerwą, drugi przesunięty o pół cyklu), pod kropkami;
+  przy `prefers-reduced-motion` ich nie ma.
 - Loga w „Integracjach” (`logo-{claude,deepseek,gpt,grok}.webp`) znormalizowane
   do jednego formatu: kwadrat 256 × 256, przezroczyste tło, znak przycięty do
   obrysu i wpasowany w 224 px na środku, bezstratny WebP (5–13 kB). Grok miał
