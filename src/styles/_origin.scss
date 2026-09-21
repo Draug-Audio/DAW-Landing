@@ -57,7 +57,12 @@
       text-wrap: balance;
     }
 
-    p {
+    // Akapity treści — bez nagłówka `.eyebrow`, który ma własny, wspólny dla
+    // całej strony wygląd (czerwony, mono 10,5 px); ta reguła jest bardziej
+    // szczegółowa i nadpisywała mu kolor i rozmiar. `:where` nie podnosi
+    // szczegółowości — zwykłe `:not(.eyebrow)` przebijało regułę podpisu
+    // `.origin__sign` i ten dostawał rozmiar i kolor akapitu.
+    p:where(:not(.eyebrow)) {
       font-size: 14.5px;
       line-height: 1.65;
       color: $text-dim;
