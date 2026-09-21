@@ -484,19 +484,23 @@ muzykę, ale pierścienie stoją.
 
 ### Retro analizator za zdjęciem
 
-Za zdjęciem w sekcji „Jak powstał DAW” stoi siatka kwadratowych „diod”
-minimalnie jaśniejszych od tła (krycie 0,035), w której słupki zapalają całe
-kratki od dołu, jak w starym korektorze graficznym. Kolumny to 28 pasm
-tercjowych ISO 266 od 31,5 Hz do 16 kHz, wierszy tyle, ile zmieści się
-w wysokości (przy 1600 px okna 15, kratki 29 px). Nad słupkiem znacznik
-szczytu: stoi 0,5 s, potem opada. Kalibracja widma wspólna z pierścieniami
+Za zdjęciem w sekcji „Jak powstał DAW” stoi siatka poziomych segmentów
+„diod” minimalnie jaśniejszych od tła (krycie 0,035), w której słupki zapalają
+całe segmenty od dołu, jak w starym korektorze graficznym. Kolumny to 28 pasm
+tercjowych ISO 266 od 31,5 Hz do 16 kHz. Siatka zaczyna się 8 % wysokości nad
+dolną krawędzią zdjęcia i sięga dokładnie górnej: liczba wierszy jest
+zaokrąglana, a podziałka pionowa dopasowywana tak, żeby najwyższy segment
+zaczynał się równo na krawędzi (przy 1600 px okna 37 wierszy, segmenty
+29 × 11 px). Nad słupkiem znacznik szczytu: stoi 0,5 s, potem opada. Kalibracja widma wspólna z pierścieniami
 (`src/audio/spectrum.js`), bufor widma na klatkę też — analiza liczy się raz.
 
 Zdjęcie jest wycinanką (43 % pikseli w pełni przezroczystych), więc siatka
 prześwituje jak ściana za stanowiskiem: nad monitorem i głośnikami, w
-szczelinach między nimi, na skrajnych kolumnach i prawie na całej szerokości
-pod biurkiem. Stąd krycie zapalonych kratek 0,24 na dole i 0,36 u góry — przy
-0,12 dół, najlepiej odsłonięty, ledwie odróżniał się od zgaszonych kratek.
+szczelinach między nimi, na skrajnych kolumnach i po bokach pod biurkiem.
+Obecna wersja zdjęcia ma ograniczony kanał alfa — przejść półprzezroczystych
+jest 2,7 % zamiast 16 %, a krzesło i cień pod producentem są kryjące.
+Krycie zapalonych segmentów 0,24 na dole i 0,36 u góry — przy 0,12 dół ledwie
+odróżniał się od zgaszonych.
 
 Poziomy na prawdziwym nagraniu (analizator jak na stronie, offline):
 średnio 42 %, do sufitu dochodzi 1 % słupków; w intro grają tylko basy,
@@ -516,10 +520,11 @@ Plik ma 7,65 MB (320 kbps stereo, 3:11). Do tła w zupełności wystarczy
 - Zrzuty slajdów (`1`–`8`) przekonwertowane z PNG na WebP: 2561 kB → 723 kB.
   Bezstratnie, żeby tekst interfejsu został ostry; wyjątkiem jest `2`, w dużej
   mierze fotograficzne GUI wtyczek, zapisane stratnie q97.
-- Zdjęcie z sekcji „Jak powstał DAW” ważyło 6,3 MB (PNG 4606 × 2624).
-  Tutaj jest jako WebP 2200 px / 283 kB — **z kanałem alfa**, bo to wycinanka
-  na przezroczystym tle. Odrzucenie alfy przy konwersji odsłania surowe zielone
-  piksele spod biurka.
+- Zdjęcie z sekcji „Jak powstał DAW” to PNG 4606 × 2624 (5,6 MB). Tutaj jest
+  jako WebP 2200 px, q90 / 250 kB — **z kanałem alfa**, bo to wycinanka na
+  przezroczystym tle. Odrzucenie alfy przy konwersji odsłania surowe zielone
+  piksele spod biurka. Źródłowy PNG nie jest w repozytorium — w `public/`
+  trafiłby na serwer jako nieużywane 5,6 MB.
 - Treść slajdów (numer, tytuł, opis, plik) siedzi w `src/data/slides.js` —
   dodanie albo usunięcie pozycji nie wymaga zmian w silniku, kąt na okręgu
   i promień policzą się same.

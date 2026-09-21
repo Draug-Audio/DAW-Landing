@@ -3,8 +3,10 @@ import { bandLevel } from './spectrum.js';
 
 /**
  * Retro analizator widma za zdjęciem w sekcji „Jak powstał DAW”: siatka
- * kwadratowych „diod”, minimalnie jaśniejszych od tła, w której słupki
- * zapalają całe kratki od dołu — jak w starym korektorze graficznym.
+ * poziomych segmentów „diod”, minimalnie jaśniejszych od tła, w której słupki
+ * zapalają całe segmenty od dołu — jak w starym korektorze graficznym. Siatka
+ * zaczyna się nad dolną krawędzią zdjęcia (odstęp `bottom`) i sięga dokładnie
+ * górnej.
  *
  * Kolumny to pasma tercjowe ISO 266 od 31,5 Hz do 16 kHz, wiersze — poziom.
  * Nad słupkiem zostaje znacznik szczytu: trzyma się chwilę, potem opada.
@@ -26,14 +28,24 @@ const BANDS = [
 const EDGE = 2 ** (1 / 6);
 
 const GRID = {
-  /** szczelina między kratkami jako ułamek podziałki */
+  /** szczelina między kolumnami jako ułamek podziałki poziomej */
   gap: 0.22,
-  /** kratka zgaszona — minimalnie jaśniejsza od tła sekcji */
+  /**
+   * Wysokość wiersza jako ułamek podziałki poziomej — segmenty są poziomymi
+   * prostokątami, ok. 3 : 1. Liczba wierszy jest zaokrąglana tak, żeby
+   * wypełniły wysokość co do piksela, więc ta wartość jest przybliżona.
+   */
+  row: 0.4,
+  /** szczelina między wierszami jako ułamek podziałki pionowej */
+  rowGap: 0.3,
+  /** odstęp siatki od dolnej krawędzi zdjęcia, jako ułamek jego wysokości */
+  bottom: 0.08,
+  /** segment zgaszony — minimalnie jaśniejszy od tła sekcji */
   off: 'rgba(232, 236, 232, 0.035)',
   /**
-   * Krycie zapalonych kratek: najniższy i najwyższy wiersz. Dół musi być
-   * wyraźny — zdjęcie odsłania go prawie na całej szerokości (pod biurkiem),
-   * a przy 0,12 zapalona kratka ledwie odróżniała się od zgaszonej (0,035).
+   * Krycie zapalonych segmentów: najniższy i najwyższy wiersz. Dół musi być
+   * wyraźny — zdjęcie odsłania go po bokach pod biurkiem, a przy 0,12
+   * zapalony segment ledwie odróżniał się od zgaszonego (0,035).
    */
   lit: [0.24, 0.36],
   /** krycie znacznika szczytu */
@@ -65,7 +77,7 @@ export class SpectrumGrid {
     this.canvas.setAttribute('aria-hidden', 'true');
     stage.prepend(this.canvas);
     this.ctx = this.canvas.getContext('2d');
-    // siatka zgaszonych kratek rysowana raz, przy zmianie rozmiaru
+    // siatka zgaszonych segmentów rysowana raz, przy zmianie rozmiaru
     this.base = document.createElement('canvas');
 
     const n = BANDS.length;
@@ -103,20 +115,25 @@ export class SpectrumGrid {
       if (c.height !== H) c.height = H;
     }
 
-    // Kratki kwadratowe, w pikselach urządzenia i na całych pikselach — retro
-    // „dioda” ma mieć ostre krawędzie. Kolumn tyle, ile pasm; wierszy tyle,
-    // ile zmieści się w wysokości, liczone od dołu.
+    // Segmenty w pikselach urządzenia i na całych pikselach — retro „dioda” ma
+    // mieć ostre krawędzie. Kolumn tyle, ile pasm. Wiersze liczone od dołu:
+    // wypełniają dokładnie pas od odstępu `bottom` do górnej krawędzi, a
+    // szczelina leży pod każdym segmentem, więc najwyższy zaczyna się równo
+    // na krawędzi.
     const cols = BANDS.length;
     const pitch = W / cols;
     const gap = Math.max(1, Math.round(pitch * GRID.gap));
-    const rows = Math.max(1, Math.floor(H / pitch));
+    const floor = H - Math.round(H * GRID.bottom);
+    const rows = Math.max(1, Math.round(floor / (pitch * GRID.row)));
+    const rowPitch = floor / rows;
+    const rowGap = Math.max(1, Math.round(rowPitch * GRID.rowGap));
     this.xs = Array.from({ length: cols }, (_, c) => {
       const x0 = Math.round(c * pitch + gap / 2);
       return [x0, Math.round((c + 1) * pitch - gap / 2) - x0];
     });
     this.ys = Array.from({ length: rows }, (_, r) => {
-      const y0 = Math.round(H - (r + 1) * pitch + gap / 2);
-      return [y0, Math.round(H - r * pitch - gap / 2) - y0];
+      const y0 = Math.round(floor - (r + 1) * rowPitch);
+      return [y0, Math.round(floor - r * rowPitch) - rowGap - y0];
     });
     this.rows = rows;
     this.rowStyles = Array.from({ length: rows }, (_, r) => {
@@ -175,8 +192,8 @@ export class SpectrumGrid {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(this.base, 0, 0);
 
-    // zapalone kratki: słupek zapala całe kratki, bez ułamków — jeden kolor
-    // na wiersz, więc zmian stylu jest tyle, ile wierszy
+    // zapalone segmenty: słupek zapala całe segmenty, bez ułamków — jeden
+    // kolor na wiersz, więc zmian stylu jest tyle, ile wierszy
     const lit = Array.from(this.level, (v) => Math.round(clamp(v, 0, 1) * rows));
     for (let r = 0; r < rows; r += 1) {
       const [y, h] = this.ys[r];
@@ -193,7 +210,7 @@ export class SpectrumGrid {
       if (!any) break;
     }
 
-    // znaczniki szczytu — jedna kratka nad słupkiem
+    // znaczniki szczytu — jeden segment nad słupkiem
     ctx.fillStyle = `rgba(${LIME},${GRID.peak})`;
     for (let c = 0; c < lit.length; c += 1) {
       const p = Math.round(clamp(this.peak[c], 0, 1) * rows) - 1;
