@@ -4,15 +4,14 @@ import { mountShowcase } from './slider/index.js';
 import { BackgroundSound } from './audio/BackgroundSound.js';
 import { mountSoundPlayer } from './audio/SoundPlayer.js';
 import { SpeakerRings, svgSpeakers } from './audio/SpeakerRings.js';
+import { backgroundTrack } from './data/track.js';
 
 // ── muzyka w tle + pierścienie hero jako kolumny głośnikowe ──
-// Tempo i pierwsza „raz” zmierzone z nagrania: dopasowanie siatki do
-// obwiedni pasm daje dokładnie 96,000 BPM bez dryfu; stopa akcentuje
-// uderzenie w 0,025 s, a werbel gra na 2 i 4 — to jest początek taktu.
-const sound = new BackgroundSound(`${import.meta.env.BASE_URL}assets/background.mp3`, {
+// tempo, pierwsza „raz” i obwiednia zmierzone z nagrania — src/data/track.js
+const sound = new BackgroundSound(backgroundTrack.src, {
   volume: 0.5,
-  bpm: 96,
-  downbeat: 0.025,
+  bpm: backgroundTrack.bpm,
+  downbeat: backgroundTrack.downbeat,
 });
 const soundToggle = document.querySelector('[data-sound-toggle]');
 if (soundToggle) {
@@ -20,7 +19,7 @@ if (soundToggle) {
   soundToggle.hidden = false;
   sound.bindToggle(soundToggle);
 }
-mountSoundPlayer(document.querySelector('[data-player]'), sound);
+mountSoundPlayer(document.querySelector('[data-player]'), sound, { waveform: backgroundTrack.waveform });
 
 // Kolumny głośnikowe w hero i w sekcji agenta — zbudowane identycznie (osobny
 // SVG na grupę pierścieni) i renderowane tą samą ścieżką. Każda sekcja

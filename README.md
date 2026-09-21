@@ -19,6 +19,7 @@ public/assets/          1–8.webp (zrzuty slajdów), logo, wtyczki, zdjęcie
 src/
   main.js               punkt wejścia — style, slider, muzyka i pierścienie
   data/slides.js        treść slajdów (src / numer / tytuł / opis)
+  data/track.js         muzyka w tle: plik, tempo, pierwsza „raz”, obwiednia
   audio/
     BackgroundSound.js  muzyka w tle, wyłącznik, głośność, analiza widma L / środek / P
     SoundPlayer.js      odtwarzacz na środku paska: play / pauza, oś czasu, gałka
@@ -301,7 +302,16 @@ zanik wykładniczy 140 ms (przed kolejnym uderzeniem już zgaszony), „raz”
 mocniej (szczytowe krycie 0,5 wobec 0,3). Rytm z tej samej siatki co puls pierścieni; pętla
 chodzi tylko przy grającej muzyce, a przy `prefers-reduced-motion` poświata
 nie miga. 1,6 błysku na sekundę mieści się w progu WCAG 2.3.1 (3 / s).
-Dalej oś czasu
+Dalej oś czasu z cieniem fali — obwiednią całego utworu rozciągniętą od linii
+w górę i w dół (odegrana część w przygaszonej limonce, przycięta do postępu,
+reszta ledwie widoczną szarością). Obwiednia to 256 przedziałów po ok. 0,75 s:
+RMS sumy kanałów w dB względem najgłośniejszego przedziału, z zakresu
+−18…0 dB. Skala decybelowa, bo utwór jest mocno zmasterowany (mediana 3,8 dB
+pod maksimum, 90 % czasu w 10 dB) — liniowa amplituda dałaby prawie płaski
+prostokąt, a tak widać intro, kulminację, przełamanie i wyciszenie.
+Policzona raz, z nagrania, i zapisana w `src/data/track.js` (ok. 1 KB):
+liczenie jej u użytkownika wymagałoby pobrania całych 7,6 MB przed
+odtwarzaniem. Dalej
 z przewijaniem (natywny `input[type=range]` — klawiatura i czytniki działają od
 ręki) i gałka głośności w stylu DAW, z podpisem po prawej. Gałka to tor na
 270° (od 7:30 do 4:30) przycięty do jasnych nóżek na końcach zakresu, więc

@@ -17,13 +17,34 @@ function formatTime(seconds) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
-export function mountSoundPlayer(root, sound) {
+/**
+ * Cień fali: obwiednia (0–100) jako zamknięty kształt symetryczny względem
+ * osi — górna krawędź od lewej do prawej, dolna z powrotem. viewBox ma
+ * szerokość `n − 1` i wysokość 2 (od −1 do 1), a SVG rozciąga go na oś czasu.
+ */
+function wavePath(values) {
+  const top = values.map((v, i) => `${i} ${(-v / 100).toFixed(2)}`);
+  const bottom = values.map((v, i) => `${i} ${(v / 100).toFixed(2)}`).reverse();
+  return `M${top.join('L')}L${bottom.join('L')}Z`;
+}
+
+export function mountSoundPlayer(root, sound, { waveform } = {}) {
   if (!root) return;
   const { audio } = sound;
   const play = root.querySelector('[data-player-play]');
   const timeline = root.querySelector('[data-player-timeline]');
   const current = root.querySelector('[data-player-current]');
   const duration = root.querySelector('[data-player-duration]');
+  // postęp ustawiany na wspólnym rodzicu: czyta go i suwak, i cień fali
+  const track = root.querySelector('[data-player-track]') ?? timeline;
+
+  if (waveform?.length) {
+    const d = wavePath(waveform);
+    for (const svg of root.querySelectorAll('.player__wave')) {
+      svg.setAttribute('viewBox', `0 -1 ${waveform.length - 1} 2`);
+      svg.querySelector('[data-player-wave]').setAttribute('d', d);
+    }
+  }
 
   root.hidden = false;
 
@@ -77,7 +98,7 @@ export function mountSoundPlayer(root, sound) {
   const paintProgress = (time) => {
     const total = audio.duration;
     const p = Number.isFinite(total) && total > 0 ? time / total : 0;
-    timeline.style.setProperty('--progress', `${(p * 100).toFixed(3)}%`);
+    track.style.setProperty('--progress', `${(p * 100).toFixed(3)}%`);
     current.textContent = formatTime(time);
     timeline.setAttribute('aria-valuetext', `${formatTime(time)} z ${formatTime(total)}`);
   };
