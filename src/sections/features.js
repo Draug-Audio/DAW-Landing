@@ -152,11 +152,8 @@ export function mountFeatures(section) {
     await setHeight(tableHeight());
 
     // 2 → razem: treść kafla wraca, treść dużej karty gaśnie, jej przycięcie
-    // i box tła zwijają się do prostokąta kafla; po nawigacji strzałkami to
-    // może być inny kafel niż kliknięty, więc jego treść najpierw chowamy,
-    // dopiero potem podnosimy go nad box
-    tile.animate([{ opacity: 0 }], { fill: 'forwards' });
-    tile.classList.add('is-lifted');
+    // i box tła zwijają się do prostokąta kafla aktualnej funkcji — nawigacja
+    // strzałkami przenosi na niego podniesienie i schowaną treść
     await morph(tile, false);
     detail.hidden = true;
     box.hidden = true;
@@ -185,6 +182,15 @@ export function mountFeatures(section) {
     const out = [{ opacity: 1 }, { opacity: 0, transform: `translateX(${-delta * 12}px)` }];
     const inn = [{ opacity: 0, transform: `translateX(${delta * 12}px)` }, { opacity: 1, transform: 'none' }];
     await Promise.all(slide.map((el) => run(el, out, TIME.swap / 2)));
+    // stan „pod dużą kartą” przechodzi na kafel nowej funkcji: poprzedni
+    // wraca pod box tła z widoczną treścią, nowy zostaje nad boxem ze
+    // schowaną — inaczej przy zwijaniu do nowego kafla stary świeciłby
+    // nad boxem pustym prostokątem
+    const [prev, fresh] = [tiles[current], tiles[next]];
+    prev.classList.remove('is-lifted');
+    prev.getAnimations().forEach((a) => a.cancel());
+    fresh.classList.add('is-lifted');
+    fresh.animate([{ opacity: 0 }], { fill: 'forwards' });
     render(next);
     slide.forEach((el) => el.getAnimations().forEach((a) => a.cancel()));
     await Promise.all([
