@@ -90,11 +90,21 @@
   // podakapit pod opisem: modele, z którymi pracuje agent
   &__integrations { margin-top: 40px; }
 
+  // podtytuł i opis w tym samym stylu co „Inteligentne wtyczki one-knob”
   &__subtitle {
-    margin-bottom: 14px;
-    font-size: 18px;
-    letter-spacing: -0.01em;
-    font-weight: 600;
+    margin-bottom: 12px;
+    font-size: clamp(20px, 2vw, 26px);
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+
+  &__subdesc {
+    max-width: 72ch;
+    margin-bottom: 20px;
+    font-size: 15px;
+    line-height: 1.6;
+    color: $text-dim;
+    text-wrap: pretty;
   }
 }
 
