@@ -14,9 +14,10 @@
 $bp-player: 1240px;
 
 // Kolory osi czasu — wspólne dla linii toru i cienia fali, żeby się nie
-// rozjechały: reszta utworu i część odegrana.
+// rozjechały: reszta utworu i część odegrana. Oba kryjące: linia leży na
+// fali, a przy kolorze z alfą ich nałożenie dawało jaśniejszy pas.
 $track-rest: $line-bright;
-$track-fill: rgba(200, 255, 61, 0.75);
+$track-fill: $lime;
 
 .player {
   position: absolute;
