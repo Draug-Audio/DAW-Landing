@@ -15,6 +15,37 @@
     opacity: 0.55;
   }
 
+  // Kolumny głośnikowe (wspólne style: _speakers.scss). Rozmiary jak dawne
+  // pierścienie z obramowaniem: skrajne min(44 %, 560 px), środkowa to
+  // najszerszy pierścień, min(130 %, 1620 px).
+  &__speaker {
+    &--left,
+    &--right { width: min(44%, 560px); }
+
+    &--left { left: -220px; top: -240px; }
+    &--right { right: -220px; bottom: -260px; }
+
+    &--center {
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: min(130%, 1620px);
+    }
+  }
+
+  // Poświata pod środkową kolumną — wypełnienie, nie pierścień, więc zostaje
+  // w DOM, a nie na canvasie
+  &__glow {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(70%, 860px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle at center, rgba(200, 255, 61, 0.025), rgba(200, 255, 61, 0.008) 55%, transparent 78%);
+  }
+
   &__inner {
     position: relative;
     z-index: 1;
@@ -77,54 +108,6 @@
 
   &--user { color: $text-dim; i { background: $text-ghost; } }
   &--agent { color: $lime; i { background: $lime; } }
-}
-
-// ── pierścienie tła ──────────────────────────────────────────
-.orbit {
-  position: absolute;
-  width: min(44%, 560px);
-  aspect-ratio: 1;
-  border: 1px solid $ring-1;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-
-  &__mid {
-    width: 62%;
-    aspect-ratio: 1;
-    border: 1px solid $ring-2;
-    border-radius: 50%;
-    display: grid;
-    place-items: center;
-  }
-
-  &__core {
-    width: 37%;
-    aspect-ratio: 1;
-    border: 1px solid $ring-3;
-    border-radius: 50%;
-  }
-
-  &--tl { left: -220px; top: -240px; }
-  &--br { right: -220px; bottom: -260px; }
-}
-
-.orbit-ring {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  aspect-ratio: 1;
-  border-radius: 50%;
-
-  &--glow {
-    width: min(70%, 860px);
-    border: 1px solid $ring-5;
-    background: radial-gradient(circle at center, rgba(200, 255, 61, 0.025), rgba(200, 255, 61, 0.008) 55%, transparent 78%);
-  }
-
-  &--wide { width: min(100%, 1240px); border: 1px solid $ring-6; }
-  &--widest { width: min(130%, 1620px); border: 1px solid $ring-7; }
 }
 
 // ── oś czasu współpracy ──────────────────────────────────────

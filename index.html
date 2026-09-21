@@ -61,20 +61,25 @@
   <!-- ─────────────────────────── HERO ─────────────────────────── -->
   <section class="hero">
     <div class="hero__halo" aria-hidden="true"></div>
-    <!-- Okręgi tła. Każda grupa współśrodkowa to kolumna głośnikowa: JS czyta
-         stąd geometrię i rysuje na canvasie widmo muzyki w tle, a ten SVG
-         zostaje jako wersja statyczna, gdy skrypt nie ruszy. -->
-    <div class="hero__rings" aria-hidden="true">
-      <svg viewBox="-150 -250 2500 1500" width="2500" height="1500" fill="none" data-hero-rings>
-        <circle cx="1100" cy="470" r="520" stroke="#1c2118" stroke-width="1"></circle>
-        <circle cx="1100" cy="470" r="360" stroke="#232a1d" stroke-width="1"></circle>
-        <circle cx="1100" cy="470" r="700" stroke="#161a14" stroke-width="1"></circle>
-        <circle cx="240" cy="300" r="300" stroke="#1c2118" stroke-width="1"></circle>
-        <circle cx="240" cy="300" r="190" stroke="#252c1f" stroke-width="1"></circle>
-        <circle cx="1960" cy="620" r="340" stroke="#1c2118" stroke-width="1"></circle>
-        <circle cx="1960" cy="620" r="210" stroke="#252c1f" stroke-width="1"></circle>
-        <circle cx="1960" cy="620" r="84" stroke="#3b4a25" stroke-width="1"></circle>
-        <circle cx="240" cy="300" r="70" stroke="#3b4a25" stroke-width="1"></circle>
+    <!-- Okręgi tła: każda grupa to osobny SVG i jedna kolumna głośnikowa
+         (lewa, środkowa, prawa). JS mierzy te SVG i rysuje na canvasie widmo
+         muzyki w tle; same SVG zostają jako wersja statyczna bez skryptu.
+         Tak samo zbudowane są okręgi w sekcji agenta. -->
+    <div class="hero__rings speakers" aria-hidden="true" data-speakers>
+      <svg class="speaker hero__speaker hero__speaker--left" viewBox="-300 -300 600 600" data-speaker>
+        <circle r="300" stroke="#1c2118"/>
+        <circle r="190" stroke="#252c1f"/>
+        <circle r="70" stroke="#3b4a25"/>
+      </svg>
+      <svg class="speaker hero__speaker hero__speaker--center" viewBox="-700 -700 1400 1400" data-speaker>
+        <circle r="700" stroke="#161a14"/>
+        <circle r="520" stroke="#1c2118"/>
+        <circle r="360" stroke="#232a1d"/>
+      </svg>
+      <svg class="speaker hero__speaker hero__speaker--right" viewBox="-340 -340 680 680" data-speaker>
+        <circle r="340" stroke="#1c2118"/>
+        <circle r="210" stroke="#252c1f"/>
+        <circle r="84" stroke="#3b4a25"/>
       </svg>
     </div>
 
@@ -166,12 +171,28 @@
 
   <!-- ─────────────────────────── AGENT ─────────────────────────── -->
   <section id="agent" class="agent">
-    <div class="agent__orbits" aria-hidden="true">
-      <div class="orbit orbit--tl"><div class="orbit__mid"><div class="orbit__core"></div></div></div>
-      <div class="orbit-ring orbit-ring--glow"></div>
-      <div class="orbit-ring orbit-ring--wide"></div>
-      <div class="orbit-ring orbit-ring--widest"></div>
-      <div class="orbit orbit--br"><div class="orbit__mid"><div class="orbit__core"></div></div></div>
+    <!-- Trzy kolumny głośnikowe, zbudowane tak samo jak w hero: lewy górny
+         róg, środek, prawy dolny. Promienie w viewBoxie to proporcje dawnych
+         pierścieni: 62 % i 37 % z 62 % w rogach, 1240 / 1620 i 860 / 1620 na
+         środku (dawne limity szerokości; poniżej nich proporcje różnią się
+         o mniej niż 1 %). -->
+    <div class="agent__orbits speakers" aria-hidden="true" data-speakers>
+      <div class="agent__glow"></div>
+      <svg class="speaker agent__speaker agent__speaker--left" viewBox="-100 -100 200 200" data-speaker>
+        <circle r="100" stroke="#1c2118"/>
+        <circle r="62" stroke="#252c1f"/>
+        <circle r="22.94" stroke="#3b4a25"/>
+      </svg>
+      <svg class="speaker agent__speaker agent__speaker--center" viewBox="-100 -100 200 200" data-speaker>
+        <circle r="100" stroke="#101208"/>
+        <circle r="76.54" stroke="#14170f"/>
+        <circle r="53.09" stroke="#1a2016"/>
+      </svg>
+      <svg class="speaker agent__speaker agent__speaker--right" viewBox="-100 -100 200 200" data-speaker>
+        <circle r="100" stroke="#1c2118"/>
+        <circle r="62" stroke="#252c1f"/>
+        <circle r="22.94" stroke="#3b4a25"/>
+      </svg>
     </div>
 
     <div class="agent__inner">

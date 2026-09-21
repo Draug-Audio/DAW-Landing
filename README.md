@@ -23,8 +23,7 @@ src/
     BackgroundSound.js  muzyka w tle, wyłącznik, głośność, analiza widma L / środek / P
     SoundPlayer.js      odtwarzacz na środku paska: play / pauza, oś czasu, gałka
     Knob.js             gałka w stylu DAW (270°, przeciąganie w pionie, klawiatura)
-  hero/
-    SpeakerRings.js     pierścienie hero jako kolumny głośnikowe
+    SpeakerRings.js     okręgi w hero i w sekcji agenta jako kolumny głośnikowe
   styles/               SCSS, jeden partial na sekcję
     _tokens.scss        paleta, typografia, rytm, breakpointy, miksiny
   slider/
@@ -285,7 +284,7 @@ Wartości sprzed i po zmianie wyglądu kafelka nie są porównywalne — pomiary
 potrafią się rozjechać o połowę między sesjami panelu podglądu, więc liczby mają
 sens jako rząd wielkości, nie jako różnica.
 
-## Muzyka w tle i pierścienie hero
+## Muzyka w tle i kolumny głośnikowe
 
 `public/assets/background.mp3` gra w pętli z połową głośności (wzmocnienie 0,5
 na wyjściu grafu Web Audio). **Rusza przy pierwszym kliknięciu, dotknięciu albo
@@ -327,13 +326,23 @@ geście (`data-sound-control`). Inaczej `pointerdown` na pauzie najpierw
 startowałby muzykę, a `click` zaraz ją zatrzymywał — albo odwrotnie, zależnie
 od tego, czy kontekst audio zdążył ruszyć między tymi zdarzeniami.
 
-Trzy grupy współśrodkowych okręgów w tle to trzy kolumny głośnikowe:
+Okręgi w tle hero i sekcji „Współpraca z agentem” to po trzy kolumny
+głośnikowe — lewa, środkowa i prawa:
 
 | kolumna | kanał | woofer (największy) | średniotonowy | tweeter (najmniejszy) |
 |---|---|---|---|---|
-| lewa (x 240) | lewy | 40–288 Hz | 288–2080 Hz | 2,08–15 kHz |
-| środkowa (x 1100) | suma | 〃 | 〃 | 〃 |
-| prawa (x 1960) | prawy | 〃 | 〃 | 〃 |
+| lewa | lewy | 40–288 Hz | 288–2080 Hz | 2,08–15 kHz |
+| środkowa | suma | 〃 | 〃 | 〃 |
+| prawa | prawy | 〃 | 〃 | 〃 |
+
+Obie sekcje są zbudowane identycznie: każda kolumna to osobny
+`<svg data-speaker>` z okręgami wokół (0, 0), pozycjonowany w CSS, a kontener
+`[data-speakers]` dostaje jeden canvas na szerokość okna, z pionem
+dopasowanym do zasięgu pierścieni. W sekcji agenta rozmiary są responsywne —
+skaluje je `viewBox`, a `vector-effect: non-scaling-stroke` trzyma linię 1 px.
+Układ przeniesiony z dawnych elementów bez zmian: w hero co do piksela, w sekcji
+agenta skrajne kolumny też, środkowa z proporcjami z szerokiego ekranu
+(poniżej limitów szerokości różnica jest mniejsza niż 1 %).
 
 Pasma dzieli zwrotnica równa w skali logarytmicznej — dla trzech przetworników
 wypadają punkty ok. 290 Hz i 2,1 kHz, w okolicy typowych kolumn trójdrożnych.
@@ -346,9 +355,7 @@ próbki skaczą), a obrys to krzywa przez środki odcinków, bez załamań w pun
 próbek. W ciszy rysowany jest dokładny okrąg. Cały pierścień do tego „oddycha”
 jak membrana — woofer do 9 px, tweeter ledwie 1,5 px.
 
-Geometria jest czytana z SVG w markupie; bez JS zostają statyczne okręgi,
-a w ciszy canvas rysuje dokładnie to samo co SVG (zgodność środków i promieni
-do 0,5 px).
+Bez JS zostają statyczne SVG, a w ciszy canvas rysuje dokładnie to samo.
 
 Kalibracja, zmierzona na tym utworze:
 
@@ -364,10 +371,16 @@ Kalibracja, zmierzona na tym utworze:
 
 Koszt klatki: ok. 0,03 ms po stronie JS; z wymuszonym wykonaniem na GPU
 (odczyt 1 px) ok. 0,9 ms — to górna granica, z synchronizacją w cenie; tyle
-samo co przy wcześniejszej wersji z kreskami wokół pierścieni. Pętla
-działa tylko przy grającej muzyce i widocznym hero, a po zatrzymaniu
-pierścienie wybrzmiewają do zera i pętla gaśnie. `prefers-reduced-motion`
-zostawia muzykę, ale pierścienie stoją.
+samo co przy wcześniejszej wersji z kreskami wokół pierścieni.
+
+Każda sekcja ma własną pętlę, bramkowaną `IntersectionObserver`-em: animuje się
+tylko ta, która jest na ekranie, albo obie, gdy widać obie. Gdy sekcja zejdzie
+z ekranu, pętla staje od razu; gdy muzyka stanie, pierścienie wybrzmiewają do
+zera i pętla gaśnie — w ciszy nie chodzi żadna. Widmo jest liczone raz na
+klatkę, nawet przy dwóch widocznych sekcjach: `frameSpectrum` trzyma bufor na
+kanał, kluczowany znacznikiem czasu klatki z `requestAnimationFrame`
+(sprawdzone: 6 wywołań na klatkę, 3 analizy). `prefers-reduced-motion` zostawia
+muzykę, ale pierścienie stoją.
 
 Plik ma 7,65 MB (320 kbps stereo, 3:11). Do tła w zupełności wystarczy
 128–160 kbps — ok. 3–3,8 MB.

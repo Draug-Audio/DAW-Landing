@@ -1,7 +1,7 @@
 import { clamp } from '../slider/math.js';
 
 /**
- * Pierścienie w tle hero jako kolumny głośnikowe.
+ * Dekoracyjne okręgi jako kolumny głośnikowe.
  *
  * Każda grupa współśrodkowych okręgów to jedna kolumna z wielodrożną zwrotnicą:
  * największy pierścień dostaje najniższe pasmo (woofer), najmniejszy najwyższe
@@ -17,9 +17,15 @@ import { clamp } from '../slider/math.js';
  * membrana: wychylenie rośnie z mocą pasma i maleje ku tweeterowi, który
  * w prawdziwej kolumnie prawie się nie rusza.
  *
- * Geometria jest czytana z SVG w markupie, więc układ okręgów żyje w jednym
- * miejscu, a bez JS strona pokazuje po prostu statyczne okręgi. W ciszy canvas
- * rysuje dokładnie to samo co SVG.
+ * Każda kolumna to osobny `<svg data-speaker>` z okręgami wokół (0, 0),
+ * pozycjonowany w CSS — tak samo w hero i w sekcji agenta, więc obie sekcje
+ * renderuje ta sama ścieżka (`svgSpeakers`). Układ okręgów żyje w markupie
+ * i CSS, a bez JS strona pokazuje po prostu statyczne SVG. W ciszy canvas
+ * rysuje dokładnie to samo.
+ *
+ * Każda scena ma własną pętlę, bramkowaną widocznością — animuje się tylko
+ * sekcja, która jest na ekranie (albo obie, gdy widać obie). Widmo liczy się
+ * raz na klatkę, nawet gdy scen jest kilka (`BackgroundSound.frameSpectrum`).
  */
 
 const TAU = Math.PI * 2;
@@ -56,6 +62,13 @@ const RELEASE = 0.2;
 const MAX_PIXELS = 4.2e6;
 const LIME = '200,255,61';
 
+/** maksymalne odkształcenie pierścienia widmem, w px */
+const reachFor = (r) => 12 + r * 0.06;
+/** maksymalne wychylenie całego pierścienia (membrana), w px */
+const EXCURSION = 9;
+/** ile miejsca pierścień potrzebuje ponad swój promień, żeby się nie przyciąć */
+const ringMargin = (r) => reachFor(r) + EXCURSION + 2;
+
 /**
  * Pasma zwrotnicy dla `n` przetworników — równe w skali logarytmicznej.
  * Dla trzech przetworników daje punkty podziału ok. 290 Hz i 2,1 kHz, czyli
@@ -67,31 +80,24 @@ function crossover(n) {
   return Array.from({ length: n }, (_, i) => [lo * ratio ** (i / n), lo * ratio ** ((i + 1) / n)]);
 }
 
-function readSpeakers(svg) {
-  const groups = new Map();
-  for (const circle of svg.querySelectorAll('circle')) {
-    const cx = Number(circle.getAttribute('cx'));
-    const cy = Number(circle.getAttribute('cy'));
-    const key = `${cx},${cy}`;
-    if (!groups.has(key)) groups.set(key, { cx, cy, rings: [] });
-    groups.get(key).rings.push({
-      r: Number(circle.getAttribute('r')),
-      color: circle.getAttribute('stroke') || '#1c2118',
-    });
-  }
-
-  const list = [...groups.values()].sort((a, b) => a.cx - b.cx);
-  return list.map((group, index) => {
-    // skrajne grupy grają swoje kanały, reszta — sumę
+/**
+ * Grupy okręgów → kolumny. Grupa to jeden SVG, więc podział jest jawny
+ * w markupie, a nie zgadywany ze wspólnych środków.
+ * @param {{cx: number, cy: number, rings: {r: number, color: string}[]}[]} groups w px canvasu
+ */
+function buildSpeakers(groups) {
+  const sorted = [...groups].sort((a, b) => a.cx - b.cx);
+  return sorted.map((group, index) => {
+    // skrajne kolumny grają swoje kanały, reszta — sumę
     let channel = 'mid';
-    if (list.length >= 3 && index === 0) channel = 'left';
-    else if (list.length >= 3 && index === list.length - 1) channel = 'right';
+    if (sorted.length >= 3 && index === 0) channel = 'left';
+    else if (sorted.length >= 3 && index === sorted.length - 1) channel = 'right';
 
-    group.rings.sort((a, b) => b.r - a.r);
-    const bands = crossover(group.rings.length);
-    const last = Math.max(1, group.rings.length - 1);
-    const drivers = group.rings.map((ring, j) => makeDriver(ring, bands[j], j / last));
-    return { cx: group.cx, cy: group.cy, channel, drivers, data: null };
+    const rings = [...group.rings].sort((a, b) => b.r - a.r);
+    const bands = crossover(rings.length);
+    const last = Math.max(1, rings.length - 1);
+    const drivers = rings.map((ring, j) => makeDriver(ring, bands[j], j / last));
+    return { cx: group.cx, cy: group.cy, channel, drivers };
   });
 }
 
@@ -99,7 +105,7 @@ function readSpeakers(svg) {
  * @param {number} t pozycja w kolumnie: 0 = woofer, 1 = tweeter
  */
 function makeDriver({ r, color }, band, t) {
-  // kreska co ok. 14 px obwodu, parzyście, bo pierścień jest lustrzany
+  // próbka co ok. 14 px obwodu, parzyście, bo pierścień jest lustrzany
   const count = 2 * Math.round(clamp((TAU * r) / 14, 40, 200) / 2);
   const half = count / 2;
   const dirs = new Float32Array(half * 4);
@@ -131,10 +137,10 @@ function makeDriver({ r, color }, band, t) {
     pts: new Float32Array(count * 2),
     level: 0,
     // nachylenie wyrównuje energię pasm; to lekkie podbicie jest tylko dla oka —
-    // cienka kreska na małym pierścieniu czyta się słabiej niż gruba na dużym
+    // cienka linia na małym pierścieniu czyta się słabiej niż gruba na dużym
     gain: 1 + 0.15 * t,
-    reach: 12 + r * 0.06,
-    excursion: 9 - 7.5 * t,
+    reach: reachFor(r),
+    excursion: EXCURSION - 7.5 * t,
     alpha: 0.26 + 0.18 * t,
     width: 1.6 - 0.6 * t,
     map: null,
@@ -158,36 +164,103 @@ function binMap(driver, binHz) {
   driver.mapHz = binHz;
 }
 
+// ── źródło geometrii ─────────────────────────────────────────
+
+/**
+ * Kolumny z `svg[data-speaker]` w kontenerze — hero i sekcja agenta są
+ * zbudowane identycznie, więc to jedyne źródło geometrii.
+ *
+ * Kontener dostaje jeden canvas na szerokość okna; jego pion jest dopasowywany
+ * do zasięgu pierścieni razem z zapasem na odkształcenie, bo kolumny wychodzą
+ * poza sekcję (w hero — nad nią, w sekcji agenta — w rogach i szerokością).
+ * Kolor okręgu czytany raz z wyliczonego `stroke`, więc może pochodzić z
+ * atrybutu albo z CSS. Klasa `is-live` chowa SVG (`visibility`, nie
+ * `display` — ich pudełka są potrzebne do pomiaru).
+ */
+export function svgSpeakers(container) {
+  const groups = [...container.querySelectorAll('svg[data-speaker]')].map((svg) => ({
+    svg,
+    rings: [...svg.querySelectorAll('circle')].map((circle) => ({
+      cx: Number(circle.getAttribute('cx') || 0),
+      cy: Number(circle.getAttribute('cy') || 0),
+      r: Number(circle.getAttribute('r')),
+      color: getComputedStyle(circle).stroke,
+    })),
+  }));
+
+  const canvas = document.createElement('canvas');
+  canvas.className = 'speakers__canvas';
+  canvas.setAttribute('aria-hidden', 'true');
+  container.append(canvas);
+  container.classList.add('is-live');
+
+  return {
+    canvas,
+    watch: [container],
+    measure() {
+      const cb = container.getBoundingClientRect();
+      const placed = [];
+      let top = Infinity;
+      let bottom = -Infinity;
+      for (const { svg, rings } of groups) {
+        const box = svg.getBoundingClientRect();
+        if (!box.width || !rings.length) continue; // kolumna schowana na tej szerokości
+        const vb = svg.viewBox.baseVal;
+        // preserveAspectRatio domyślnie xMidYMid meet: jedna skala, wyśrodkowanie
+        const s = Math.min(box.width / vb.width, box.height / vb.height);
+        const ox = box.left - cb.left + (box.width - vb.width * s) / 2 - vb.x * s;
+        const oy = box.top - cb.top + (box.height - vb.height * s) / 2 - vb.y * s;
+        const mapped = rings.map((ring) => ({
+          cx: ox + ring.cx * s, cy: oy + ring.cy * s, r: ring.r * s, color: ring.color,
+        }));
+        for (const ring of mapped) {
+          const m = ring.r + ringMargin(ring.r);
+          top = Math.min(top, ring.cy - m);
+          bottom = Math.max(bottom, ring.cy + m);
+        }
+        placed.push(mapped);
+      }
+      if (!placed.length) return [];
+
+      top = Math.floor(top);
+      canvas.style.top = `${top}px`;
+      canvas.style.height = `${Math.ceil(bottom) - top}px`;
+      const left = canvas.getBoundingClientRect().left - cb.left;
+      return placed.map((rings) => ({
+        cx: rings[0].cx - left,
+        cy: rings[0].cy - top,
+        rings: rings.map((ring) => ({ r: ring.r, color: ring.color })),
+      }));
+    },
+  };
+}
+
+// ── scena ────────────────────────────────────────────────────
+
 export class SpeakerRings {
   /**
-   * @param {SVGSVGElement} svg statyczne okręgi z markupu — źródło geometrii
-   * @param {import('../audio/BackgroundSound.js').BackgroundSound} sound
+   * @param {ReturnType<typeof svgSpeakers>} source
+   * @param {import('./BackgroundSound.js').BackgroundSound} sound
    */
-  constructor(svg, sound, { reducedMotion = false } = {}) {
-    this.svg = svg;
+  constructor(source, sound, { reducedMotion = false } = {}) {
+    this.source = source;
     this.sound = sound;
     this.reducedMotion = reducedMotion;
-    this.speakers = readSpeakers(svg);
-
-    this.canvas = document.createElement('canvas');
-    this.canvas.className = 'hero__spectrum';
-    this.canvas.setAttribute('aria-hidden', 'true');
-    svg.after(this.canvas);
+    this.canvas = source.canvas;
     this.ctx = this.canvas.getContext('2d');
-    // `visibility`, nie `hidden` — pudełko SVG zostaje, bo z niego liczymy
-    // przeliczenie współrzędnych na canvas
-    svg.style.visibility = 'hidden';
+    this.speakers = [];
 
-    for (const speaker of this.speakers) speaker.data = new Uint8Array(sound.binCount);
-
-    this.visible = true;
+    this.visible = false;
     this.raf = 0;
     this.last = 0;
     this._frame = this._frame.bind(this);
 
-    new ResizeObserver(() => this.resize()).observe(this.canvas);
+    const resize = new ResizeObserver(() => this.resize());
+    resize.observe(this.canvas);
+    for (const el of source.watch) resize.observe(el);
     new IntersectionObserver(([entry]) => {
       this.visible = entry.isIntersecting;
+      if (!this.visible) this._sleep();
       this._wake();
     }).observe(this.canvas);
     sound.onChange(() => this._wake());
@@ -195,27 +268,33 @@ export class SpeakerRings {
   }
 
   resize() {
+    // źródło przestawia pion canvasu, więc jego pudełko czytamy po pomiarze
+    const groups = this.source.measure();
     const box = this.canvas.getBoundingClientRect();
     if (!box.width || !box.height) return;
-    const svgBox = this.svg.getBoundingClientRect();
-    const vb = this.svg.viewBox.baseVal;
 
     const k = Math.min(window.devicePixelRatio || 1, 1.5, Math.sqrt(MAX_PIXELS / (box.width * box.height)));
-    this.canvas.width = Math.round(box.width * k);
-    this.canvas.height = Math.round(box.height * k);
+    const width = Math.round(box.width * k);
+    const height = Math.round(box.height * k);
+    if (this.canvas.width !== width) this.canvas.width = width;
+    if (this.canvas.height !== height) this.canvas.height = height;
     this.k = k;
 
-    // preserveAspectRatio domyślnie xMidYMid meet: jedna skala, wyśrodkowanie
-    const s = Math.min(svgBox.width / vb.width, svgBox.height / vb.height);
-    this.s = s;
-    this.ox = svgBox.left - box.left + (svgBox.width - vb.width * s) / 2 - vb.x * s;
-    this.oy = svgBox.top - box.top + (svgBox.height - vb.height * s) / 2 - vb.y * s;
+    // zmiana geometrii zeruje stan pierścieni — i tak wybrzmiewa w 0,2 s
+    this.speakers = buildSpeakers(groups);
     this._draw();
   }
 
   _wake() {
     if (this.raf || !this.visible || this.reducedMotion) return;
     this.raf = requestAnimationFrame(this._frame);
+  }
+
+  /** scena zeszła z ekranu — pętla staje od razu, nie czeka na wybrzmienie */
+  _sleep() {
+    if (this.raf) cancelAnimationFrame(this.raf);
+    this.raf = 0;
+    this.last = 0;
   }
 
   _frame(now) {
@@ -227,11 +306,9 @@ export class SpeakerRings {
     let live = false;
     let energy = 0;
     for (const speaker of this.speakers) {
-      const fresh = this.sound.spectrum(speaker.channel, speaker.data);
-      if (fresh) live = true;
-      for (const driver of speaker.drivers) {
-        energy += this._update(driver, fresh ? speaker.data : null, binHz, dt);
-      }
+      const data = this.sound.frameSpectrum(speaker.channel, now);
+      if (data) live = true;
+      for (const driver of speaker.drivers) energy += this._update(driver, data, binHz, dt);
     }
     this._draw();
 
@@ -280,31 +357,30 @@ export class SpeakerRings {
   }
 
   _draw() {
-    const { ctx, canvas, k, s } = this;
+    const { ctx, canvas, k } = this;
     if (!k) return;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.setTransform(k * s, 0, 0, k * s, k * this.ox, k * this.oy);
-    const px = 1 / s; // 1 px CSS w jednostkach viewBoxa
+    ctx.setTransform(k, 0, 0, k, 0, 0);
     ctx.lineJoin = 'round';
 
     for (const speaker of this.speakers) {
       const { cx, cy } = speaker;
       for (const driver of speaker.drivers) {
         // membrana: wychylenie całego pierścienia z mocą pasma
-        const r = driver.r + driver.level * driver.excursion * px;
+        const r = driver.r + driver.level * driver.excursion;
         const silent = driver.level < 1e-3;
         ctx.beginPath();
-        // w ciszy dokładny okrąg — ten sam co w SVG z markupu
+        // w ciszy dokładny okrąg — ten sam co w markupie
         if (silent) ctx.arc(cx, cy, r, 0, TAU);
-        else this._ringPath(driver, cx, cy, r, px);
-        ctx.lineWidth = px;
+        else this._ringPath(driver, cx, cy, r);
+        ctx.lineWidth = 1;
         ctx.strokeStyle = driver.color;
         ctx.stroke();
         if (silent) continue;
 
         // ta sama linia jeszcze raz, limonką, tym jaśniej, im głośniej gra pasmo
-        ctx.lineWidth = driver.width * px;
+        ctx.lineWidth = driver.width;
         ctx.strokeStyle = `rgba(${LIME},${(driver.alpha * Math.min(1, driver.level * 2)).toFixed(3)})`;
         ctx.stroke();
       }
@@ -317,7 +393,7 @@ export class SpeakerRings {
    * próbki potrafią skakać i linia byłaby postrzępiona. Brzegi są lustrzane:
    * na dole i u góry sąsiadem skrajnej próbki jest ona sama po drugiej stronie.
    */
-  _ringPath(driver, cx, cy, r, px) {
+  _ringPath(driver, cx, cy, r) {
     const { ctx } = this;
     const { values, shape, pts, dirs, half, reach } = driver;
     const last = half - 1;
@@ -333,7 +409,7 @@ export class SpeakerRings {
       const right = i < half;
       const j = right ? i : n - 1 - i;
       const o = j * 4 + (right ? 0 : 2);
-      const radius = r + shape[j] * reach * px;
+      const radius = r + shape[j] * reach;
       pts[i * 2] = cx + dirs[o] * radius;
       pts[i * 2 + 1] = cy + dirs[o + 1] * radius;
     }

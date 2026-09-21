@@ -70,6 +70,8 @@ export class BackgroundSound {
     this.enabled = readPreference();
     this.ctx = null;
     this.analysers = null;
+    /** bufory widma na bieżącą klatkę, po jednym na kanał */
+    this.frames = {};
     this.listeners = new Set();
     this.resumeOnShow = false;
 
@@ -105,15 +107,29 @@ export class BackgroundSound {
   }
 
   /**
-   * Widmo kanału: 'left', 'right' albo 'mid' (suma). Wartości 0–255 w skali
-   * decybelowej między `minDecibels` a `maxDecibels` analizatora.
-   * @returns {boolean} czy dane są aktualne
+   * Widmo kanału ('left', 'right' albo 'mid' — suma) dla danej klatki.
+   * Wartości 0–255 w skali decybelowej między `minDecibels` a `maxDecibels`.
+   *
+   * Kilka scen w tej samej klatce dostaje ten sam bufor: `stamp` to znacznik
+   * czasu z `requestAnimationFrame`, wspólny dla wszystkich wywołań zwrotnych
+   * jednej klatki, więc analiza każdego kanału liczy się raz, nawet gdy na
+   * ekranie są i hero, i sekcja agenta. Bufor jest współdzielony — tylko
+   * do odczytu.
+   * @returns {Uint8Array | null} null, gdy nic nie gra
    */
-  spectrum(channel, out) {
+  frameSpectrum(channel, stamp) {
     const analyser = this.analysers?.[channel];
-    if (!analyser || !this.isPlaying()) return false;
-    analyser.getByteFrequencyData(out);
-    return true;
+    if (!analyser || !this.isPlaying()) return null;
+    let slot = this.frames[channel];
+    if (!slot) {
+      slot = { stamp: -1, data: new Uint8Array(analyser.frequencyBinCount) };
+      this.frames[channel] = slot;
+    }
+    if (slot.stamp !== stamp) {
+      analyser.getByteFrequencyData(slot.data);
+      slot.stamp = stamp;
+    }
+    return slot.data;
   }
 
   onChange(listener) {

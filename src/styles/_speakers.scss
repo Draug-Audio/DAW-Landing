@@ -1,0 +1,40 @@
+@use 'tokens' as *;
+
+// ─────────────────────────────────────────────────────────────
+// Kolumny głośnikowe — dekoracyjne okręgi w hero i w sekcji agenta.
+// Każda grupa pierścieni to osobny SVG `.speaker` z okręgami wokół (0, 0);
+// pozycję i rozmiar nadaje sekcja. JS (src/audio/SpeakerRings.js) mierzy te
+// SVG i rysuje je na jednym canvasie na sekcję, odkształcone widmem muzyki.
+// ─────────────────────────────────────────────────────────────
+
+.speakers {
+  pointer-events: none;
+
+  // canvas przejął rysowanie — SVG zostają dla pomiaru, ale niewidoczne
+  &.is-live .speaker { visibility: hidden; }
+}
+
+.speaker {
+  position: absolute;
+  aspect-ratio: 1;
+  overflow: visible;
+
+  circle {
+    fill: none;
+    stroke-width: 1;
+    // viewBox skaluje okręgi razem z SVG (sekcja agenta jest responsywna),
+    // a linia ma zostać 1 px
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+// Szerokość okna, bo pierścienie wychodzą poza sekcję i poza kontener; pion
+// (top / height) ustawia JS według zasięgu pierścieni razem z zapasem na
+// odkształcenie.
+.speakers__canvas {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100vw;
+  pointer-events: none;
+}

@@ -20,29 +20,23 @@
     pointer-events: none;
   }
 
+  // Warstwa okręgów na całą sekcję; kolumny pozycjonowane względem środka
+  // hero. Współrzędne to dawny układ jednego SVG 2500 × 1500 (viewBox od
+  // -150, -250, górą na -430 px): x względem środka, y względem góry sekcji.
   &__rings {
     position: absolute;
-    top: -430px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 2500px;
-    height: 1500px;
-    pointer-events: none;
+    inset: 0;
     z-index: -2;
   }
 
-  // Widmo na pierścieniach (src/hero/SpeakerRings.js). W pionie to samo pudełko
-  // co SVG wyżej, w poziomie tylko szerokość okna — 2500 px canvasu przy gęstym
-  // ekranie to kilkanaście megapikseli, z czego większość poza kadrem.
-  &__spectrum {
-    position: absolute;
-    top: -430px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100vw;
-    height: 1500px;
-    pointer-events: none;
-    z-index: -2;
+  &__speaker {
+    left: calc(50% + var(--x) - var(--size) / 2);
+    top: calc(var(--y) - var(--size) / 2);
+    width: var(--size);
+
+    &--left { --x: -860px; --y: 120px; --size: 600px; }
+    &--center { --x: 0px; --y: 290px; --size: 1400px; }
+    &--right { --x: 860px; --y: 440px; --size: 680px; }
   }
 
   &__copy {

@@ -3,7 +3,7 @@ import { slides } from './data/slides.js';
 import { mountShowcase } from './slider/index.js';
 import { BackgroundSound } from './audio/BackgroundSound.js';
 import { mountSoundPlayer } from './audio/SoundPlayer.js';
-import { SpeakerRings } from './hero/SpeakerRings.js';
+import { SpeakerRings, svgSpeakers } from './audio/SpeakerRings.js';
 
 // ── muzyka w tle + pierścienie hero jako kolumny głośnikowe ──
 const sound = new BackgroundSound(`${import.meta.env.BASE_URL}assets/background.mp3`, { volume: 0.5 });
@@ -15,12 +15,13 @@ if (soundToggle) {
 }
 mountSoundPlayer(document.querySelector('[data-player]'), sound);
 
-const rings = document.querySelector('[data-hero-rings]');
-if (rings) {
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const speakers = new SpeakerRings(rings, sound, { reducedMotion });
-  if (import.meta.env.DEV) window.__speakers = speakers;
-}
+// Kolumny głośnikowe w hero i w sekcji agenta — zbudowane identycznie (osobny
+// SVG na grupę pierścieni) i renderowane tą samą ścieżką. Każda sekcja
+// animuje się tylko wtedy, gdy jest na ekranie.
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const speakers = [...document.querySelectorAll('[data-speakers]')]
+  .map((container) => new SpeakerRings(svgSpeakers(container), sound, { reducedMotion }));
+if (import.meta.env.DEV) window.__speakers = speakers;
 if (import.meta.env.DEV) window.__sound = sound;
 
 const showcase = document.querySelector('[data-showcase]');
