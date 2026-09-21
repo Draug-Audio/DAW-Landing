@@ -56,7 +56,7 @@ const GRID = {
  * Barwa zapalonego segmentu według jego wysokości na skali, od dna po szczyt —
  * jak w mierniku poziomu: jednolita zieleń do połowy, potem przejście w
  * bursztyn na trzech czwartych i w czerwień na samej górze. Kolory kryjące,
- * przejścia liniowe między przystankami.
+ * przejścia liniowe między przystankami (krycie osobno, `METER_ALPHA`).
  */
 const METER = [
   [0, [0x4b, 0xdf, 0x89]],
@@ -65,14 +65,22 @@ const METER = [
   [1, [0xfe, 0x5a, 0x45]],
 ];
 
+/**
+ * Krycie segmentu według wysokości na skali: od `[0]` na dnie liniowo do
+ * `[1]` w połowie, wyżej pełne — dół słupków (odsłonięty pod biurkiem)
+ * przygaszony, góra w pełnych barwach.
+ */
+const METER_ALPHA = [0.2, 1];
+
 function meterColor(t) {
+  const alpha = METER_ALPHA[0] + (METER_ALPHA[1] - METER_ALPHA[0]) * clamp(t / 0.5, 0, 1);
   let i = 1;
   while (i < METER.length - 1 && t > METER[i][0]) i += 1;
   const [t0, c0] = METER[i - 1];
   const [t1, c1] = METER[i];
   const u = clamp((t - t0) / (t1 - t0 || 1), 0, 1);
   const [r, g, b] = c0.map((v, k) => Math.round(v + (c1[k] - v) * u));
-  return `rgb(${r},${g},${b})`;
+  return `rgba(${r},${g},${b},${alpha.toFixed(3)})`;
 }
 
 export class SpectrumGrid {

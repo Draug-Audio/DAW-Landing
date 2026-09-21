@@ -509,7 +509,8 @@ jest 2,7 % zamiast 16 %, a krzesło i cień pod producentem są kryjące.
 Zapalone segmenty mają pełne, kryjące barwy miernika poziomu według swojej
 wysokości na skali: do połowy jednolita zieleń `#4bdf89`, na trzech
 czwartych bursztyn `#fea823`, na szczycie czerwień `#fe5a45`, z liniowymi
-przejściami między tymi przystankami. Znacznik szczytu ma zwykły kolor
+przejściami między tymi przystankami. Krycie rośnie od dna liniowo z 0,2
+do 1 w połowie skali, wyżej jest pełne. Znacznik szczytu ma zwykły kolor
 wiersza, w którym stoi — jakby zapalił się ten jeden segment.
 
 Poziomy na prawdziwym nagraniu (analizator jak na stronie, offline):
