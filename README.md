@@ -376,10 +376,13 @@ Puls to dwie warstwy, które się przenikają:
 
 - **linia** — ostra, niesie falę (przejmuje kształt pierścienia), krycie
   `1 − s`;
-- **rozmycie** — gotowy obraz (598 px, okrąg o promieniu 240 px, σ = 9 px),
-  animowany wyłącznie skalą i kryciem `s`. Skalowanie obrazu skaluje też
-  szerokość rozmycia, więc rośnie ono z pulsem samo z siebie (σ = 3,75 %
-  promienia).
+- **rozmycie** — gotowy obraz animowany wyłącznie skalą i kryciem `s`.
+  Rysowany na wzór trzeciego (największego) pierścienia, więc przy
+  największych rozmiarach pulsu wychodzi prawie 1:1, a na pierwszym ticku
+  jest skalowany w dół. W hero: 1694 px przy gęstości 1×, okrąg na 700 px,
+  σ = 26 px (3,75 % promienia); zmierzone σ 27 px, szczyt dokładnie na
+  700 px. Skalowanie skaluje też szerokość rozmycia, więc rośnie ono z pulsem
+  samo z siebie. Rozdzielczość = gęstość pikseli sceny, w budżecie 4 Mpx.
 
 `s = u⁴` w obrębie uderzenia: przez pierwszą połowę widać praktycznie samą
 linię, rozmycie przejmuje dopiero końcówkę (wcześniej rozmycie szło krzywą
@@ -390,9 +393,12 @@ na końcu rozmycie ma 29–33 px szerokości i jasność 41–46.
 Obraz rozmycia jest przebudowywany skokami, raz na tick metronomu (sprawdzone:
 8 przebudów na 2 takty), z falą pierścienia, na który puls właśnie wszedł.
 Tick wypada na początku uderzenia, gdy rozmycie jest jeszcze niewidoczne, więc
-skoku kształtu nie widać. Rozmycie w obrazie to paski o szerokości ½σ
-przesunięte od fali w zakresie ±2σ, z kryciem równym profilowi Gaussa — nie
-nakładają się, więc krycie paska to wprost wartość profilu. Fala jest w nim
+skoku kształtu nie widać. Rozmycie w obrazie robi filtr canvasu: linia
+grubości 2σ rozmyta o 0,8σ daje profil o σ ≈ 1,0σ i szczycie 0,79 (zmierzone
+201 / 255), który wyrównuje krycie przy rysowaniu. Przebudowa kosztuje ok.
+0,75 ms. Bez `ctx.filter` (Safari < 18) rozmycie to 9 pasków o szerokości ½σ
+z kryciem równym profilowi Gaussa, w niższej rozdzielczości — przy paskach
+w pełnej skali (13 px każdy) widać by było schodki. Fala jest w nim
 zapisana w proporcji do promienia docelowego pierścienia, więc po
 przeskalowaniu siada tam, gdzie była linia. Każda scena ma własny obraz, bo
 fale hero i sekcji agenta się różnią.

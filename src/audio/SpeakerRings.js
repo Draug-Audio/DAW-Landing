@@ -92,8 +92,14 @@ const PULSE = {
    * więc rozmycie rośnie razem z pulsem samo z siebie.
    */
   blurRatio: 0.075,
-  /** pasków na profil rozmycia (±2σ) — każdy szeroki na ½σ */
+  /**
+   * Pasków na profil rozmycia (±2σ), gdy przeglądarka nie ma `ctx.filter`
+   * (Safari < 18) — każdy szeroki na ½σ. Obraz powstaje wtedy w niższej
+   * rozdzielczości (`fallbackRadius`), żeby interpolacja przy skalowaniu
+   * wygładziła schodki między paskami.
+   */
   blurBands: 9,
+  fallbackRadius: 240,
   /**
    * Wykładnik krzywej przejścia linia → rozmycie w obrębie uderzenia:
    * `u ** 4`. Przez pierwszą połowę uderzenia widać praktycznie samą ostrą
@@ -111,9 +117,18 @@ const PULSE = {
    * ledwie widoczny.
    */
   glow: 0.55,
-  /** promień okręgu w obrazie rozmycia; obraz jest skalowany do pulsu */
-  spriteRadius: 240,
+  /** budżet pikseli obrazu rozmycia — jak dla canvasu sceny */
+  spritePixels: 4e6,
 };
+
+/** czy canvas umie rozmywać sam (`ctx.filter`) — Chrome, Firefox, Safari 18+ */
+const CANVAS_FILTER = (() => {
+  try {
+    return typeof document.createElement('canvas').getContext('2d').filter === 'string';
+  } catch {
+    return false;
+  }
+})();
 
 /**
  * Pasma zwrotnicy dla `n` przetworników — równe w skali logarytmicznej.
@@ -215,16 +230,22 @@ function makePulse(drivers) {
   const gap = inner.length > 1 ? outer.r - inner[inner.length - 2].r : outer.r * 0.25;
   const half = PULSE.samples;
 
-  // Obraz rozmycia: stały rozmiar, okrąg o promieniu `spriteRadius`, a fala
-  // zapisana w proporcji do promienia docelowego — najmniejszy docelowy to
-  // pierwszy pierścień, więc stąd największa możliwa fala w obrazie.
-  const R = PULSE.spriteRadius;
+  // Obraz rozmycia rysowany na wzór trzeciego (największego) pierścienia:
+  // przy największych rozmiarach pulsu wychodzi prawie 1:1, a przy
+  // mniejszych — na pierwszym ticku — jest skalowany w dół, co nie traci
+  // jakości. Fala zapisana w proporcji do promienia pierścienia docelowego;
+  // zapas na nią liczony dokładnie dla każdego ticku, nie z najgorszego
+  // przypadku.
+  const R = outer.r;
   const sigma = (R * PULSE.blurRatio) / 2;
-  const maxWave = Math.max(...inner.map((d) => d.reach)) * (R / inner[0].r);
-  const spriteHalf = Math.ceil(R + maxWave + 2.5 * sigma);
+  let maxWave = 0;
+  for (let k = 1; k <= inner.length; k += 1) {
+    const ref = k < inner.length ? inner[k].r : outer.r + gap;
+    maxWave = Math.max(maxWave, (inner[k - 1].reach * R) / ref);
+  }
+  // rozmycie linii grubości 2σ filtrem 0,8σ sięga ok. 3,5σ od osi
+  const spriteHalf = Math.ceil(R + maxWave + outer.excursion + 3.5 * sigma);
   const sprite = document.createElement('canvas');
-  sprite.width = spriteHalf * 2;
-  sprite.height = spriteHalf * 2;
 
   return {
     inner,
@@ -237,13 +258,16 @@ function makePulse(drivers) {
     sprite,
     spriteCtx: sprite.getContext('2d'),
     spriteHalf,
+    spriteRadius: R,
+    /** szczyt profilu w obrazie — rozmycie filtrem nie dochodzi do 1 */
+    glowPeak: 1,
     sigma,
     /** fala obrazu rozmycia — osobna, bo `disp` w tej samej klatce niesie linia */
     glowDisp: new Float32Array(half),
     /** numer uderzenia, dla którego obraz rozmycia jest aktualny */
     spriteBeat: null,
-    // rozmycie sięga 2σ = blurRatio · promień poza linię
-    extent: (outer.r + gap) * (1 + PULSE.blurRatio) + outer.reach + outer.excursion + 2,
+    // rozmycie sięga ok. 3,5σ = 1,75 · blurRatio · promień poza linię
+    extent: (outer.r + gap) * (1 + 1.75 * PULSE.blurRatio) + outer.reach + outer.excursion + 2,
   };
 }
 
@@ -632,10 +656,10 @@ export class SpeakerRings {
 
     const glowAlpha = alpha * soft * PULSE.glow;
     if (glowAlpha > 0.004) {
-      // okrąg obrazu (spriteRadius) trafia na bieżący promień; fala i szerokość
-      // rozmycia skalują się razem z nim
-      const size = pulse.spriteHalf * 2 * (radius / PULSE.spriteRadius);
-      ctx.globalAlpha = glowAlpha;
+      // okrąg obrazu (trzeci pierścień) trafia na bieżący promień; fala
+      // i szerokość rozmycia skalują się razem z nim
+      const size = pulse.spriteHalf * 2 * (radius / pulse.spriteRadius);
+      ctx.globalAlpha = Math.min(1, glowAlpha / pulse.glowPeak);
       ctx.drawImage(pulse.sprite, cx - size / 2, cy - size / 2, size, size);
     }
     ctx.globalAlpha = 1;
@@ -643,34 +667,65 @@ export class SpeakerRings {
 
   /**
    * Obraz rozmycia dla jednego uderzenia: fala pierścienia docelowego (albo
-   * równe koło na „raz”), rozmyta wzdłuż normalnej. Paski o szerokości ½σ
-   * przesunięte od fali w zakresie ±2σ, z kryciem równym profilowi Gaussa —
-   * nie nakładają się, więc krycie paska to wprost wartość profilu. Fala
-   * zapisana w proporcji do `refRadius`, bo obraz jest potem skalowany.
+   * równe koło na „raz”), rozmyta — filtrem canvasu, a bez niego paskami
+   * o szerokości ½σ z kryciem równym profilowi Gaussa. Rysowany w skali
+   * trzeciego pierścienia, z falą w proporcji do `refRadius`, bo obraz jest
+   * potem skalowany do bieżącego promienia.
    */
   _rebuildGlow(pulse, target, refRadius) {
-    const { spriteCtx: g, spriteHalf: c, sigma, half, glowDisp, radii, pts, dirs } = pulse;
-    const R = PULSE.spriteRadius;
+    const { sprite, spriteCtx: g, spriteHalf: c, sigma, half, glowDisp, radii, pts, dirs } = pulse;
+    const R = pulse.spriteRadius;
     const waveScale = R / refRadius;
     for (let j = 0; j < half; j += 1) {
       glowDisp[j] = target ? sampleShape(target, (j + 0.5) / half) * waveScale : 0;
     }
 
+    // Rozdzielczość: gęstość pikseli sceny, w budżecie pikseli. Bez
+    // `ctx.filter` — niższa, żeby interpolacja wygładziła paski.
+    const side = c * 2;
+    const res = CANVAS_FILTER
+      ? Math.min(this.k || 1, Math.sqrt(PULSE.spritePixels) / side)
+      : PULSE.fallbackRadius / R;
+    const px = Math.max(1, Math.round(side * res));
+    if (sprite.width !== px) {
+      sprite.width = px;
+      sprite.height = px;
+    }
+    const scale = px / side;
+
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.globalAlpha = 1;
-    g.clearRect(0, 0, c * 2, c * 2);
+    g.filter = 'none';
+    g.clearRect(0, 0, px, px);
+    g.setTransform(scale, 0, 0, scale, 0, 0);
     g.lineJoin = 'round';
     g.strokeStyle = `rgb(${LIME})`;
-    const bands = PULSE.blurBands;
-    const step = (4 * sigma) / (bands - 1);
-    g.lineWidth = step;
-    for (let i = 0; i < bands; i += 1) {
-      const offset = -2 * sigma + i * step;
-      g.globalAlpha = Math.exp(-(offset * offset) / (2 * sigma * sigma));
-      for (let j = 0; j < half; j += 1) radii[j] = R + offset + glowDisp[j];
+
+    if (CANVAS_FILTER) {
+      // Linia grubości 2σ rozmyta filtrem 0,8σ: splot daje profil o σ ≈ 1,0σ
+      // i szczycie erf(0,88) ≈ 0,79 — to wyrównuje `glowPeak` przy rysowaniu.
+      // Promień filtra jest w pikselach bitmapy, nie w jednostkach transformacji.
+      for (let j = 0; j < half; j += 1) radii[j] = R + glowDisp[j];
+      g.filter = `blur(${(0.8 * sigma * scale).toFixed(2)}px)`;
+      g.lineWidth = 2 * sigma;
       g.beginPath();
       mirroredPath(g, c, c, half, dirs, radii, pts);
       g.stroke();
+      g.filter = 'none';
+      pulse.glowPeak = 0.79;
+    } else {
+      const bands = PULSE.blurBands;
+      const step = (4 * sigma) / (bands - 1);
+      g.lineWidth = step;
+      for (let i = 0; i < bands; i += 1) {
+        const offset = -2 * sigma + i * step;
+        g.globalAlpha = Math.exp(-(offset * offset) / (2 * sigma * sigma));
+        for (let j = 0; j < half; j += 1) radii[j] = R + offset + glowDisp[j];
+        g.beginPath();
+        mirroredPath(g, c, c, half, dirs, radii, pts);
+        g.stroke();
+      }
+      pulse.glowPeak = 1;
     }
     g.globalAlpha = 1;
   }
