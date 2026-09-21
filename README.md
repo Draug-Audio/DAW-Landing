@@ -549,6 +549,13 @@ Plik ma 7,65 MB (320 kbps stereo, 3:11). Do tła w zupełności wystarczy
   wtyczek z makiety (siatka 3 × 3: najpierw instrumenty — Sampler, Drumpad,
   Syntezator — potem efekty) i podsekcja „Inteligentne wtyczki one-knob”
   z serią „OK” w jednym rzędzie (6 kolumn; poniżej 1100 px 3, na telefonie 2).
+- Pełna wtyczka to karta (`figure.plugin`, `tabindex="0"`): po najechaniu albo
+  fokusie z klawiatury unosi się, a spod dolnej krawędzi wysuwa się szuflada
+  z opisem tego, czym wtyczka się wyróżnia. Szuflada leży poza przepływem
+  i nachodzi na rząd poniżej (karta dostaje wtedy z-index nad sąsiadami),
+  więc siatka nie skacze. Na ekranach bez najechania (`hover: none`) opis
+  stoi pod kartą na stałe; czytniki ekranu czytają go zawsze (`figcaption`).
+  Opisy oparte na tym, co każda wtyczka pokazuje w makiecie.
 - Zdjęcie z sekcji „Jak powstał DAW” to PNG 4606 × 2624 (5,6 MB). Tutaj jest
   jako WebP 2200 px, q90 / 250 kB — **z kanałem alfa**, bo to wycinanka na
   przezroczystym tle. Odrzucenie alfy przy konwersji odsłania surowe zielone

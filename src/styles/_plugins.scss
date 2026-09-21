@@ -17,15 +17,17 @@
     // wokół zaokrąglonego panelu, więc podświetlenie idzie z `drop-shadow`,
     // który obrysowuje kształt z kanału alfa, a nie pudełko.
     img {
+      display: block;
       width: 100%;
       height: auto;
       filter: drop-shadow(0 0 0 transparent);
       transition: filter 0.2s ease, transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
 
-      &:hover {
-        filter: drop-shadow(0 0 1px $ring-3);
-        transform: translateY(-3px);
-      }
+    // gołe obrazki (wtyczki one-knob) — podświetlenie i uniesienie samego obrazka
+    > img:hover {
+      filter: drop-shadow(0 0 1px $ring-3);
+      transform: translateY(-3px);
     }
 
     @include below($bp-lg) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -48,5 +50,87 @@
     font-size: clamp(20px, 2vw, 26px);
     letter-spacing: -0.02em;
     font-weight: 700;
+  }
+}
+
+// ── karta pełnej wtyczki z szufladą opisu ────────────────────
+// Po najechaniu albo fokusie z klawiatury karta się unosi, a spod jej dolnej
+// krawędzi wysuwa się szuflada z opisem. Szuflada leży poza przepływem, więc
+// nachodzi na rząd poniżej zamiast przesuwać siatkę; karta dostaje wtedy
+// z-index nad sąsiadami. Na ekranach bez najechania (dotyk) opis stoi pod
+// kartą na stałe. Czytniki ekranu czytają opis zawsze — jest w figcaption.
+.plugin {
+  position: relative;
+  margin: 0;
+  outline: none;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+
+  // obrazek nad szufladą — jej górne 12 px chowa się pod dolną krawędzią karty
+  img {
+    position: relative;
+    z-index: 1;
+  }
+
+  &__drawer {
+    position: absolute;
+    top: calc(100% - 12px);
+    left: 0;
+    right: 0;
+    // przycina wysuwaną treść: szuflada wyjeżdża spod karty, a nie pojawia się
+    // nad nią
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  &__info {
+    // górne 12 px schowane pod kartą, stąd większy odstęp u góry
+    padding: 24px 18px 16px;
+    // wnętrze panelu z makiety i jego krawędź
+    background: #0c1014;
+    border: 1px solid $line;
+    border-top: 0;
+    border-radius: 0 0 10px 10px;
+    transform: translateY(-100%);
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  &__name {
+    @include mono(10.5px, 0.16em);
+    color: $lime;
+    margin-bottom: 8px;
+  }
+
+  &__desc {
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: $text-dim;
+    text-wrap: pretty;
+  }
+
+  @media (hover: hover) {
+    &:hover,
+    &:focus-visible {
+      z-index: 3;
+      transform: translateY(-3px);
+
+      img { filter: drop-shadow(0 0 1px $ring-3); }
+
+      .plugin__info { transform: none; }
+    }
+  }
+
+  // dotyk: opis zawsze widoczny, w przepływie, pod kartą
+  @media (hover: none) {
+    &__drawer {
+      position: static;
+      margin-top: -12px;
+    }
+
+    &__info { transform: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &,
+    &__info { transition: none; }
   }
 }

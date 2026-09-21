@@ -292,16 +292,91 @@
     </div>
     <!-- Pełne wtyczki: najpierw instrumenty, potem efekty. Zrzuty z
          Mockups/DAW Plugins.html, z kanałem alfa (README, „Uwagi”). -->
+    <!-- Karta wtyczki: po najechaniu albo fokusie spod dolnej krawędzi
+         wysuwa się szuflada z opisem (bez przesuwania siatki); na ekranach
+         dotykowych opis stoi pod kartą na stałe. -->
     <div class="plugins__grid">
-      <img src="./assets/plugin-sampler.webp" width="1528" height="876" alt="Sampler — instrument Draug Audio Workstation" loading="lazy" decoding="async">
-      <img src="./assets/plugin-drumpad.webp" width="1528" height="808" alt="Drumpad — instrument Draug Audio Workstation" loading="lazy" decoding="async">
-      <img src="./assets/plugin-synth.webp" width="1564" height="938" alt="Syntezator — instrument Draug Audio Workstation" loading="lazy" decoding="async">
-      <img src="./assets/plugin-eq.webp" width="1528" height="848" alt="Equalizer — wtyczka Draug Audio Workstation" loading="lazy" decoding="async">
-      <img src="./assets/plugin-compressor.webp" width="1048" height="616" alt="Kompresor — wtyczka Draug Audio Workstation" loading="lazy" decoding="async">
-      <img src="./assets/plugin-reverb.webp" width="1564" height="938" alt="Pogłos — wtyczka Draug Audio Workstation" loading="lazy" decoding="async">
-      <img src="./assets/plugin-delay.webp" width="1564" height="938" alt="Echo — wtyczka Draug Audio Workstation" loading="lazy" decoding="async">
-      <img src="./assets/plugin-distortion.webp" width="1564" height="946" alt="Przester — wtyczka Draug Audio Workstation" loading="lazy" decoding="async">
-      <img src="./assets/plugin-gate.webp" width="1048" height="660" alt="Bramka szumów — wtyczka Draug Audio Workstation" loading="lazy" decoding="async">
+      <figure class="plugin" tabindex="0">
+        <img src="./assets/plugin-sampler.webp" width="1528" height="876" alt="Sampler — instrument Draug Audio Workstation" loading="lazy" decoding="async">
+        <figcaption class="plugin__drawer">
+          <div class="plugin__info">
+            <p class="plugin__name">Sampler</p>
+            <p class="plugin__desc">Warstwy sterowane velocity — kilka sampli na jednym klawiszu, przełączanych siłą uderzenia. Pętla z płynnym przejściem, tryb one-shot i obwiednia z własnymi krzywymi wejścia i wyjścia.</p>
+          </div>
+        </figcaption>
+      </figure>
+      <figure class="plugin" tabindex="0">
+        <img src="./assets/plugin-drumpad.webp" width="1528" height="808" alt="Drumpad — instrument Draug Audio Workstation" loading="lazy" decoding="async">
+        <figcaption class="plugin__drawer">
+          <div class="plugin__info">
+            <p class="plugin__name">Drumpad</p>
+            <p class="plugin__desc">Łączy się z samplerem: każdy pad otwierasz w nim jednym kliknięciem, a nazwy padów od razu podpisują klawisze w piano rollu — widzisz KICK i SNARE zamiast C1 i D1. Do tego grupy choke i nauka klawisza.</p>
+          </div>
+        </figcaption>
+      </figure>
+      <figure class="plugin" tabindex="0">
+        <img src="./assets/plugin-synth.webp" width="1564" height="938" alt="Syntezator — instrument Draug Audio Workstation" loading="lazy" decoding="async">
+        <figcaption class="plugin__drawer">
+          <div class="plugin__info">
+            <p class="plugin__name">Syntezator</p>
+            <p class="plugin__desc">Sześć kształtów fali, polifonia i unisono z rozstrojeniem oraz szerokością stereo. Filtr z rezonansem i własną obwiednią, LFO i glide, a na oscyloskopie widać to, co słychać.</p>
+          </div>
+        </figcaption>
+      </figure>
+      <figure class="plugin" tabindex="0">
+        <img src="./assets/plugin-eq.webp" width="1528" height="848" alt="Equalizer — wtyczka Draug Audio Workstation" loading="lazy" decoding="async">
+        <figcaption class="plugin__drawer">
+          <div class="plugin__info">
+            <p class="plugin__name">Equalizer</p>
+            <p class="plugin__desc">Każde pasmo może działać dynamicznie — z własnym progiem i ratio, jak kompresor tylko na wybranym zakresie. Całe pole to analizator widma: klik w puste miejsce dodaje pasmo, klik w węzeł otwiera jego gałki.</p>
+          </div>
+        </figcaption>
+      </figure>
+      <figure class="plugin" tabindex="0">
+        <img src="./assets/plugin-compressor.webp" width="1048" height="616" alt="Kompresor — wtyczka Draug Audio Workstation" loading="lazy" decoding="async">
+        <figcaption class="plugin__drawer">
+          <div class="plugin__info">
+            <p class="plugin__name">Kompresor</p>
+            <p class="plugin__desc">Na żywo widać sygnał przed i po kompresji oraz krzywą z progiem i miękkim kolanem. Gałka MIX daje kompresję równoległą bez zakładania dodatkowej szyny.</p>
+          </div>
+        </figcaption>
+      </figure>
+      <figure class="plugin" tabindex="0">
+        <img src="./assets/plugin-reverb.webp" width="1564" height="938" alt="Pogłos — wtyczka Draug Audio Workstation" loading="lazy" decoding="async">
+        <figcaption class="plugin__drawer">
+          <div class="plugin__info">
+            <p class="plugin__name">Pogłos</p>
+            <p class="plugin__desc">Pomieszczenie widać w rzucie — ze źródłem, mikrofonem i wymiarami — a wczesne odbicia i ogon regulujesz osobno. Ducking przycisza pogłos pod głównym sygnałem, a typy przestrzeni sięgają od pokoju po katedrę.</p>
+          </div>
+        </figcaption>
+      </figure>
+      <figure class="plugin" tabindex="0">
+        <img src="./assets/plugin-delay.webp" width="1564" height="938" alt="Echo — wtyczka Draug Audio Workstation" loading="lazy" decoding="async">
+        <figcaption class="plugin__drawer">
+          <div class="plugin__info">
+            <p class="plugin__name">Echo</p>
+            <p class="plugin__desc">Czas zsynchronizowany z tempem, a przy każdym powtórzeniu widać, o ile cichnie. Tryb taśmy z wow, flutter i nasyceniem głowicy, do tego ping-pong, reverse i ducking pod głównym sygnałem.</p>
+          </div>
+        </figcaption>
+      </figure>
+      <figure class="plugin" tabindex="0">
+        <img src="./assets/plugin-distortion.webp" width="1564" height="946" alt="Przester — wtyczka Draug Audio Workstation" loading="lazy" decoding="async">
+        <figcaption class="plugin__drawer">
+          <div class="plugin__info">
+            <p class="plugin__name">Przester</p>
+            <p class="plugin__desc">Sześć charakterów nasycenia — od lampy po bitcrush — z podglądem kształtu fali i harmonicznych. Osobne filtry przed i po przesterze, żeby nasycić tylko to pasmo, które trzeba.</p>
+          </div>
+        </figcaption>
+      </figure>
+      <figure class="plugin" tabindex="0">
+        <img src="./assets/plugin-gate.webp" width="1048" height="660" alt="Bramka szumów — wtyczka Draug Audio Workstation" loading="lazy" decoding="async">
+        <figcaption class="plugin__drawer">
+          <div class="plugin__info">
+            <p class="plugin__name">Bramka szumów</p>
+            <p class="plugin__desc">Histereza rozdziela próg otwarcia i zamknięcia, więc bramka nie trzepocze na wybrzmieniu. Na wykresie widać sygnał przed i po bramce, a hold trzyma ją otwartą przez zadany czas.</p>
+          </div>
+        </figcaption>
+      </figure>
     </div>
 
     <div class="plugins__sub">
