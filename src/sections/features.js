@@ -8,8 +8,9 @@
  *
  * Otwarcie idzie krokami:
  * 1. z-index: kliknięty kafel nad box tła, box tła nad pozostałymi kaflami;
- * 2. box tła rozwija się od prostokąta kafla do całej tabeli (`clip-path`)
- *    i zakrywa treść pozostałych kafli;
+ * 2. box tła rozwija się od prostokąta kafla do całej tabeli i zakrywa treść
+ *    pozostałych kafli — animowane są jego krawędzie, nie przycięcie, bo na
+ *    czas ruchu ma własny border (`clip-path` by go obciął);
  * 3. treść kafla gaśnie, a treść dużej karty wchodzi — z własnym animowanym
  *    przycięciem, od prostokąta kafla do całości;
  * 4. wysokość układu dopasowuje się do treści dużej karty.
@@ -42,12 +43,27 @@ export function mountFeatures(section) {
   let current = -1;
   let busy = false;
 
-  /** prostokąt kafla jako `inset()` względem elementu `el` (nie ujemny) */
-  const clipOf = (el, tile) => {
+  /** odległości krawędzi kafla od krawędzi elementu `el`: góra, prawo, dół, lewo */
+  const edgesOf = (el, tile) => {
     const r = el.getBoundingClientRect();
     const t = tile.getBoundingClientRect();
-    const v = [t.top - r.top, r.right - t.right, r.bottom - t.bottom, t.left - r.left];
-    return `inset(${v.map((x) => `${Math.max(0, x)}px`).join(' ')})`;
+    return [t.top - r.top, r.right - t.right, r.bottom - t.bottom, t.left - r.left]
+      .map((x) => `${Math.max(0, x)}px`);
+  };
+  /** prostokąt kafla jako `inset()` względem elementu `el` */
+  const clipOf = (el, tile) => `inset(${edgesOf(el, tile).join(' ')})`;
+  /** prostokąt kafla jako pozycja boxu tła */
+  const boxAt = (tile) => {
+    const [top, right, bottom, left] = edgesOf(box, tile);
+    return { top, right, bottom, left };
+  };
+  const BOX_FULL = { top: '0px', right: '0px', bottom: '0px', left: '0px' };
+
+  /** ruch boxu tła; border widoczny tylko na czas animacji */
+  const moveBox = async (from, to) => {
+    box.classList.add('is-moving');
+    await run(box, [from, to], TIME.box);
+    box.classList.remove('is-moving');
   };
 
   /** naturalna wysokość tabeli: dół ostatniego rzędu kafli plus obramowanie */
@@ -94,7 +110,7 @@ export function mountFeatures(section) {
     box.hidden = false;
 
     // 2. box tła od kafla do całej tabeli
-    await run(box, [{ clipPath: clipOf(box, tile) }, { clipPath: 'inset(0)' }], TIME.box);
+    await moveBox(boxAt(tile), BOX_FULL);
 
     // 3. treść kafla gaśnie, treść dużej karty wchodzi z własnym przycięciem
     render(index);
@@ -142,7 +158,7 @@ export function mountFeatures(section) {
     detail.getAnimations().forEach((a) => a.cancel());
 
     // 2 → box tła zwija się do kafla
-    await run(box, [{ clipPath: 'inset(0)' }, { clipPath: clipOf(box, tile) }], TIME.box);
+    await moveBox(BOX_FULL, boxAt(tile));
     box.hidden = true;
     box.getAnimations().forEach((a) => a.cancel());
 

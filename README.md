@@ -541,15 +541,18 @@ karty (`.feature-detail`). Otwarcie idzie krokami, łańcuchowanymi przez Web
 Animations API (każda animacja daje obietnicę zakończenia):
 
 1. z-index — kliknięty kafel nad boxem tła, box nad pozostałymi kaflami;
-2. box tła rozwija się `clip-path: inset()` od prostokąta kafla do całej
-   tabeli i zakrywa treść pozostałych kafli (420 ms);
+2. box tła rozwija się od prostokąta kafla do całej tabeli i zakrywa treść
+   pozostałych kafli (420 ms). Animowane są jego krawędzie (`top` / `right` /
+   `bottom` / `left`), a nie `clip-path`, bo na czas ruchu box ma własny
+   border w kolorze `$line-bright` — przycięcie by go obcięło. Po dojściu
+   border gaśnie w 0,12 s;
 3. treść kafla gaśnie, a treść dużej karty wchodzi z własnym animowanym
    przycięciem — od prostokąta kafla do całości (200 / 380 ms);
 4. wysokość układu dopasowuje się do treści dużej karty (320 ms).
 
 Zwinięcie to te same kroki od końca, do kafla aktualnie pokazanej funkcji —
 po nawigacji strzałkami może to być inny kafel niż kliknięty. Zmierzone przy
-1600 × 900: box z `inset(216px 461px 0 0)` do zera, siatka 457 → 484 px;
+1600 × 900: box od prostokąta kafla do krawędzi tabeli, siatka 457 → 484 px;
 na telefonie siatka 1519 → 713 px (duża karta jest niższa od tabeli kafli
 jeden pod drugim). Po zwinięciu wysokość wraca do `auto`, z-indeksy
 i animacje są czyszczone.

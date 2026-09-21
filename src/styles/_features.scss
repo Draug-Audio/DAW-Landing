@@ -90,8 +90,14 @@
   position: absolute;
   inset: 0;
   z-index: 2;
+  box-sizing: border-box;
   background: $panel;
+  // własny border tylko na czas rozsuwania i zwijania
+  border: 1px solid transparent;
+  transition: border-color 0.12s ease;
   pointer-events: none;
+
+  &.is-moving { border-color: $line-bright; }
 }
 
 .feature-detail {
