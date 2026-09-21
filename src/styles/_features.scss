@@ -71,22 +71,39 @@
   &:has(.feature__open:focus-visible) { background: $panel-hover; }
 }
 
-// ── rozwinięty kafel ─────────────────────────────────────────
-// Panel nad całą siatką, w kolorze kafla; `clip-path` ustawia JS — od
-// prostokąta klikniętego kafla do całości i z powrotem.
-.feature-detail {
+// ── rozwinięcie: box tła i treść dużej karty ─────────────────
+// Dwie warstwy nad wspólnym układem siatki; kroki animacji (z-index, box,
+// przenikanie treści, wysokość układu) prowadzi src/sections/features.js.
+.features__grid {
+  // rzędy zostają swojej wysokości, gdy układ rośnie pod dużą kartę
+  align-content: start;
+
+  // otwarta karta: wysokość układu idzie za jej treścią, więc kafle poniżej
+  // tej wysokości muszą być przycięte
+  &.is-open { overflow: hidden; }
+}
+
+// kafel w trakcie animacji: nad boxem tła, żeby jego treść stała na miejscu
+.feature.is-lifted { z-index: 3; }
+
+.feature-box {
   position: absolute;
   inset: 0;
   z-index: 2;
+  background: $panel;
+  pointer-events: none;
+}
+
+.feature-detail {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 4;
   display: flex;
   flex-direction: column;
   gap: 14px;
   padding: 24px 24px 28px;
-  overflow: auto;
-  background: $panel;
-  transition: clip-path 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-
-  @media (prefers-reduced-motion: reduce) { transition: none; }
 
   // numer ze strzałkami po lewej, zwinięcie po prawej — w jednej linii
   &__bar {
@@ -135,18 +152,12 @@
 
   // dwie kolumny: rozbudowany opis i grafika; na wąskim ekranie jedna pod drugą
   &__body {
-    flex: 1;
-    min-height: 0;
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
     gap: 40px;
     align-items: center;
 
-    // Jedna kolumna: treść tyle, ile potrzebuje, diagram zaraz pod tekstem.
-    // Rozciągnięta na wysokość panelu (a siatka kafli ma tu ok. 1500 px)
-    // centrowała diagram w pustym polu, daleko pod tekstem.
     @include below($bp-md) {
-      flex: none;
       grid-template-columns: minmax(0, 1fr);
       gap: 24px;
       align-items: start;
@@ -171,20 +182,12 @@
 
   &__figure {
     margin: 0;
-    min-height: 0;
-    height: 100%;
-
-    @include below($bp-md) { height: auto; }
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
 
     svg {
       display: block;
       width: 100%;
       height: auto;
-      max-height: 100%;
+      max-height: 340px;
     }
   }
 }

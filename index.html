@@ -234,8 +234,10 @@
           <figure class="feature-detail__figure"><svg viewBox="0 0 480 300" role="img" aria-label="Szkic diagramu: płynna praca mimo rosnącej liczby ścieżek"><defs><marker id="sk-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 8 4 0 8z" class="sk-arrowhead"/></marker></defs><line class="sk-line" x1="44" y1="250" x2="456" y2="250"/><line class="sk-line" x1="44" y1="30" x2="44" y2="250"/><rect class="sk-fill" x="60" y="230" width="28" height="20" rx="2"/><rect class="sk-fill" x="104" y="210" width="28" height="40" rx="2"/><rect class="sk-fill" x="148" y="190" width="28" height="60" rx="2"/><rect class="sk-fill" x="192" y="170" width="28" height="80" rx="2"/><rect class="sk-fill" x="236" y="150" width="28" height="100" rx="2"/><rect class="sk-fill" x="280" y="130" width="28" height="120" rx="2"/><rect class="sk-fill" x="324" y="110" width="28" height="140" rx="2"/><rect class="sk-fill" x="368" y="90" width="28" height="160" rx="2"/><path class="sk-line sk-accent sk-thick" d="M44 70C140 66 240 74 456 68"/><text class="sk-label" x="52" y="58">OBCIĄŻENIE</text><text class="sk-label sk-label--dim" x="456" y="272" text-anchor="end">LICZBA ŚCIEŻEK →</text></svg></figure>
         </template>
       </article>
-      <!-- Rozwinięty kafel: jeden panel nad całą siatką, rozkładany od
-           prostokąta klikniętego kafla (src/sections/features.js). -->
+      <!-- Rozwinięcie — osobna warstwa nad wspólnym układem siatki: box tła
+           rozwijany od prostokąta klikniętego kafla i treść dużej karty
+           z własnym przycięciem (src/sections/features.js). -->
+      <div class="feature-box" aria-hidden="true" hidden></div>
       <div class="feature-detail" id="feature-detail" role="region" aria-labelledby="feature-detail-title" hidden>
         <div class="feature-detail__bar">
           <div class="feature-detail__nav">

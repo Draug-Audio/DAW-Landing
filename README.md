@@ -534,25 +534,38 @@ Plik ma 7,65 MB (320 kbps stereo, 3:11). Do tła w zupełności wystarczy
 
 ## Kluczowe funkcje
 
-Klik w kafel rozsuwa go do rozmiaru całej tabeli. Nad siatką leży jeden panel
-szczegółów; otwarcie to przejście `clip-path: inset()` od prostokąta klikniętego
-kafla do zera — panel od początku ma docelowy układ, a przycięcie tylko go
-odsłania, więc w trakcie animacji nic się nie przelicza. Zwinięcie idzie
-odwrotnie, do kafla aktualnie pokazanej funkcji. Zmierzone: ok. 30 kroków
-animacji w 0,53 s w obie strony.
+Klik w kafel rozsuwa go do rozmiaru całej tabeli. Tabela i rozwinięcie to dwie
+osobne warstwy na wspólnym układzie siatki: kafle z treścią, która w trakcie
+animacji stoi w miejscu, oraz nad nimi box tła (`.feature-box`) i treść dużej
+karty (`.feature-detail`). Otwarcie idzie krokami, łańcuchowanymi przez Web
+Animations API (każda animacja daje obietnicę zakończenia):
+
+1. z-index — kliknięty kafel nad boxem tła, box nad pozostałymi kaflami;
+2. box tła rozwija się `clip-path: inset()` od prostokąta kafla do całej
+   tabeli i zakrywa treść pozostałych kafli (420 ms);
+3. treść kafla gaśnie, a treść dużej karty wchodzi z własnym animowanym
+   przycięciem — od prostokąta kafla do całości (200 / 380 ms);
+4. wysokość układu dopasowuje się do treści dużej karty (320 ms).
+
+Zwinięcie to te same kroki od końca, do kafla aktualnie pokazanej funkcji —
+po nawigacji strzałkami może to być inny kafel niż kliknięty. Zmierzone przy
+1600 × 900: box z `inset(216px 461px 0 0)` do zera, siatka 457 → 484 px;
+na telefonie siatka 1519 → 713 px (duża karta jest niższa od tabeli kafli
+jeden pod drugim). Po zwinięciu wysokość wraca do `auto`, z-indeksy
+i animacje są czyszczone.
 
 W miejscu numeru pasek `‹ 02 ›` — strzałki przełączają funkcje (na końcach
 zawijają), w tej samej linii po prawej przycisk zwinięcia. Treść w dwóch
 kolumnach: rozbudowany opis i grafika — na razie szkielet diagramu w SVG,
 osobny dla każdej funkcji, do podmiany na docelowe grafiki. Na wąskim ekranie
 kolumny idą jedna pod drugą. Treść rozwiniętego widoku siedzi w `<template>`
-w każdym kafelku, panel ją klonuje. Rozbudowane opisy oparte na tym, co strona
+w każdym kafelku, duża karta ją klonuje. Rozbudowane opisy oparte na tym, co strona
 już mówi o funkcjach (kafle, podpisy slajdów, sekcja o agencie).
 
 Kafel otwiera prawdziwy przycisk rozciągnięty na cały kafel, z `aria-expanded`
 i opisem dla czytników. Esc zwija, ← / → przełączają funkcje; fokus po
-otwarciu trafia na tytuł panelu, po zwinięciu wraca na kafel. Przy
-`prefers-reduced-motion` panel otwiera się i zwija bez animacji.
+otwarciu trafia na tytuł karty, po zwinięciu wraca na kafel; zakryte kafle
+dostają `inert`. Przy `prefers-reduced-motion` kroki mają czas 0.
 
 ## Uwagi
 
