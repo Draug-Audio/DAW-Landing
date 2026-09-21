@@ -146,12 +146,6 @@
 
   // ── lista Ratio w szufladzie wtyczki one-knob ──
   // wiersz: parametr | pasek od środka | wartość ze znakiem
-  &__ratios-title {
-    @include mono(9.5px, 0.16em);
-    margin-bottom: 8px;
-    color: $text-muted;
-  }
-
   &__ratios {
     display: grid;
     gap: 7px;

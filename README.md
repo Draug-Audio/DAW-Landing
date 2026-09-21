@@ -603,8 +603,8 @@ dostają `inert`. Przy `prefers-reduced-motion` kroki mają czas 0.
   więc siatka nie skacze. Na ekranach bez najechania (`hover: none`) opis
   stoi pod kartą na stałe; czytniki ekranu czytają go zawsze (`figcaption`).
   Opisy oparte na tym, co każda wtyczka pokazuje w makiecie.
-- Wtyczki one-knob mają taką samą kartę z szufladą, ale w szufladzie jest
-  tylko lista „Ratio”: 4–6 konkretnych parametrów z wagą, z jaką każdy idzie
+- Wtyczki one-knob mają taką samą kartę z szufladą, ale w szufladzie są
+  same parametry (bez tytułu, opisu i nagłówka): 4–6 konkretnych parametrów z wagą, z jaką każdy idzie
   za gałką (ujemna — parametr maleje, gdy gałka rośnie). Pasek rośnie od
   kreski środka w prawo albo w lewo, długość = |ratio|, wartość ze znakiem
   cyframi o stałej szerokości. Wagi są przykładowe — pod spodem dobiera je
