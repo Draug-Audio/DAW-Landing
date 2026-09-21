@@ -299,8 +299,10 @@ z przewijaniem (natywny `input[type=range]` — klawiatura i czytniki działają
 ręki) i gałka głośności w stylu DAW, z podpisem po prawej. Gałka to tor na
 270° (od 7:30 do 4:30) przycięty do jasnych nóżek na końcach zakresu, więc
 pokazuje skalę, a nie pełny okrąg; na nim łuk wartości, w środku krótki
-wskaźnik — bez piasty i pierścieni wewnętrznych. Oba łuki mają płaskie końce:
-okrągła końcówka wystawałaby poza skalę o pół grubości. Kontrolki nie mają obrysu fokusu; fokus z klawiatury pokazuje
+wskaźnik — bez piasty i pierścieni wewnętrznych. Całość leży na
+nieprzezroczystym korpusie z obramowaniem 1 px, odsuniętym o 1 px od toru, żeby
+się z nim nie zlewało; nóżki startują tuż za obramowaniem. Oba łuki mają płaskie
+końce: okrągła końcówka wystawałaby poza skalę o pół grubości. Kontrolki nie mają obrysu fokusu; fokus z klawiatury pokazuje
 sam element (rozjaśniony tor gałki, uchwyt osi czasu, ramka przycisku).
 Sterowanie jak w DAW: przeciąganie w pionie (180 px = pełny zakres, z Shiftem
 5× dokładniej), kółko (3 %, z Shiftem 1 %), dwuklik = powrót do 50 %,

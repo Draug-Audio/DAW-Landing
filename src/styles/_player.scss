@@ -164,6 +164,14 @@ $bp-player: 1240px;
   // Oba łuki z płaskimi końcami: tor kończy się dokładnie na nóżkach, a łuk
   // wartości startuje równo z torem. Okrągła końcówka wystawałaby poza skalę
   // o pół grubości.
+  // Korpus kryje to, co pod nagłówkiem — pierścienie hero i treść przewijaną
+  // pod półprzezroczystym paskiem nie prześwitują przez gałkę.
+  &__body {
+    fill: $panel-hover;
+    stroke: $line-bright;
+    stroke-width: 1;
+  }
+
   &__track {
     fill: none;
     stroke: $line-bright;

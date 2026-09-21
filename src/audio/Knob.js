@@ -3,9 +3,10 @@ import { clamp } from '../slider/math.js';
 /**
  * Gałka w stylu DAW: tor na 270° (od 7:30 do 4:30 zgodnie z ruchem wskazówek
  * zegara), przycięty do nóżek na końcach zakresu, na nim łuk wartości, a w
- * środku krótki wskaźnik. Bez piasty i pierścieni wewnętrznych.
+ * środku krótki wskaźnik, wszystko na pełnym, nieprzezroczystym korpusie.
+ * Bez piasty i pierścieni wewnętrznych.
  * Proporcje z projektu gałki w DAW: tor grubości ok. 1/4 promienia, wskaźnik od
- * 0,23 do 0,8 promienia, nóżki od 1,22 do 1,43.
+ * 0,23 do 0,8 promienia; nóżki zaczynają się tuż za obramowaniem korpusu.
  *
  * Sterowanie jak w DAW:
  * - przeciąganie w pionie — w górę więcej, w dół mniej; pełny zakres na
@@ -24,6 +25,9 @@ const SIZE = 32;
 const C = SIZE / 2;
 /** promień osi toru i łuku wartości */
 const R = 12;
+/** promień osi obramowania korpusu: tor kończy się na R + 1,5, potem 1 px
+ *  korpusu i obramowanie 1 px (R + 2,5 … R + 3,5) */
+const BODY = R + 3;
 const NS = 'http://www.w3.org/2000/svg';
 
 /** punkt na okręgu; kąt w stopniach od godziny 12, zgodnie z ruchem wskazówek */
@@ -77,10 +81,14 @@ export class Knob {
 
   _build() {
     const svg = el('svg', { viewBox: `0 0 ${SIZE} ${SIZE}`, width: SIZE, height: SIZE, 'aria-hidden': 'true' });
-    // nóżki na końcach zakresu — wystają na zewnątrz toru, jak na skali gałki
+    // Nieprzezroczysty korpus z obramowaniem 1 px. Obramowanie leży 1 px za
+    // zewnętrzną krawędzią toru (tor: R ± 1,5), żeby się z nim nie zlewało,
+    // i domyka dół gałki w szczelinie między nóżkami.
+    svg.append(el('circle', { class: 'knob__body', cx: C, cy: C, r: BODY }));
+    // nóżki na końcach zakresu — startują tuż za obramowaniem
     for (const deg of [START, START + SWEEP]) {
-      const [x0, y0] = point(R * 1.22, deg);
-      const [x1, y1] = point(R * 1.43, deg);
+      const [x0, y0] = point(BODY + 0.9, deg);
+      const [x1, y1] = point(BODY + 3.2, deg);
       svg.append(el('line', { class: 'knob__tick', x1: x0, y1: y0, x2: x1, y2: y1 }));
     }
     // tor tylko między nóżkami — pokazuje skalę, a nie pełny okrąg
