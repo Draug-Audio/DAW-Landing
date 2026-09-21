@@ -20,7 +20,9 @@ src/
   main.js               punkt wejścia — style, slider, muzyka i pierścienie
   data/slides.js        treść slajdów (src / numer / tytuł / opis)
   audio/
-    BackgroundSound.js  muzyka w tle, wyłącznik, analiza widma L / środek / P
+    BackgroundSound.js  muzyka w tle, wyłącznik, głośność, analiza widma L / środek / P
+    SoundPlayer.js      odtwarzacz na środku paska: play / pauza, oś czasu, gałka
+    Knob.js             gałka w stylu DAW (270°, przeciąganie w pionie, klawiatura)
   hero/
     SpeakerRings.js     pierścienie hero jako kolumny głośnikowe
   styles/               SCSS, jeden partial na sekcję
@@ -289,12 +291,32 @@ sens jako rząd wielkości, nie jako różnica.
 na wyjściu grafu Web Audio). **Rusza przy pierwszym kliknięciu, dotknięciu albo
 klawiszu, nie przy wejściu na stronę** — przeglądarki blokują dźwięk bez gestu
 użytkownika i nie da się tego obejść. Do tego momentu nie powstaje nawet
-AudioContext, a plik nie jest pobierany (`preload="none"`).
+AudioContext; pobierany jest tylko nagłówek pliku (`preload="metadata"`), żeby
+odtwarzacz znał długość utworu.
 
-W nagłówku jest wyłącznik (`aria-pressed`); WCAG 1.4.2 wymaga, żeby dźwięk
-grający sam z siebie dało się zatrzymać. Wybór zapamiętuje `localStorage`, więc
-kto wyłączył muzykę, nie usłyszy jej przy kolejnej wizycie. W ukrytej karcie
+Na środku paska nawigacji siedzi odtwarzacz: play / pauza, oś czasu
+z przewijaniem (natywny `input[type=range]` — klawiatura i czytniki działają od
+ręki) i gałka głośności w stylu DAW. Gałka ma łuk 270° od 7:30 do 4:30,
+sterowanie jak w DAW: przeciąganie w pionie (180 px = pełny zakres, z Shiftem
+5× dokładniej), kółko (3 %, z Shiftem 1 %), dwuklik = powrót do 50 %,
+klawiatura (strzałki, PageUp / PageDown, Home / End). Głośność jest liniowa,
+50 % = połowa amplitudy, zmiany idą z 15-milisekundowym poślizgiem, żeby nie
+trzaskały.
+
+Poniżej 1240 px środek paska zajmują logo i nawigacja, więc zamiast
+odtwarzacza jest mały wyłącznik (`aria-pressed`) — ten sam stan, inny widok.
+Wiąże prawa strona: odtwarzacz ma 441 px, nawigacja z CTA zaczyna się 349 px od
+krawędzi; przy 1241 px zostaje 43 px odstępu. WCAG 1.4.2 wymaga, żeby dźwięk
+grający sam z siebie dało się zatrzymać — na każdej szerokości jest czym.
+
+Wybór „włączone / wyłączone” i głośność zapamiętuje `localStorage`, więc kto
+wyłączył muzykę, nie usłyszy jej przy kolejnej wizycie. W ukrytej karcie
 muzyka pauzuje i wraca po powrocie.
+
+Przyciski play i wyłącznik są wyłączone z automatycznego startu przy pierwszym
+geście (`data-sound-control`). Inaczej `pointerdown` na pauzie najpierw
+startowałby muzykę, a `click` zaraz ją zatrzymywał — albo odwrotnie, zależnie
+od tego, czy kontekst audio zdążył ruszyć między tymi zdarzeniami.
 
 Trzy grupy współśrodkowych okręgów w tle to trzy kolumny głośnikowe:
 

@@ -1,0 +1,211 @@
+@use 'tokens' as *;
+
+// ─────────────────────────────────────────────────────────────
+// Odtwarzacz muzyki w tle — środek paska nawigacji.
+// Logika: src/audio/SoundPlayer.js, gałka: src/audio/Knob.js.
+// ─────────────────────────────────────────────────────────────
+
+// Poniżej tej szerokości środek paska jest zajęty przez logo i nawigację —
+// odtwarzacz znika, a zostaje mały wyłącznik dźwięku (`.sound-toggle`).
+// Wiąże prawa strona: odtwarzacz ma 441 px, a nawigacja z CTA zaczyna się
+// 349 px od krawędzi okna. Styk wypada przy ok. 1140 px, przy 1180 zostawało
+// 20 px odstępu, przy 1240 — ok. 50.
+$bp-player: 1240px;
+
+.player {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  @include below($bp-player) { display: none; }
+
+  &__play {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid $line-bright;
+    border-radius: 2px;
+    background: transparent;
+    color: $text-muted;
+    cursor: pointer;
+    transition: border-color 0.18s ease, color 0.18s ease;
+
+    &:hover {
+      border-color: $lime;
+      color: $lime;
+    }
+
+    &[data-state='playing'] { color: $lime; }
+  }
+
+  &__icon-pause { display: none; }
+
+  &__play[data-active='true'] {
+    .player__icon-play { display: none; }
+    .player__icon-pause { display: inline; }
+  }
+
+  &__time {
+    @include mono(10px, 0.04em);
+    color: $text-faint;
+    font-variant-numeric: tabular-nums;
+    min-width: 4ch;
+
+    &:first-of-type { text-align: right; }
+  }
+
+  // Oś czasu: natywny suwak, żeby klawiatura i czytniki działały od ręki,
+  // ale wyglądający jak cienka linia postępu. Wypełnienie idzie z `--progress`.
+  &__timeline {
+    --progress: 0%;
+
+    appearance: none;
+    width: 220px;
+    height: 14px;
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+
+    &::-webkit-slider-runnable-track {
+      height: 2px;
+      background: linear-gradient(to right, rgba(200, 255, 61, 0.75) var(--progress), $line-bright var(--progress));
+    }
+
+    &::-moz-range-track {
+      height: 2px;
+      background: $line-bright;
+    }
+
+    &::-moz-range-progress {
+      height: 2px;
+      background: rgba(200, 255, 61, 0.75);
+    }
+
+    // uchwyt pojawia się dopiero przy najechaniu / fokusie
+    &::-webkit-slider-thumb {
+      appearance: none;
+      width: 8px;
+      height: 8px;
+      margin-top: -3px;
+      border: 0;
+      border-radius: 50%;
+      background: $lime;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    &::-moz-range-thumb {
+      width: 8px;
+      height: 8px;
+      border: 0;
+      border-radius: 50%;
+      background: $lime;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    &:hover,
+    &:focus-visible {
+      &::-webkit-slider-thumb { opacity: 1; }
+      &::-moz-range-thumb { opacity: 1; }
+    }
+
+    &:focus-visible { outline: 1px solid $lime; outline-offset: 2px; }
+  }
+
+  // Etykieta nad wartością, wyrównane do gałki — jak na pasku kanału w DAW
+  &__level {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1px;
+    margin-left: 6px;
+  }
+
+  &__label {
+    @include mono(9px, 0.14em);
+    text-transform: uppercase;
+    color: $text-whisper;
+  }
+
+  &__value {
+    @include mono(11px, 0.04em);
+    color: $text-faint;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+// ── gałka ──
+.knob {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: ns-resize;
+  touch-action: none;
+
+  svg { display: block; overflow: visible; }
+
+  &:focus-visible { outline: 1px solid $lime; outline-offset: 2px; }
+
+  &__tick {
+    stroke: $text-whisper;
+    stroke-width: 1.2;
+    stroke-linecap: round;
+  }
+
+  &__track {
+    fill: none;
+    stroke: $line-bright;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+  }
+
+  &__arc {
+    fill: none;
+    stroke: $lime;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+  }
+
+  &__body { fill: #141714; }
+
+  &__rim {
+    fill: none;
+    stroke: rgba(200, 255, 61, 0.28);
+    stroke-width: 1.3;
+    stroke-linecap: round;
+  }
+
+  &__hub {
+    fill: none;
+    stroke: $text-ghost;
+    stroke-width: 1.1;
+  }
+
+  &__pointer {
+    stroke: $text;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+
+    &--inner { stroke: $text-ghost; }
+  }
+
+  &:hover &__arc,
+  &.is-dragging &__arc { stroke: $lime-soft; }
+}
+
+// Wyłącznik dźwięku zostaje tylko tam, gdzie odtwarzacz się nie mieści —
+// to ten sam stan, dwa widoki.
+// `below` jest włączny (max-width), więc próg tutaj musi leżeć tuż nad nim —
+// przy równym progu dokładnie na 1180 px znikałyby oba.
+.sound-toggle {
+  @media (min-width: $bp-player + 0.02px) { display: none; }
+}

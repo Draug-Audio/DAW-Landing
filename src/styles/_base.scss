@@ -4,6 +4,10 @@
 *::before,
 *::after { box-sizing: border-box; }
 
+// Atrybut `hidden` musi wygrywać z `display` z klas komponentów — inaczej
+// `.sound-toggle { display: grid }` pokazywało przycisk, który bez JS nic nie robi.
+[hidden] { display: none !important; }
+
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 90px;

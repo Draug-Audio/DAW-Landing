@@ -2,6 +2,7 @@ import './styles/main.scss';
 import { slides } from './data/slides.js';
 import { mountShowcase } from './slider/index.js';
 import { BackgroundSound } from './audio/BackgroundSound.js';
+import { mountSoundPlayer } from './audio/SoundPlayer.js';
 import { SpeakerRings } from './hero/SpeakerRings.js';
 
 // ── muzyka w tle + pierścienie hero jako kolumny głośnikowe ──
@@ -12,6 +13,7 @@ if (soundToggle) {
   soundToggle.hidden = false;
   sound.bindToggle(soundToggle);
 }
+mountSoundPlayer(document.querySelector('[data-player]'), sound);
 
 const rings = document.querySelector('[data-hero-rings]');
 if (rings) {

@@ -11,6 +11,7 @@
  */
 
 const STORAGE_KEY = 'draug:sound';
+const VOLUME_KEY = 'draug:volume';
 /** zdarzenia, które przeglądarka uznaje za aktywację; `pointerdown` wystarcza
  *  dla myszy, dla dotyku dopiero `pointerup` / `touchend` */
 const GESTURES = ['pointerdown', 'pointerup', 'touchend', 'keydown'];
@@ -20,6 +21,23 @@ function readPreference() {
     return localStorage.getItem(STORAGE_KEY) !== 'off';
   } catch {
     return true;
+  }
+}
+
+function readVolume(fallback) {
+  try {
+    const stored = Number.parseFloat(localStorage.getItem(VOLUME_KEY));
+    return Number.isFinite(stored) ? Math.min(1, Math.max(0, stored)) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeVolume(volume) {
+  try {
+    localStorage.setItem(VOLUME_KEY, volume.toFixed(3));
+  } catch {
+    // jak wyżej
   }
 }
 
@@ -40,9 +58,14 @@ export class BackgroundSound {
     this.audio = new Audio();
     this.audio.src = src;
     this.audio.loop = true;
-    // 7,6 MB — pobierany dopiero przy pierwszym odtworzeniu, strumieniowo
-    this.audio.preload = 'none';
-    this.volume = volume;
+    // Sam nagłówek pliku — odtwarzacz w nagłówku strony pokazuje długość
+    // utworu, zanim ktokolwiek go włączy. Resztę (7,6 MB) przeglądarka
+    // pobiera strumieniowo dopiero przy odtwarzaniu.
+    this.audio.preload = 'metadata';
+    /** wartość domyślna gałki — do niej wraca dwuklik */
+    this.defaultVolume = volume;
+    this.volume = readVolume(volume);
+    this.output = null;
     this.fftSize = fftSize;
     this.enabled = readPreference();
     this.ctx = null;
@@ -56,6 +79,15 @@ export class BackgroundSound {
     }
     document.addEventListener('visibilitychange', () => this._onVisibility());
     if (this.enabled) this._bindGestures();
+  }
+
+  /**
+   * Odtwarzanie zlecone — `paused` przestawia się synchronicznie w `play()`,
+   * zanim ruszy dźwięk. Do decyzji „play czy pauza” pod przyciskiem, gdzie
+   * `isPlaying()` potrafi jeszcze przez chwilę mówić „nie”.
+   */
+  isActive() {
+    return !this.audio.paused;
   }
 
   /** gra i kontekst audio faktycznie przetwarza próbki */
@@ -89,6 +121,19 @@ export class BackgroundSound {
     return () => this.listeners.delete(listener);
   }
 
+  /** głośność 0–1, liniowo — 0,5 to połowa amplitudy */
+  setVolume(volume) {
+    this.volume = Math.min(1, Math.max(0, volume));
+    writeVolume(this.volume);
+    if (this.output) {
+      // krótki poślizg zamiast skoku — skok wzmocnienia słychać jako trzask
+      this.output.gain.setTargetAtTime(this.volume, this.ctx.currentTime, 0.015);
+    } else if (this.ctx === false) {
+      this.audio.volume = this.volume;
+    }
+    this._emit();
+  }
+
   setEnabled(enabled) {
     this.enabled = enabled;
     writePreference(enabled);
@@ -115,6 +160,7 @@ export class BackgroundSound {
       button.setAttribute('aria-pressed', String(this.enabled));
       button.title = this.enabled ? 'Wyłącz muzykę w tle' : 'Włącz muzykę w tle';
     };
+    button.dataset.soundControl = '';
     button.addEventListener('click', () => this.setEnabled(!this.enabled));
     this.onChange(sync);
     sync();
@@ -134,7 +180,12 @@ export class BackgroundSound {
     for (const type of GESTURES) document.removeEventListener(type, this._onGesture, true);
   }
 
-  _onGesture() {
+  _onGesture(event) {
+    // Przyciski sterujące dźwiękiem same decydują, co zrobić. Bez tego
+    // `pointerdown` na „pauzie” najpierw startowałby muzykę, a `click` zaraz
+    // potem ją zatrzymywał — albo odwrotnie, zależnie od tego, czy kontekst
+    // audio zdążył ruszyć między tymi zdarzeniami.
+    if (event.target instanceof Element && event.target.closest('[data-sound-control]')) return;
     this._start();
   }
 
@@ -155,7 +206,7 @@ export class BackgroundSound {
     // w zawieszeniu aż do następnego gestu, więc czekanie na nią blokowałoby
     // kolejne próby. O powodzeniu rozstrzyga play(), które bez aktywacji
     // odrzuca od razu.
-    this.ctx?.resume().catch(() => {});
+    if (this.ctx) this.ctx.resume().catch(() => {});
     this.audio.play().then(
       () => this._unbindGestures(),
       () => {}, // brak aktywacji albo przerwane pauzą — czekamy na następny gest
@@ -163,10 +214,12 @@ export class BackgroundSound {
   }
 
   _ensureGraph() {
-    if (this.ctx) return;
+    if (this.ctx !== null) return;
     const Context = window.AudioContext || window.webkitAudioContext;
     if (!Context) {
-      // bez Web Audio: sama muzyka, pierścienie zostają w spoczynku
+      // bez Web Audio: sama muzyka, pierścienie zostają w spoczynku;
+      // `false` odróżnia „brak obsługi” od „jeszcze nie utworzono”
+      this.ctx = false;
       this.audio.volume = this.volume;
       return;
     }
@@ -177,6 +230,7 @@ export class BackgroundSound {
     const out = ctx.createGain();
     out.gain.value = this.volume;
     source.connect(out).connect(ctx.destination);
+    this.output = out;
 
     const analyser = () => {
       const node = ctx.createAnalyser();
