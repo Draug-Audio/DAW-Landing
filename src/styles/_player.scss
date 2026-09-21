@@ -1,3 +1,4 @@
+@use 'sass:color';
 @use 'tokens' as *;
 
 // ─────────────────────────────────────────────────────────────
@@ -170,13 +171,13 @@ $bp-player: 1240px;
     fill: $panel-hover;
     stroke: $line;
     stroke-width: 1;
+    transition: fill 0.15s ease;
   }
 
   &__track {
     fill: none;
     stroke: $line-bright;
     stroke-width: 3;
-    transition: stroke 0.15s ease;
   }
 
   &__arc {
@@ -197,8 +198,9 @@ $bp-player: 1240px;
   &:hover &__arc,
   &.is-dragging &__arc { stroke: $lime-soft; }
 
-  // fokus z klawiatury bez obrysu: rozjaśniony tor
-  &:focus-visible &__track { stroke: $text-ghost; }
+  // fokus z klawiatury bez obrysu: korpus lekko rozjaśniony w stronę limonki
+  // (6 %), tor i skala zostają bez zmian
+  &:focus-visible &__body { fill: color.mix($lime, $panel-hover, 6%); }
 }
 
 // Wyłącznik dźwięku zostaje tylko tam, gdzie odtwarzacz się nie mieści —
