@@ -303,8 +303,9 @@ mocniej (szczytowe krycie 0,5 wobec 0,3). Rytm z tej samej siatki co puls pierś
 chodzi tylko przy grającej muzyce, a przy `prefers-reduced-motion` poświata
 nie miga. 1,6 błysku na sekundę mieści się w progu WCAG 2.3.1 (3 / s).
 Dalej oś czasu z cieniem fali — obwiednią całego utworu rozciągniętą od linii
-w górę i w dół (w kolorze toru osi czasu, a odegrana część w przygaszonej
-limonce, przycięta do postępu). Obwiednia to 256 przedziałów po ok. 0,75 s:
+w górę i w dół, w kolorach toru osi czasu: reszta jak tor, odegrana część jak
+jego wypełnienie (przycięta do postępu). Oba kolory są wspólnymi zmiennymi
+linii i fali. Obwiednia to 256 przedziałów po ok. 0,75 s:
 RMS sumy kanałów w dB względem najgłośniejszego przedziału, z zakresu
 −18…0 dB. Skala decybelowa, bo utwór jest mocno zmasterowany (mediana 3,8 dB
 pod maksimum, 90 % czasu w 10 dB) — liniowa amplituda dałaby prawie płaski

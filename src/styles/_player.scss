@@ -13,6 +13,11 @@
 // 20 px odstępu, przy 1240 — ok. 50.
 $bp-player: 1240px;
 
+// Kolory osi czasu — wspólne dla linii toru i cienia fali, żeby się nie
+// rozjechały: reszta utworu i część odegrana.
+$track-rest: $line-bright;
+$track-fill: rgba(200, 255, 61, 0.75);
+
 .player {
   position: absolute;
   top: 50%;
@@ -104,8 +109,8 @@ $bp-player: 1240px;
     align-items: center;
   }
 
-  // Obwiednia utworu od linii w górę i w dół: w kolorze toru osi czasu,
-  // a odegrana część w przygaszonej limonce.
+  // Obwiednia utworu od linii w górę i w dół, w kolorach toru osi czasu:
+  // reszta jak tor, odegrana część jak jego wypełnienie.
   &__wave {
     position: absolute;
     left: 0;
@@ -116,12 +121,12 @@ $bp-player: 1240px;
     overflow: visible;
     pointer-events: none;
 
-    path { fill: $line-bright; }
+    path { fill: $track-rest; }
 
     &--played {
       clip-path: inset(0 calc(100% - var(--progress)) 0 0);
 
-      path { fill: rgba(200, 255, 61, 0.18); }
+      path { fill: $track-fill; }
     }
   }
 
@@ -138,17 +143,17 @@ $bp-player: 1240px;
 
     &::-webkit-slider-runnable-track {
       height: 2px;
-      background: linear-gradient(to right, rgba(200, 255, 61, 0.75) var(--progress), $line-bright var(--progress));
+      background: linear-gradient(to right, $track-fill var(--progress), $track-rest var(--progress));
     }
 
     &::-moz-range-track {
       height: 2px;
-      background: $line-bright;
+      background: $track-rest;
     }
 
     &::-moz-range-progress {
       height: 2px;
-      background: rgba(200, 255, 61, 0.75);
+      background: $track-fill;
     }
 
     // uchwyt pojawia się dopiero przy najechaniu / fokusie
