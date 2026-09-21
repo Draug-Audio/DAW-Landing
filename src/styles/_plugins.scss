@@ -74,22 +74,29 @@
   &__drawer {
     position: absolute;
     top: calc(100% - 12px);
-    left: 0;
-    right: 0;
-    // przycina wysuwaną treść: szuflada wyjeżdża spod karty, a nie pojawia się
-    // nad nią
+    // Przycina wysuwaną treść: szuflada wyjeżdża spod karty, a nie pojawia się
+    // nad nią. Przyciąłby też cień szuflady, więc kontener ma zapas na cień po
+    // bokach i u dołu (padding), cofnięty ujemnym marginesem.
+    left: calc(-1 * var(--drawer-shadow));
+    right: calc(-1 * var(--drawer-shadow));
+    padding: 0 var(--drawer-shadow) calc(2 * var(--drawer-shadow));
     overflow: hidden;
     pointer-events: none;
+
+    --drawer-shadow: 24px;
   }
 
   &__info {
     // górne 12 px schowane pod kartą, stąd większy odstęp u góry
     padding: 24px 18px 16px;
-    // wnętrze panelu z makiety i jego krawędź
-    background: #0c1014;
-    border: 1px solid $line;
+    // Wyraźnie jaśniejsza niż panel (#0c1014) i z widoczną krawędzią, a cień
+    // odcina ją od karty poniżej — przy kolorze panelu szuflada zlewała się
+    // i z własną kartą, i z ciemną kartą, na którą nachodzi.
+    background: #141a1f;
+    border: 1px solid #262d33;
     border-top: 0;
     border-radius: 0 0 10px 10px;
+    box-shadow: 0 16px 28px -8px rgba(0, 0, 0, 0.75);
     transform: translateY(-100%);
     transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
   }
@@ -123,7 +130,8 @@
   @media (hover: none) {
     &__drawer {
       position: static;
-      margin-top: -12px;
+      margin: -12px 0 0;
+      padding: 0;
     }
 
     &__info { transform: none; }
