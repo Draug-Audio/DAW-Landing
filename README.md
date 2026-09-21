@@ -545,8 +545,10 @@ Plik ma 7,65 MB (320 kbps stereo, 3:11). Do tła w zupełności wystarczy
   dawne zrzuty w 1× na jasnym tle (486 kB). Panel ma własną ciemną krawędź,
   więc strona nie rysuje wokół obrazka ramki (prostokątna wisiałaby wokół
   zaokrąglonego panelu); podświetlenie po najechaniu to `drop-shadow`, który
-  obrysowuje kształt z kanału alfa. Makieta ma też serię „OK” (wtyczki na
-  jedną gałkę) oraz Sampler, Drumpad i Syntezator — na stronie ich nie ma.
+  obrysowuje kształt z kanału alfa. Na stronie jest wszystkie 9 pełnych
+  wtyczek z makiety (siatka 3 × 3: najpierw instrumenty — Sampler, Drumpad,
+  Syntezator — potem efekty) i podsekcja „Inteligentne wtyczki one-knob”
+  z serią „OK” w jednym rzędzie (6 kolumn; poniżej 1100 px 3, na telefonie 2).
 - Zdjęcie z sekcji „Jak powstał DAW” to PNG 4606 × 2624 (5,6 MB). Tutaj jest
   jako WebP 2200 px, q90 / 250 kB — **z kanałem alfa**, bo to wycinanka na
   przezroczystym tle. Odrzucenie alfy przy konwersji odsłania surowe zielone
