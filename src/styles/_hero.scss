@@ -6,8 +6,11 @@
   margin: 0 auto;
   padding: 96px $gutter 0;
 
+  // Tło hero leży pod canvasem sceny (ten ma `z-index: -1`), inaczej okręgi
+  // i halo rysują się na kaflach — oba są dekoracją tła, nie warstwą nad nim.
   &__halo {
     position: absolute;
+    z-index: -2;
     top: -120px;
     left: 50%;
     transform: translateX(-50%);
@@ -25,7 +28,7 @@
     width: 2500px;
     height: 1500px;
     pointer-events: none;
-    z-index: 0;
+    z-index: -2;
   }
 
   &__copy {
