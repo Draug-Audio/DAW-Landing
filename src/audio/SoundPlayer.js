@@ -8,8 +8,8 @@ import { Knob } from './Knob.js';
 
 /** zanik błysku poświaty po uderzeniu, s — przed kolejnym (625 ms) już zgaszony */
 const GLOW_DECAY = 0.14;
-/** siła błysku na „raz” i na pozostałych uderzeniach taktu */
-const GLOW_ACCENT = [1, 0.6, 0.6, 0.6];
+/** szczytowe krycie błysku na „raz” i na pozostałych uderzeniach taktu */
+const GLOW_ACCENT = [0.5, 0.3, 0.3, 0.3];
 
 function formatTime(seconds) {
   if (!Number.isFinite(seconds)) return '--:--';

@@ -298,7 +298,7 @@ identyczny z korpusem gałki — 28 px, to samo tło i krawędź), z poświatą
 migającą w rytm — osobna warstwa (`will-change: opacity`), której pętla zmienia
 wyłącznie krycie, więc nic się nie przemalowuje. Błysk na każdym uderzeniu,
 zanik wykładniczy 140 ms (przed kolejnym uderzeniem już zgaszony), „raz”
-mocniej (1 wobec 0,6). Rytm z tej samej siatki co puls pierścieni; pętla
+mocniej (szczytowe krycie 0,5 wobec 0,3). Rytm z tej samej siatki co puls pierścieni; pętla
 chodzi tylko przy grającej muzyce, a przy `prefers-reduced-motion` poświata
 nie miga. 1,6 błysku na sekundę mieści się w progu WCAG 2.3.1 (3 / s).
 Dalej oś czasu
