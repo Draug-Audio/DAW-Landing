@@ -6,6 +6,7 @@ import { mountSoundPlayer } from './audio/SoundPlayer.js';
 import { SpeakerRings, svgSpeakers } from './audio/SpeakerRings.js';
 import { backgroundTrack } from './data/track.js';
 import { SpectrumGrid } from './audio/SpectrumGrid.js';
+import { mountFeatures } from './sections/features.js';
 
 // ── muzyka w tle + pierścienie hero jako kolumny głośnikowe ──
 // tempo, pierwsza „raz” i obwiednia zmierzone z nagrania — src/data/track.js
@@ -51,3 +52,6 @@ if (showcase) {
     canvas.replaceWith(img);
   });
 }
+
+// „Kluczowe funkcje”: kafel rozsuwa się do rozmiaru całej tabeli
+mountFeatures(document.querySelector('#funkcje'));

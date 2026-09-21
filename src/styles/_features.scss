@@ -50,3 +50,189 @@
     strong { color: $lime; }
   }
 }
+
+// ── kafel jako przycisk ──────────────────────────────────────
+// Cały kafel klikalny: przycisk rozciągnięty na kafel (z opisem dla
+// czytników), a kafel podświetla się na najechanie i na fokus z klawiatury.
+.feature {
+  position: relative;
+
+  &__open {
+    position: absolute;
+    inset: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+
+    &:focus { outline: none; }
+  }
+
+  &:has(.feature__open:focus-visible) { background: $panel-hover; }
+}
+
+// ── rozwinięty kafel ─────────────────────────────────────────
+// Panel nad całą siatką, w kolorze kafla; `clip-path` ustawia JS — od
+// prostokąta klikniętego kafla do całości i z powrotem.
+.feature-detail {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 24px 24px 28px;
+  overflow: auto;
+  background: $panel;
+  transition: clip-path 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+
+  @media (prefers-reduced-motion: reduce) { transition: none; }
+
+  // numer ze strzałkami po lewej, zwinięcie po prawej — w jednej linii
+  &__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  // numer w pasku ma ten sam styl co w kafelku, ale bez odstępu pod spodem
+  &__no.feature__no { margin: 0; }
+
+  &__btn {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid $line-bright;
+    border-radius: 2px;
+    background: transparent;
+    color: $text-muted;
+    cursor: pointer;
+    transition: border-color 0.18s ease, color 0.18s ease;
+
+    &:hover,
+    &:focus-visible {
+      border-color: $lime;
+      color: $lime;
+      outline: none;
+    }
+  }
+
+  &__title {
+    font-size: clamp(22px, 2.2vw, 30px);
+    letter-spacing: -0.02em;
+    font-weight: 700;
+
+    &:focus { outline: none; }
+  }
+
+  // dwie kolumny: rozbudowany opis i grafika; na wąskim ekranie jedna pod drugą
+  &__body {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    gap: 40px;
+    align-items: center;
+
+    // Jedna kolumna: treść tyle, ile potrzebuje, diagram zaraz pod tekstem.
+    // Rozciągnięta na wysokość panelu (a siatka kafli ma tu ok. 1500 px)
+    // centrowała diagram w pustym polu, daleko pod tekstem.
+    @include below($bp-md) {
+      flex: none;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-width: 60ch;
+
+    p {
+      font-size: 15px;
+      line-height: 1.65;
+      color: $text-dim;
+      text-wrap: pretty;
+
+      strong { color: $lime; }
+    }
+  }
+
+  &__figure {
+    margin: 0;
+    min-height: 0;
+    height: 100%;
+
+    @include below($bp-md) { height: auto; }
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 100%;
+    }
+  }
+}
+
+// ── szkielety diagramów (makiety do podmiany na docelowe grafiki) ──
+.feature-detail__figure svg {
+  .sk-box,
+  .sk-line,
+  .sk-dash,
+  .sk-grid {
+    fill: none;
+    stroke: $line-bright;
+    stroke-width: 1.5;
+  }
+
+  .sk-dash { stroke-dasharray: 5 5; }
+
+  .sk-grid {
+    stroke: $line;
+    stroke-width: 1;
+    stroke-dasharray: 2 6;
+  }
+
+  .sk-fill { fill: $line-bright; }
+
+  .sk-dot {
+    fill: $panel;
+    stroke: $text-ghost;
+    stroke-width: 1.5;
+  }
+
+  .sk-arrowhead { fill: $text-ghost; }
+
+  .sk-accent {
+    stroke: $lime;
+
+    &.sk-fill,
+    &.sk-dot { fill: $lime; }
+  }
+
+  .sk-thick { stroke-width: 2.5; }
+
+  .sk-label {
+    font-family: $font-mono;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    fill: $text-faint;
+
+    &--dim { fill: $text-ghost; }
+  }
+}

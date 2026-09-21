@@ -20,6 +20,7 @@ src/
   main.js               punkt wejścia — style, slider, muzyka i pierścienie
   data/slides.js        treść slajdów (src / numer / tytuł / opis)
   data/track.js         muzyka w tle: plik, tempo, pierwsza „raz”, obwiednia
+  sections/features.js  „Kluczowe funkcje”: kafel rozsuwany do rozmiaru całej tabeli
   audio/
     BackgroundSound.js  muzyka w tle, wyłącznik, głośność, analiza widma L / środek / P
     SoundPlayer.js      odtwarzacz na środku paska: play / pauza, oś czasu, gałka
@@ -530,6 +531,28 @@ miało właściwe proporcje, zanim plik się wczyta.
 
 Plik ma 7,65 MB (320 kbps stereo, 3:11). Do tła w zupełności wystarczy
 128–160 kbps — ok. 3–3,8 MB.
+
+## Kluczowe funkcje
+
+Klik w kafel rozsuwa go do rozmiaru całej tabeli. Nad siatką leży jeden panel
+szczegółów; otwarcie to przejście `clip-path: inset()` od prostokąta klikniętego
+kafla do zera — panel od początku ma docelowy układ, a przycięcie tylko go
+odsłania, więc w trakcie animacji nic się nie przelicza. Zwinięcie idzie
+odwrotnie, do kafla aktualnie pokazanej funkcji. Zmierzone: ok. 30 kroków
+animacji w 0,53 s w obie strony.
+
+W miejscu numeru pasek `‹ 02 ›` — strzałki przełączają funkcje (na końcach
+zawijają), w tej samej linii po prawej przycisk zwinięcia. Treść w dwóch
+kolumnach: rozbudowany opis i grafika — na razie szkielet diagramu w SVG,
+osobny dla każdej funkcji, do podmiany na docelowe grafiki. Na wąskim ekranie
+kolumny idą jedna pod drugą. Treść rozwiniętego widoku siedzi w `<template>`
+w każdym kafelku, panel ją klonuje. Rozbudowane opisy oparte na tym, co strona
+już mówi o funkcjach (kafle, podpisy slajdów, sekcja o agencie).
+
+Kafel otwiera prawdziwy przycisk rozciągnięty na cały kafel, z `aria-expanded`
+i opisem dla czytników. Esc zwija, ← / → przełączają funkcje; fokus po
+otwarciu trafia na tytuł panelu, po zwinięciu wraca na kafel. Przy
+`prefers-reduced-motion` panel otwiera się i zwija bez animacji.
 
 ## Uwagi
 
