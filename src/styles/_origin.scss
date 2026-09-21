@@ -71,6 +71,20 @@
       height: calc(100% + var(--figure-pad));
       pointer-events: none;
     }
+
+    // Wtopienie dołu całej grafiki (zdjęcie + siatka) w tło sekcji: pełny
+    // kolor tła przy dolnej krawędzi, przezroczystość na 30 % wysokości.
+    // Ten sam obszar co canvas siatki; po zdjęciu w kolejności, więc nad nim.
+    &::after {
+      content: '';
+      position: absolute;
+      top: calc(-1 * var(--figure-pad));
+      right: 0;
+      bottom: 0;
+      left: 0;
+      background: linear-gradient(to top, $bg-deep, transparent 30%);
+      pointer-events: none;
+    }
   }
 
   &__copy {
