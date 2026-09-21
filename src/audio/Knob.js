@@ -1,9 +1,9 @@
 import { clamp } from '../slider/math.js';
 
 /**
- * Gałka w stylu DAW: pierścień-tor, na nim łuk wartości na 270° (od 7:30 do
- * 4:30 zgodnie z ruchem wskazówek zegara), krótki wskaźnik wewnątrz pierścienia
- * i nóżki na zewnątrz, na końcach zakresu. Bez piasty i pierścieni wewnętrznych.
+ * Gałka w stylu DAW: tor na 270° (od 7:30 do 4:30 zgodnie z ruchem wskazówek
+ * zegara), przycięty do nóżek na końcach zakresu, na nim łuk wartości, a w
+ * środku krótki wskaźnik. Bez piasty i pierścieni wewnętrznych.
  * Proporcje z projektu gałki w DAW: tor grubości ok. 1/4 promienia, wskaźnik od
  * 0,23 do 0,8 promienia, nóżki od 1,22 do 1,43.
  *
@@ -83,7 +83,8 @@ export class Knob {
       const [x1, y1] = point(R * 1.43, deg);
       svg.append(el('line', { class: 'knob__tick', x1: x0, y1: y0, x2: x1, y2: y1 }));
     }
-    svg.append(el('circle', { class: 'knob__track', cx: C, cy: C, r: R }));
+    // tor tylko między nóżkami — pokazuje skalę, a nie pełny okrąg
+    svg.append(el('path', { class: 'knob__track', d: arc(R, START, START + SWEEP) }));
     this.valueArc = el('path', { class: 'knob__arc' });
     this.pointer = el('line', { class: 'knob__pointer' });
     svg.append(this.valueArc, this.pointer);

@@ -148,8 +148,8 @@ $bp-player: 1240px;
 }
 
 // ── gałka ──
-// Jeden pierścień-tor, łuk wartości na nim, krótki wskaźnik w środku i jasne
-// nóżki na końcach zakresu — geometria w src/audio/Knob.js.
+// Tor na 270° przycięty do nóżek, łuk wartości na nim, krótki wskaźnik
+// w środku — geometria w src/audio/Knob.js.
 .knob {
   flex: none;
   width: 32px;
@@ -161,6 +161,9 @@ $bp-player: 1240px;
 
   svg { display: block; overflow: visible; }
 
+  // Oba łuki z płaskimi końcami: tor kończy się dokładnie na nóżkach, a łuk
+  // wartości startuje równo z torem. Okrągła końcówka wystawałaby poza skalę
+  // o pół grubości.
   &__track {
     fill: none;
     stroke: $line-bright;
@@ -172,7 +175,6 @@ $bp-player: 1240px;
     fill: none;
     stroke: $lime;
     stroke-width: 3;
-    stroke-linecap: round;
   }
 
   &__tick,
