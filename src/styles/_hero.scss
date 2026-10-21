@@ -89,6 +89,14 @@
     margin-top: 36px;
   }
 
+  &__waitlist-note {
+    margin-top: 14px;
+    max-width: 520px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: $text-muted;
+  }
+
   @include below($bp-sm) {
     padding-top: 64px;
   }
