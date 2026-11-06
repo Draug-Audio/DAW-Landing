@@ -577,9 +577,25 @@ dostają `inert`. Przy `prefers-reduced-motion` kroki mają czas 0.
 
 ## Uwagi
 
-- Zrzuty slajdów (`1`–`8`) przekonwertowane z PNG na WebP: 2561 kB → 723 kB.
-  Bezstratnie, żeby tekst interfejsu został ostry; wyjątkiem jest `2`, w dużej
-  mierze fotograficzne GUI wtyczek, zapisane stratnie q97.
+- Zrzuty slajdów (`1`–`8`) pochodzą z `DAW Screens/PL` (listopad 2026: timeline
+  i agent, rack FX, routing, piano roll z mikserem i historią, wyszukiwarka
+  wtyczek, menedżer projektów, tekst i karaoke, ustawienia). `N.webp` (2560 px)
+  bezstratnie, żeby tekst interfejsu został ostry; wyjątkiem są `2`, `5` i `8`
+  z fotograficznym GUI obcych wtyczek, zapisane stratnie q97. `N-lo.webp`
+  (1536 px) q90 — przy skalowaniu bezstratny wychodził większy.
+- Sekcja „Sampler” (`#sampler`) pokazuje zrzuty okna samplera z `DAW Screens/PL`
+  w natywnym rozmiarze (760 × 450, bezstratny WebP, najwyżej 3 kolumny, żeby
+  nie rozciągać ich ponad 1:1). Zakładka Dynamika to film z dźwiękiem
+  (`sampler-dynamika.mp4`, plakat z jej zrzutu, `preload="none"`); na czas
+  filmu muzyka w tle staje i wraca po nim (`BackgroundSound.yieldTo`). Pod
+  zrzutami szkic czterech poziomów (`warstwy-samplera.webp` z `DAW Screens/PL/Warstwy
+  samplera.png`, ciemna wersja `docs/warstwy-samplera.svg` z repozytorium DAW
+  rozwinięta o Poziom 0 · Fala, na tle karty `$panel` #0c0e0c, więc obraz
+  zlewa się z kartą; stratnie q92 — 194 kB zamiast 919 kB bezstratnie),
+  oznaczony jako planowany.
+- Dawna sekcja „Domyślne wtyczki” to „Planowany rozwój” (`#planowany-rozwoj`).
+  Linki Sampler i Planowany rozwój w nagłówku chowają się poniżej 860 px oraz
+  między 1320 a 1600 px, gdzie pasek dzielą z odtwarzaczem.
 - Panele wtyczek (`plugin-*.webp`) to zrzuty z `Mockups/DAW Plugins.html`
   z kanałem alfa: Edge bez interfejsu (puppeteer-core), przezroczyste tło
   strony i przodków panelu, zrzut samego elementu z `omitBackground`, gęstość
@@ -589,9 +605,10 @@ dostają `inert`. Przy `prefers-reduced-motion` kroki mają czas 0.
   dawne zrzuty w 1× na jasnym tle (486 kB). Panel ma własną ciemną krawędź,
   więc strona nie rysuje wokół obrazka ramki (prostokątna wisiałaby wokół
   zaokrąglonego panelu); podświetlenie po najechaniu to `drop-shadow`, który
-  obrysowuje kształt z kanału alfa. Na stronie jest wszystkie 9 pełnych
-  wtyczek z makiety (siatka 3 × 3: najpierw instrumenty — Sampler, Drumpad,
-  Syntezator — potem efekty) i podsekcja „Inteligentne wtyczki one-knob”
+  obrysowuje kształt z kanału alfa. W „Planowanym rozwoju” stoi 8 z 9 pełnych
+  wtyczek z makiety (siatka 3 kolumn: najpierw instrumenty — Drumpad,
+  Syntezator — potem efekty); Sampler z makiety zniknął, bo ma własną
+  sekcję ze zrzutami z DAW i podsekcja „Inteligentne wtyczki one-knob”
   z serią „OK” w jednym rzędzie (6 kolumn; poniżej 1100 px 3, na telefonie 2).
 - Pełna wtyczka to karta (`figure.plugin__card`, `tabindex="0"`) w komórce
   siatki (`div.plugin`). Komórka ma wysokość rzędu, karta — wysokość swojej

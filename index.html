@@ -58,6 +58,8 @@
   <nav class="site-nav" aria-label="Główna">
     <a href="#funkcje">Funkcje</a>
     <a href="#agent">Agent</a>
+    <a class="site-nav__extra" href="#sampler">Sampler</a>
+    <a class="site-nav__extra" href="#planowany-rozwoj">Planowany rozwój</a>
     <!-- <a href="#cennik">Cennik</a> -->
   </nav>
   <button class="sound-toggle" type="button" data-sound-toggle aria-pressed="true" aria-label="Muzyka w tle" hidden>
@@ -124,7 +126,7 @@
              i ustawiona co do piksela na kaflu z canvasu. Znika natychmiast
              przy ruchu karuzeli, wraca fadem po zatrzymaniu. -->
         <img class="showcase__sharp" data-showcase-sharp alt="" aria-hidden="true" decoding="async">
-        <noscript><img class="showcase__fallback" src="./assets/1.webp" alt="Interfejs Draug Audio Workstation — timeline i historia operacji"></noscript>
+        <noscript><img class="showcase__fallback" src="./assets/1.webp" alt="Interfejs Draug Audio Workstation — timeline i rozmowa z agentem"></noscript>
         <p class="sr-only" aria-live="polite" data-showcase-live></p>
 
         <button class="showcase__arrow showcase__arrow--prev" type="button" data-showcase-prev aria-label="Poprzedni widok">
@@ -381,30 +383,100 @@
     </div>
   </section>
 
-  <!-- ─────────────────────────── WTYCZKI ─────────────────────────── -->
-  <section id="wtyczki" class="plugins">
+  <!-- ─────────────────────────── SAMPLER ─────────────────────────── -->
+  <!-- Zrzuty z DAW Screens/PL, w natywnej rozdzielczości okna (760 × 450),
+       bezstratny WebP. Pod nimi szkic czterech poziomów (Fala, Próbka,
+       Multisample, Drum Rack), ciemna wersja z DAW Screens/PL — rozwinięcie
+       docs/warstwy-samplera.svg z repozytorium DAW o Poziom 0. To plan,
+       więc ma znacznik „Planowane”. -->
+  <section id="sampler" class="sampler">
     <div class="section-head section-head--wide">
-      <p class="eyebrow">Zestaw w komplecie</p>
-      <h2>Domyślne wtyczki</h2>
-      <p class="section-head__lead">Każda wtyczka jest w pełni dostępna dla agenta — ten sam zestaw parametrów, który widzisz w interfejsie, agent potrafi ustawić i zautomatyzować.</p>
+      <p class="eyebrow">Wbudowany instrument</p>
+      <h2>Sampler</h2>
+      <p class="section-head__lead">Sampler jest częścią DAW, nie osobną wtyczką: gra w silniku, wygląda jak reszta programu i bierze próbki prosto z projektu. Każdą zmianę słychać w trakcie kręcenia gałką, a nie dopiero po puszczeniu.</p>
+    </div>
+    <div class="sampler__grid">
+      <figure class="sampler__shot">
+        <img src="./assets/sampler-plik.webp" width="769" height="461" alt="Okno samplera z trzyminutowym plikiem Axion.wav" loading="lazy" decoding="async">
+        <figcaption>
+          <p class="sampler__name">Okno samplera</p>
+          <p class="sampler__desc">Otwierasz go dwuklikiem na samplu na osi albo wstawiasz na kanał. Długie pliki — tu trzyminutowy utwór — grają strumieniem z dysku, a przebieg rysuje ta sama fala, co blok na osi.</p>
+        </figcaption>
+      </figure>
+      <figure class="sampler__shot">
+        <img src="./assets/sampler-probka.webp" width="760" height="450" alt="Sampler, zakładka Próbka" loading="lazy" decoding="async">
+        <figcaption>
+          <p class="sampler__name">Próbka</p>
+          <p class="sampler__desc">Głośność, panorama i szerokość stereo, a obok normalizacja, odwrócenie kierunku i polaryzacji oraz zamiana kanałów. Bez przeliczania pliku — wszystko słychać od razu.</p>
+        </figcaption>
+      </figure>
+      <figure class="sampler__shot">
+        <img src="./assets/sampler-zakres.webp" width="760" height="450" alt="Sampler, zakładka Zakres z zaznaczoną pętlą" loading="lazy" decoding="async">
+        <figcaption>
+          <p class="sampler__name">Zakres</p>
+          <p class="sampler__desc">Początek i koniec próbki oraz pętla z płynnym przejściem, zaznaczone wprost na przebiegu.</p>
+        </figcaption>
+      </figure>
+      <figure class="sampler__shot">
+        <img src="./assets/sampler-tonacja.webp" width="760" height="450" alt="Sampler, zakładka Tonacja" loading="lazy" decoding="async">
+        <figcaption>
+          <p class="sampler__name">Tonacja</p>
+          <p class="sampler__desc">Nuta bazowa wykrywana sama, strój w półtonach i centach oraz metoda zmiany wysokości: Taśma, Widmo albo Cykle. Przy Widmie i Cyklach gałka CZAS zmienia długość niezależnie od wysokości.</p>
+        </figcaption>
+      </figure>
+      <figure class="sampler__shot">
+        <img src="./assets/sampler-obwiednia.webp" width="760" height="450" alt="Sampler, zakładka Obwiednia" loading="lazy" decoding="async">
+        <figcaption>
+          <p class="sampler__name">Obwiednia</p>
+          <p class="sampler__desc">Atak, spadek, poziom, ogon i zanik narysowane na przebiegu — widać, którą część próbki usłyszysz.</p>
+        </figcaption>
+      </figure>
+      <!-- Film z dźwiękiem, więc bez autoodtwarzania: rusza na klik,
+           z nowym zrzutem zakładki jako plakatem. `preload="none"` — 1,8 MB
+           pobiera się dopiero po kliknięciu. `data-sound-control` wyłącza go
+           z gestów, które startują muzykę w tle, a `data-yields-sound` każe
+           muzyce ustąpić na czas filmu (src/audio/BackgroundSound.js). -->
+      <figure class="sampler__shot">
+        <video class="sampler__video" src="./assets/sampler-dynamika.mp4" poster="./assets/sampler-dynamika.webp" width="762" height="452" controls preload="none" playsinline data-sound-control data-yields-sound aria-label="Film: odsłuch zakładki Dynamika w samplerze"></video>
+        <figcaption>
+          <p class="sampler__name">Dynamika <span class="sampler__tag">Film z dźwiękiem</span></p>
+          <p class="sampler__desc">Siła uderzenia zmienia głośność, długość i barwę nuty. Wykres pokazuje obwiednię i filtr dla cichego i mocnego uderzenia, a w filmie słychać, jak brzmienie idzie za gałkami.</p>
+        </figcaption>
+      </figure>
+    </div>
+
+    <figure class="sampler__plan">
+      <!-- Na telefonie szkic ma ok. 320 px i drobne podpisy — link otwiera
+           go w pełnym rozmiarze. -->
+      <a class="sampler__plan-art" href="./assets/warstwy-samplera.webp" target="_blank" rel="noopener" aria-label="Otwórz szkic poziomów samplera w pełnym rozmiarze">
+        <img src="./assets/warstwy-samplera.webp" width="1193" height="1210" alt="Szkic czterech planowanych poziomów samplera: Fala, Próbka, Multisample i Drum Rack na wspólnym silniku głosów" loading="lazy" decoding="async">
+      </a>
+      <figcaption class="sampler__plan-copy">
+        <p class="sampler__badge">Planowane</p>
+        <h3 class="sampler__plan-title">Cztery poziomy samplera</h3>
+        <p class="sampler__desc">Dzisiejszy sampler to Poziom 1 · Próbka. Pod nim stanie Fala — drobiazgowa obróbka materiału z powiększeniem do pojedynczych próbek: wycinanie, przejścia przez zero, usuwanie trzasków i rysowanie ołówkiem, zanim zagra sampler.</p>
+        <p class="sampler__desc">Nad nim, na tym samym silniku głosów, staną Multisample — strefy klawiszy, warstwy i blend przez velocity — oraz Drum Rack z padami, grupami dławienia i osobnym wyjściem każdego pada w routingu.</p>
+        <p class="sampler__desc">Wyższy poziom zawiera niższy, nie konwertuje go: próbka staje się strefą w grupie, a cały instrument — padem, bez utraty ustawień.</p>
+      </figcaption>
+    </figure>
+  </section>
+
+  <!-- ─────────────────────── PLANOWANY ROZWÓJ ─────────────────────── -->
+  <!-- Dawniej „Domyślne wtyczki”. Klasa `plugins` zostaje — opisuje
+       zawartość (karty wtyczek), a nie nagłówek. -->
+  <section id="planowany-rozwoj" class="plugins">
+    <div class="section-head section-head--wide">
+      <p class="eyebrow">W przygotowaniu</p>
+      <h2>Planowany rozwój</h2>
+      <p class="section-head__lead">Wtyczki, które dołączą do DAW. Każda będzie w pełni dostępna dla agenta — ten sam zestaw parametrów, który zobaczysz w interfejsie, agent ustawi i zautomatyzuje.</p>
     </div>
     <!-- Pełne wtyczki: najpierw instrumenty, potem efekty. Zrzuty z
          Mockups/DAW Plugins.html, z kanałem alfa (README, „Uwagi”). -->
     <!-- Karta wtyczki: po najechaniu albo fokusie spod dolnej krawędzi
          wysuwa się szuflada z opisem (bez przesuwania siatki); na ekranach
          dotykowych opis stoi pod kartą na stałe. -->
+    <!-- Bez samplera: ma własną sekcję wyżej, ze zrzutami z DAW. -->
     <div class="plugins__grid">
-      <div class="plugin">
-        <figure class="plugin__card" tabindex="0">
-          <img src="./assets/plugin-sampler.webp" width="1528" height="876" alt="Sampler — instrument Draug Audio Workstation" loading="lazy" decoding="async">
-          <figcaption class="plugin__drawer">
-            <div class="plugin__info">
-              <p class="plugin__name">Sampler</p>
-              <p class="plugin__desc">Warstwy sterowane velocity — kilka sampli na jednym klawiszu, przełączanych siłą uderzenia. Pętla z płynnym przejściem, tryb one-shot i obwiednia z własnymi krzywymi wejścia i wyjścia.</p>
-            </div>
-          </figcaption>
-        </figure>
-      </div>
       <div class="plugin">
         <figure class="plugin__card" tabindex="0">
           <img src="./assets/plugin-drumpad.webp" width="1528" height="808" alt="Drumpad — instrument Draug Audio Workstation" loading="lazy" decoding="async">

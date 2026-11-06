@@ -52,6 +52,24 @@
     &:hover { color: $lime; }
   }
 
+  // Sampler i Planowany rozwój chowają się przed resztą tam, gdzie brak
+  // miejsca:
+  // - poniżej $bp-md: na telefonie logo, Funkcje, Agent, dźwięk i CTA już
+  //   wypełniają 343 px;
+  // - od progu odtwarzacza ($bp-player w _player.scss, 1320 px) do 1600 px:
+  //   odtwarzacz stoi na środku paska (prawa krawędź w połowie okna + 257 px),
+  //   a pełna nawigacja z CTA zaczyna się 498 px od prawej. Odstęp 45 px,
+  //   jak przy krótszej nawigacji, wypada dopiero przy 1600 px; przy 1330
+  //   linki wchodziły pod odtwarzacz o 83 px. Zmienna z _player.scss nie jest
+  //   tu ładowana, bo `@use` przestawiłby kolejność reguł w main.scss.
+  @include below($bp-md) {
+    .site-nav__extra { display: none; }
+  }
+
+  @media (min-width: 1320.02px) and (max-width: 1600px) {
+    .site-nav__extra { display: none; }
+  }
+
   @include below($bp-sm) {
     gap: 9px;
     font-size: 9.5px;

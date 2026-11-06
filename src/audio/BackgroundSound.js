@@ -79,6 +79,14 @@ export class BackgroundSound {
     this.frames = {};
     this.listeners = new Set();
     this.resumeOnShow = false;
+    /**
+     * Inne źródła dźwięku na stronie, które teraz grają (film z odsłuchem),
+     * z informacją, czy muzyka grała, gdy ruszyły. Dopóki zbiór nie jest
+     * pusty, muzyka nie startuje — także od gestu, bo każdy klik na stronie
+     * w trakcie filmu wpuszczałby ją z powrotem pod jego dźwięk.
+     * @type {Map<HTMLMediaElement, boolean>}
+     */
+    this.yielding = new Map();
 
     this._onGesture = this._onGesture.bind(this);
     for (const type of ['play', 'playing', 'pause', 'ended']) {
@@ -174,6 +182,11 @@ export class BackgroundSound {
     this.enabled = enabled;
     writePreference(enabled);
     if (enabled) {
+      // Wprost włączona muzyka wygrywa z filmem: ten staje, zamiast żeby
+      // przycisk w nagłówku nic nie robił.
+      const media = [...this.yielding.keys()];
+      this.yielding.clear();
+      for (const element of media) element.pause();
       this._bindGestures();
       this._start();
     } else {
@@ -200,6 +213,30 @@ export class BackgroundSound {
     button.addEventListener('click', () => this.setEnabled(!this.enabled));
     this.onChange(sync);
     sync();
+  }
+
+  /**
+   * Muzyka ustępuje innemu elementowi z dźwiękiem (film z odsłuchem): staje,
+   * gdy on rusza, i wraca, gdy on stanie albo się skończy — o ile grała.
+   * Preferencja „włączona” się nie zmienia: to przerwa, nie wyłączenie.
+   * Odrzucone: ściszanie zamiast pauzy — pod odsłuchem dynamiki samplera
+   * każda inna muzyka przeszkadza, nawet cicha.
+   * @param {HTMLMediaElement} media
+   */
+  yieldTo(media) {
+    media.addEventListener('play', () => {
+      const wasPlaying = this.yielding.get(media) || !this.audio.paused;
+      this.yielding.set(media, wasPlaying);
+      this.audio.pause();
+    });
+    const back = () => {
+      if (!this.yielding.has(media)) return;
+      const resume = this.yielding.get(media);
+      this.yielding.delete(media);
+      if (resume) this._start();
+    };
+    media.addEventListener('pause', back);
+    media.addEventListener('ended', back);
   }
 
   // ── wewnętrzne ─────────────────────────────────────────────
@@ -236,7 +273,7 @@ export class BackgroundSound {
   }
 
   _start() {
-    if (!this.enabled || document.hidden) return;
+    if (!this.enabled || document.hidden || this.yielding.size) return;
     this._ensureGraph();
     // Bez `await` na resume(): bez aktywacji Chrome zostawia tę obietnicę
     // w zawieszeniu aż do następnego gestu, więc czekanie na nią blokowałoby

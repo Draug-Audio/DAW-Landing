@@ -23,6 +23,9 @@ if (soundToggle) {
   sound.bindToggle(soundToggle);
 }
 mountSoundPlayer(document.querySelector('[data-player]'), sound, backgroundTrack);
+// filmy z własnym dźwiękiem (odsłuch dynamiki samplera): muzyka w tle staje
+// na czas ich grania i wraca po nich
+for (const media of document.querySelectorAll('[data-yields-sound]')) sound.yieldTo(media);
 
 // Kolumny głośnikowe w hero i w sekcji agenta — zbudowane identycznie (osobny
 // SVG na grupę pierścieni) i renderowane tą samą ścieżką. Każda sekcja
